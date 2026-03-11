@@ -3,6 +3,17 @@
 Performs an outer join on hourly UTC timestamps, applies simple imputation
 for small gaps, and produces a consolidated Parquet file.  Optionally
 exports a Kaggle-ready CSV with accompanying metadata JSON.
+
+Column handling strategy for multi-year generation data:
+
+- **Core generation columns** (present in all or most years) are kept.
+  Where a fuel type was physically absent (e.g. ``nuclear`` after April 2023
+  shutdown), NaN is filled with 0.0 MW — the plant genuinely produced nothing.
+- **Consumption columns** are sporadic side-reports that come and go across
+  ENTSO-E reporting revisions.  ``hydro_pumped_storage_consumption`` is the
+  only consistently reported one (important for modelling storage dispatch).
+  Other ``*_consumption`` columns with >50 % missing are dropped.
+- A configurable ``max_missing_pct`` threshold controls which columns survive.
 """
 
 import json
@@ -16,6 +27,17 @@ from energy_modelling.data_collection.config import DataCollectionConfig
 
 # Maximum gap (in hours) that will be forward-filled. Larger gaps stay NaN.
 MAX_FFILL_HOURS = 3
+
+# Columns with more than this fraction missing get dropped before export.
+MAX_MISSING_PCT = 50.0
+
+# Generation columns where NaN means "zero output" (plant shut down / fuel
+# type not reported that year) rather than truly missing data.  These get
+# filled with 0.0 before the missing-% threshold is applied.
+ZERO_FILL_GEN_COLS = {
+    "gen_nuclear",
+    "gen_fossil_coal_derived_gas",
+}
 
 
 def load_raw_parquet(path: Path, name: str) -> pd.DataFrame:
@@ -173,6 +195,16 @@ def join_datasets(
     joined = joined.sort_index()
     joined = joined[~joined.index.duplicated(keep="first")]
 
+    # --- Zero-fill known generation columns ---
+    # For fuels that were physically absent in some years (e.g. nuclear after
+    # the German phase-out), NaN means 0 MW — not missing data.
+    for col in ZERO_FILL_GEN_COLS:
+        if col in joined.columns:
+            n_filled = int(joined[col].isna().sum())
+            if n_filled > 0:
+                joined[col] = joined[col].fillna(0.0)
+                logger.info("  Zero-filled {} NaN values in {}", n_filled, col)
+
     # Log pre-imputation quality
     pre_quality = compute_data_quality(joined)
     logger.info(
@@ -181,14 +213,35 @@ def join_datasets(
         {k: f"{v}%" for k, v in pre_quality["missing_percent"].items() if v > 0},
     )
 
+    # --- Drop columns with too much missing data ---
+    drop_cols = [
+        col for col, pct in pre_quality["missing_percent"].items() if pct > MAX_MISSING_PCT
+    ]
+    if drop_cols:
+        joined = joined.drop(columns=drop_cols)
+        logger.info(
+            "Dropped {} columns with >{:.0f}% missing: {}",
+            len(drop_cols),
+            MAX_MISSING_PCT,
+            drop_cols,
+        )
+
+    # --- Drop constant-value columns (no information) ---
+    constant_cols = [col for col in joined.columns if joined[col].dropna().nunique() <= 1]
+    if constant_cols:
+        joined = joined.drop(columns=constant_cols)
+        logger.info("Dropped {} constant-value columns: {}", len(constant_cols), constant_cols)
+        drop_cols.extend(constant_cols)
+
     # Impute small gaps
     joined = impute_small_gaps(joined)
 
     # Log post-imputation quality
     post_quality = compute_data_quality(joined)
     logger.info(
-        "Post-imputation: {} rows, missing: {}",
+        "Post-imputation: {} rows, {} columns, missing: {}",
         post_quality["total_rows"],
+        len(joined.columns),
         {k: f"{v}%" for k, v in post_quality["missing_percent"].items() if v > 0},
     )
 
@@ -205,6 +258,11 @@ def join_datasets(
 
         meta_path = config.processed_dir / "dataset_metadata.json"
         metadata = build_kaggle_metadata(config, post_quality)
+        # Record dropped columns for transparency
+        metadata["dropped_columns"] = {
+            "columns": drop_cols,
+            "reason": f"More than {MAX_MISSING_PCT:.0f}% missing across the full time span",
+        }
         meta_path.write_text(json.dumps(metadata, indent=2, default=str))
         logger.info("Saved Kaggle metadata -> {}", meta_path)
 
