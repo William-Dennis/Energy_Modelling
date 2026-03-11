@@ -22,14 +22,19 @@ from energy_modelling.data_collection.entsoe_generation import (
 def _make_generation_df(periods: int = 72, tz: str = "Europe/Berlin") -> pd.DataFrame:
     """Create a mock generation DataFrame mimicking entsoe-py output.
 
-    Returns a DataFrame with MultiIndex columns like entsoe-py produces.
+    Includes both Actual Aggregated and Actual Consumption columns to match
+    the real ENTSO-E API response structure for DE-LU.
     """
     idx = pd.date_range("2024-01-01", periods=periods, freq="h", tz=tz)
     columns = pd.MultiIndex.from_tuples(
         [
             ("Wind Onshore", "Actual Aggregated"),
+            ("Wind Onshore", "Actual Consumption"),
             ("Solar", "Actual Aggregated"),
+            ("Solar", "Actual Consumption"),
             ("Fossil Gas", "Actual Aggregated"),
+            ("Hydro Pumped Storage", "Actual Aggregated"),
+            ("Hydro Pumped Storage", "Actual Consumption"),
             ("Nuclear", "Actual Aggregated"),
         ]
     )
@@ -68,12 +73,24 @@ class TestCleanColumns:
             assert " " not in col
 
     def test_expected_column_names(self, mock_generation_df: pd.DataFrame) -> None:
-        """Should produce expected cleaned names."""
+        """Should produce expected cleaned names for Actual Aggregated columns."""
         result = _clean_columns(mock_generation_df.copy())
         assert "wind_onshore" in result.columns
         assert "solar" in result.columns
         assert "fossil_gas" in result.columns
         assert "nuclear" in result.columns
+
+    def test_consumption_columns_get_suffix(self, mock_generation_df: pd.DataFrame) -> None:
+        """Actual Consumption sub-columns should get a _consumption suffix."""
+        result = _clean_columns(mock_generation_df.copy())
+        assert "wind_onshore_consumption" in result.columns
+        assert "solar_consumption" in result.columns
+        assert "hydro_pumped_storage_consumption" in result.columns
+
+    def test_no_duplicate_columns(self, mock_generation_df: pd.DataFrame) -> None:
+        """Cleaned columns must all be unique — no duplicates allowed."""
+        result = _clean_columns(mock_generation_df.copy())
+        assert len(result.columns) == len(set(result.columns))
 
     def test_handles_flat_columns(self) -> None:
         """Should handle already-flat string columns gracefully."""

@@ -21,23 +21,44 @@ def _year_range(year: int, timezone: str) -> tuple[pd.Timestamp, pd.Timestamp]:
     return start, end
 
 
+def _normalise_name(name: str) -> str:
+    """Convert a raw column name string to snake_case."""
+    return (
+        name.strip().lower().replace(" ", "_").replace("-", "_").replace(".", "").replace("/", "_")
+    )
+
+
 def _clean_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Normalise generation DataFrame columns.
 
     The ``entsoe-py`` library returns a MultiIndex of
-    ``(generation_type, "Actual Aggregated")`` or similar.  This function
-    flattens the columns to clean snake_case names like ``wind_onshore``,
-    ``solar``, ``gas``, etc.
+    ``(generation_type, sub_type)`` where ``sub_type`` is one of:
+
+    - ``"Actual Aggregated"`` — the generation value (kept as-is)
+    - ``"Actual Consumption"`` — consumption by that technology
+      (e.g. pumped storage charging, solar self-consumption).
+      Appended as ``<name>_consumption`` to distinguish from generation.
+
+    Both are retained.  The second level is used only to build the suffix;
+    unrecognised sub-types are included with a ``_<sub_type>`` suffix so no
+    data is silently dropped.
+
+    If columns are already flat strings (e.g. in tests), they are
+    normalised to snake_case only.
     """
     if isinstance(df.columns, pd.MultiIndex):
-        # Take only the first level (generation type name)
-        df.columns = [col[0] for col in df.columns]
+        new_cols: list[str] = []
+        for fuel, sub in df.columns:
+            base = _normalise_name(str(fuel))
+            if "consumption" in str(sub).lower():
+                new_cols.append(f"{base}_consumption")
+            else:
+                # "Actual Aggregated" and anything else → use base name
+                new_cols.append(base)
+        df.columns = pd.Index(new_cols)
+    else:
+        df.columns = pd.Index([_normalise_name(str(c)) for c in df.columns])
 
-    # Normalise names: lower-case, replace spaces/hyphens with underscores
-    df.columns = [
-        str(c).strip().lower().replace(" ", "_").replace("-", "_").replace(".", "")
-        for c in df.columns
-    ]
     return df
 
 
