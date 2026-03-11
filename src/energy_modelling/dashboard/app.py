@@ -8,11 +8,15 @@ Sections
 1. Dataset overview & descriptive statistics
 2. Price time-series (daily, weekly, monthly aggregation)
 3. Generation mix (stacked area chart)
-4. Weather overview
-5. Price-feature correlations
-6. Price distribution & hourly/monthly patterns
-7. Negative price analysis
-8. Correlation heatmap
+4. Load & forecasts
+5. Neighbour prices & cross-border flows
+6. Carbon & gas prices
+7. Weather overview
+8. Price-feature correlations
+9. Price distribution & hourly/monthly patterns
+10. Negative price analysis
+11. Correlation heatmap
+12. Renewable share vs price scatter
 """
 
 from __future__ import annotations
@@ -29,54 +33,67 @@ import streamlit as st
 # ---------------------------------------------------------------------------
 DATA_PATH = Path("data/processed/dataset_de_lu.parquet")
 
-# Column groupings
+# Column groupings — all now with unit suffixes
 PRICE_COL = "price_eur_mwh"
 GEN_COLS_DISPLAY = {
-    "gen_biomass": "Biomass",
-    "gen_fossil_brown_coal_lignite": "Lignite",
-    "gen_fossil_coal_derived_gas": "Coal Gas",
-    "gen_fossil_gas": "Natural Gas",
-    "gen_fossil_hard_coal": "Hard Coal",
-    "gen_fossil_oil": "Oil",
-    "gen_geothermal": "Geothermal",
-    "gen_hydro_pumped_storage": "Pumped Storage",
-    "gen_hydro_run_of_river_and_poundage": "Run of River",
-    "gen_hydro_water_reservoir": "Water Reservoir",
-    "gen_nuclear": "Nuclear",
-    "gen_other": "Other",
-    "gen_other_renewable": "Other Renewable",
-    "gen_solar": "Solar",
-    "gen_waste": "Waste",
-    "gen_wind_offshore": "Wind Offshore",
-    "gen_wind_onshore": "Wind Onshore",
+    "gen_biomass_mw": "Biomass",
+    "gen_fossil_brown_coal_lignite_mw": "Lignite",
+    "gen_fossil_coal_derived_gas_mw": "Coal Gas",
+    "gen_fossil_gas_mw": "Natural Gas",
+    "gen_fossil_hard_coal_mw": "Hard Coal",
+    "gen_fossil_oil_mw": "Oil",
+    "gen_geothermal_mw": "Geothermal",
+    "gen_hydro_pumped_storage_mw": "Pumped Storage",
+    "gen_hydro_run_of_river_and_poundage_mw": "Run of River",
+    "gen_hydro_water_reservoir_mw": "Water Reservoir",
+    "gen_nuclear_mw": "Nuclear",
+    "gen_other_mw": "Other",
+    "gen_other_renewable_mw": "Other Renewable",
+    "gen_solar_mw": "Solar",
+    "gen_waste_mw": "Waste",
+    "gen_wind_offshore_mw": "Wind Offshore",
+    "gen_wind_onshore_mw": "Wind Onshore",
 }
 WEATHER_COLS_DISPLAY = {
-    "weather_temperature_2m": "Temperature (2m) [C]",
-    "weather_relative_humidity_2m": "Humidity (2m) [%]",
-    "weather_wind_speed_10m": "Wind Speed (10m) [km/h]",
-    "weather_wind_speed_100m": "Wind Speed (100m) [km/h]",
-    "weather_shortwave_radiation": "GHI [W/m2]",
-    "weather_direct_normal_irradiance": "DNI [W/m2]",
-    "weather_precipitation": "Precipitation [mm]",
+    "weather_temperature_2m_degc": "Temperature (2m) [C]",
+    "weather_relative_humidity_2m_pct": "Humidity (2m) [%]",
+    "weather_wind_speed_10m_kmh": "Wind Speed (10m) [km/h]",
+    "weather_wind_speed_100m_kmh": "Wind Speed (100m) [km/h]",
+    "weather_shortwave_radiation_wm2": "GHI [W/m2]",
+    "weather_direct_normal_irradiance_wm2": "DNI [W/m2]",
+    "weather_precipitation_mm": "Precipitation [mm]",
 }
 
 RENEWABLE_COLS = [
-    "gen_solar",
-    "gen_wind_onshore",
-    "gen_wind_offshore",
-    "gen_hydro_run_of_river_and_poundage",
-    "gen_hydro_water_reservoir",
-    "gen_biomass",
-    "gen_other_renewable",
-    "gen_geothermal",
+    "gen_solar_mw",
+    "gen_wind_onshore_mw",
+    "gen_wind_offshore_mw",
+    "gen_hydro_run_of_river_and_poundage_mw",
+    "gen_hydro_water_reservoir_mw",
+    "gen_biomass_mw",
+    "gen_other_renewable_mw",
+    "gen_geothermal_mw",
 ]
 FOSSIL_COLS = [
-    "gen_fossil_gas",
-    "gen_fossil_brown_coal_lignite",
-    "gen_fossil_hard_coal",
-    "gen_fossil_oil",
-    "gen_fossil_coal_derived_gas",
+    "gen_fossil_gas_mw",
+    "gen_fossil_brown_coal_lignite_mw",
+    "gen_fossil_hard_coal_mw",
+    "gen_fossil_oil_mw",
+    "gen_fossil_coal_derived_gas_mw",
 ]
+
+# Neighbour zone price columns
+NEIGHBOUR_PRICE_COLS = {
+    "price_fr_eur_mwh": "France",
+    "price_nl_eur_mwh": "Netherlands",
+    "price_at_eur_mwh": "Austria",
+    "price_pl_eur_mwh": "Poland",
+    "price_cz_eur_mwh": "Czech Republic",
+    "price_dk_1_eur_mwh": "Denmark West",
+    "price_dk_2_eur_mwh": "Denmark East",
+    "price_be_eur_mwh": "Belgium",
+    "price_se_4_eur_mwh": "Sweden South",
+}
 
 # Colour scheme (roughly matches conventional energy colours)
 GEN_COLORS = {
@@ -114,15 +131,13 @@ def load_data() -> pd.DataFrame:
     df["date"] = df.index.date  # type: ignore[union-attr]
 
     # Derived features
-    gen_cols = [
-        c
-        for c in df.columns
-        if c.startswith("gen_") and c != "gen_hydro_pumped_storage_consumption"
-    ]
-    df["total_generation"] = df[gen_cols].sum(axis=1)
-    df["renewable_generation"] = df[[c for c in RENEWABLE_COLS if c in df.columns]].sum(axis=1)
-    df["fossil_generation"] = df[[c for c in FOSSIL_COLS if c in df.columns]].sum(axis=1)
-    df["renewable_share"] = (df["renewable_generation"] / df["total_generation"] * 100).clip(0, 100)
+    gen_cols = [c for c in df.columns if c.startswith("gen_") and c.endswith("_mw")]
+    df["total_generation_mw"] = df[gen_cols].sum(axis=1)
+    df["renewable_generation_mw"] = df[[c for c in RENEWABLE_COLS if c in df.columns]].sum(axis=1)
+    df["fossil_generation_mw"] = df[[c for c in FOSSIL_COLS if c in df.columns]].sum(axis=1)
+    df["renewable_share_pct"] = (
+        df["renewable_generation_mw"] / df["total_generation_mw"] * 100
+    ).clip(0, 100)
     return df
 
 
@@ -135,9 +150,10 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("DE-LU Day-Ahead Electricity Market — Exploratory Data Analysis")
+st.title("DE-LU Day-Ahead Electricity Market -- Exploratory Data Analysis")
 st.markdown(
-    "**Dataset:** ENTSO-E day-ahead prices + generation mix + ERA5 weather for the "
+    "**Dataset:** ENTSO-E (prices, generation, load, forecasts, neighbours, flows, NTC) "
+    "+ Open-Meteo/ERA5 (weather) + Yahoo Finance (carbon, gas) for the "
     "Germany-Luxembourg bidding zone, 2019-2025. All timestamps UTC."
 )
 
@@ -162,9 +178,9 @@ year_range = st.sidebar.slider(
 mask = (df["year"] >= year_range[0]) & (df["year"] <= year_range[1])
 dff = df[mask]
 
-# ═══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 # 1. DATASET OVERVIEW
-# ═══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 st.header("1. Dataset Overview")
 
 col1, col2, col3, col4 = st.columns(4)
@@ -177,7 +193,6 @@ col3.metric(
 col4.metric("Hourly frequency", "1h")
 
 with st.expander("Descriptive statistics"):
-    # Only show main columns
     show_cols = [PRICE_COL] + list(GEN_COLS_DISPLAY.keys()) + list(WEATHER_COLS_DISPLAY.keys())
     show_cols = [c for c in show_cols if c in dff.columns]
     st.dataframe(
@@ -200,9 +215,9 @@ with st.expander("Missing data per column"):
             ).sort_values("Pct", ascending=False)
         )
 
-# ═══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 # 2. PRICE TIME-SERIES
-# ═══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 st.header("2. Day-Ahead Price Time Series")
 
 agg_option = st.radio(
@@ -239,9 +254,9 @@ col3.metric("Std Dev", f"{dff[PRICE_COL].std():.1f}")
 col4.metric("Min", f"{dff[PRICE_COL].min():.1f} EUR/MWh")
 col5.metric("Max", f"{dff[PRICE_COL].max():.1f} EUR/MWh")
 
-# ═══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 # 3. GENERATION MIX
-# ═══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 st.header("3. Generation Mix")
 
 gen_agg = st.radio(
@@ -258,7 +273,6 @@ gen_resampled = gen_resampled.rename(columns=GEN_COLS_DISPLAY)
 
 # Stacked area chart
 fig_gen = go.Figure()
-# Order: renewables first, then fossil, then other
 display_order = [
     "Solar",
     "Wind Onshore",
@@ -301,46 +315,199 @@ st.plotly_chart(fig_gen, use_container_width=True)
 
 # Renewable share over time
 st.subheader("Renewable Share Over Time")
-ren_share_ts = dff[["renewable_share"]].resample(gen_freq).mean()
+ren_share_ts = dff[["renewable_share_pct"]].resample(gen_freq).mean()
 fig_ren = px.line(
     ren_share_ts.reset_index(),
     x="timestamp_utc",
-    y="renewable_share",
-    labels={"timestamp_utc": "", "renewable_share": "Renewable %"},
+    y="renewable_share_pct",
+    labels={"timestamp_utc": "", "renewable_share_pct": "Renewable %"},
 )
 fig_ren.update_layout(height=300)
 st.plotly_chart(fig_ren, use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 4. WEATHER OVERVIEW
-# ═══════════════════════════════════════════════════════════════════════════
-st.header("4. Weather Overview")
+# ======================================================================
+# 4. LOAD & FORECASTS
+# ======================================================================
+st.header("4. Load & Forecasts")
+
+load_cols_available = [c for c in ["load_actual_mw", "load_forecast_mw"] if c in dff.columns]
+forecast_cols_available = [
+    c for c in dff.columns if c.startswith("forecast_") and c.endswith("_mw")
+]
+
+if load_cols_available or forecast_cols_available:
+    load_agg = st.radio(
+        "Aggregation",
+        ["Daily", "Weekly", "Monthly"],
+        horizontal=True,
+        key="load_agg",
+    )
+    load_freq = {"Daily": "1D", "Weekly": "1W", "Monthly": "1ME"}[load_agg]
+
+    if load_cols_available:
+        load_ts = dff[load_cols_available].resample(load_freq).mean()
+        fig_load = px.line(
+            load_ts.reset_index(),
+            x="timestamp_utc",
+            y=load_cols_available,
+            labels={"timestamp_utc": "", "value": "MW", "variable": "Series"},
+            title=f"Total Load: Actual vs Forecast ({load_agg})",
+        )
+        fig_load.update_layout(height=400)
+        st.plotly_chart(fig_load, use_container_width=True)
+
+    if forecast_cols_available:
+        fc_ts = dff[forecast_cols_available].resample(load_freq).mean()
+        fig_fc = px.line(
+            fc_ts.reset_index(),
+            x="timestamp_utc",
+            y=forecast_cols_available,
+            labels={"timestamp_utc": "", "value": "MW", "variable": "Source"},
+            title=f"Wind & Solar DA Forecast ({load_agg})",
+        )
+        fig_fc.update_layout(height=400)
+        st.plotly_chart(fig_fc, use_container_width=True)
+else:
+    st.info("No load or forecast data available. Run the full pipeline first.")
+
+# ======================================================================
+# 5. NEIGHBOUR PRICES & CROSS-BORDER FLOWS
+# ======================================================================
+st.header("5. Neighbour Prices & Cross-Border Flows")
+
+neighbour_cols_available = {k: v for k, v in NEIGHBOUR_PRICE_COLS.items() if k in dff.columns}
+flow_net_cols = [c for c in dff.columns if c.startswith("flow_") and c.endswith("_net_import_mw")]
+
+col_left, col_right = st.columns(2)
+
+with col_left:
+    if neighbour_cols_available:
+        nb_agg = st.radio(
+            "Aggregation",
+            ["Daily", "Weekly", "Monthly"],
+            horizontal=True,
+            key="nb_agg",
+        )
+        nb_freq = {"Daily": "1D", "Weekly": "1W", "Monthly": "1ME"}[nb_agg]
+        # Plot DE_LU price alongside neighbours
+        nb_plot_cols = [PRICE_COL] + list(neighbour_cols_available.keys())
+        nb_labels = {"price_eur_mwh": "DE-LU"}
+        nb_labels.update(neighbour_cols_available)
+        nb_ts = dff[nb_plot_cols].resample(nb_freq).mean()
+        nb_ts = nb_ts.rename(columns=nb_labels)
+        fig_nb = px.line(
+            nb_ts.reset_index(),
+            x="timestamp_utc",
+            y=list(nb_labels.values()),
+            labels={"timestamp_utc": "", "value": "EUR/MWh", "variable": "Zone"},
+            title=f"Day-Ahead Prices: DE-LU vs Neighbours ({nb_agg})",
+        )
+        fig_nb.update_layout(height=450)
+        st.plotly_chart(fig_nb, use_container_width=True)
+    else:
+        st.info("No neighbour price data available.")
+
+with col_right:
+    if flow_net_cols:
+        flow_agg = st.radio(
+            "Aggregation",
+            ["Daily", "Weekly", "Monthly"],
+            horizontal=True,
+            key="flow_agg",
+        )
+        flow_freq = {"Daily": "1D", "Weekly": "1W", "Monthly": "1ME"}[flow_agg]
+        flow_ts = dff[flow_net_cols].resample(flow_freq).mean()
+        # Clean column names for display
+        flow_display = {
+            c: c.replace("flow_", "").replace("_net_import_mw", "").upper() for c in flow_net_cols
+        }
+        flow_ts = flow_ts.rename(columns=flow_display)
+        fig_flow = px.line(
+            flow_ts.reset_index(),
+            x="timestamp_utc",
+            y=list(flow_display.values()),
+            labels={
+                "timestamp_utc": "",
+                "value": "MW (+ = import)",
+                "variable": "Border",
+            },
+            title=f"Net Cross-Border Flows ({flow_agg})",
+        )
+        fig_flow.add_hline(y=0, line_dash="dash", line_color="gray")
+        fig_flow.update_layout(height=450)
+        st.plotly_chart(fig_flow, use_container_width=True)
+    else:
+        st.info("No cross-border flow data available.")
+
+# ======================================================================
+# 6. CARBON & GAS PRICES
+# ======================================================================
+st.header("6. Carbon & Gas Prices")
+
+commodity_cols = [c for c in ["carbon_price_usd", "gas_price_usd"] if c in dff.columns]
+if commodity_cols:
+    comm_agg = st.radio(
+        "Aggregation",
+        ["Daily", "Weekly", "Monthly"],
+        horizontal=True,
+        key="comm_agg",
+    )
+    comm_freq = {"Daily": "1D", "Weekly": "1W", "Monthly": "1ME"}[comm_agg]
+    comm_ts = dff[commodity_cols].resample(comm_freq).mean()
+    fig_comm = px.line(
+        comm_ts.reset_index(),
+        x="timestamp_utc",
+        y=commodity_cols,
+        labels={"timestamp_utc": "", "value": "USD", "variable": "Commodity"},
+        title=f"Carbon & Gas Prices ({comm_agg})",
+    )
+    fig_comm.update_layout(height=400)
+    st.plotly_chart(fig_comm, use_container_width=True)
+else:
+    st.info("No carbon or gas price data available. Run the full pipeline first.")
+
+# ======================================================================
+# 7. WEATHER OVERVIEW
+# ======================================================================
+st.header("7. Weather Overview")
 
 weather_cols_available = [c for c in WEATHER_COLS_DISPLAY if c in dff.columns]
-weather_var = st.selectbox(
-    "Weather variable",
-    weather_cols_available,
-    format_func=lambda x: WEATHER_COLS_DISPLAY[x],
-)
+if weather_cols_available:
+    weather_var = st.selectbox(
+        "Weather variable",
+        weather_cols_available,
+        format_func=lambda x: WEATHER_COLS_DISPLAY[x],
+    )
 
-weather_daily = dff[[weather_var]].resample("1D").mean()
-fig_weather = px.line(
-    weather_daily.reset_index(),
-    x="timestamp_utc",
-    y=weather_var,
-    labels={"timestamp_utc": "", weather_var: WEATHER_COLS_DISPLAY[weather_var]},
-    title=f"{WEATHER_COLS_DISPLAY[weather_var]} (Daily Mean)",
-)
-fig_weather.update_layout(height=350)
-st.plotly_chart(fig_weather, use_container_width=True)
+    weather_daily = dff[[weather_var]].resample("1D").mean()
+    fig_weather = px.line(
+        weather_daily.reset_index(),
+        x="timestamp_utc",
+        y=weather_var,
+        labels={
+            "timestamp_utc": "",
+            weather_var: WEATHER_COLS_DISPLAY[weather_var],
+        },
+        title=f"{WEATHER_COLS_DISPLAY[weather_var]} (Daily Mean)",
+    )
+    fig_weather.update_layout(height=350)
+    st.plotly_chart(fig_weather, use_container_width=True)
+else:
+    st.info("No weather data available.")
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 5. PRICE-FEATURE CORRELATIONS
-# ═══════════════════════════════════════════════════════════════════════════
-st.header("5. Key Correlations with Price")
+# ======================================================================
+# 8. PRICE-FEATURE CORRELATIONS
+# ======================================================================
+st.header("8. Key Correlations with Price")
 
 corr_cols = (
-    ["renewable_share", "total_generation", "fossil_generation", "renewable_generation"]
+    [
+        "renewable_share_pct",
+        "total_generation_mw",
+        "fossil_generation_mw",
+        "renewable_generation_mw",
+    ]
+    + [c for c in ["load_actual_mw", "carbon_price_usd", "gas_price_usd"] if c in dff.columns]
     + weather_cols_available
     + gen_cols_available
 )
@@ -357,13 +524,13 @@ fig_corr = px.bar(
     color_continuous_scale="RdBu_r",
     range_color=[-1, 1],
 )
-fig_corr.update_layout(height=600, showlegend=False)
+fig_corr.update_layout(height=max(600, len(corr_cols) * 22), showlegend=False)
 st.plotly_chart(fig_corr, use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 6. PRICE DISTRIBUTION & PATTERNS
-# ═══════════════════════════════════════════════════════════════════════════
-st.header("6. Price Distribution & Temporal Patterns")
+# ======================================================================
+# 9. PRICE DISTRIBUTION & PATTERNS
+# ======================================================================
+st.header("9. Price Distribution & Temporal Patterns")
 
 col_left, col_right = st.columns(2)
 
@@ -380,7 +547,6 @@ with col_left:
     st.plotly_chart(fig_dist, use_container_width=True)
 
 with col_right:
-    # Year-over-year boxplot
     fig_yoy = px.box(
         dff.reset_index(),
         x="year",
@@ -394,7 +560,6 @@ with col_right:
 col_left2, col_right2 = st.columns(2)
 
 with col_left2:
-    # Hourly profile
     hourly_profile = dff.groupby("hour")[PRICE_COL].agg(["mean", "median", "std"]).reset_index()
     fig_hourly = go.Figure()
     fig_hourly.add_trace(
@@ -442,7 +607,6 @@ with col_left2:
     st.plotly_chart(fig_hourly, use_container_width=True)
 
 with col_right2:
-    # Monthly profile
     monthly_profile = dff.groupby("month")[PRICE_COL].agg(["mean", "median"]).reset_index()
     month_names = [
         "Jan",
@@ -485,10 +649,10 @@ fig_dow = px.bar(
 fig_dow.update_layout(height=350)
 st.plotly_chart(fig_dow, use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 7. NEGATIVE PRICE ANALYSIS
-# ═══════════════════════════════════════════════════════════════════════════
-st.header("7. Negative Price Analysis")
+# ======================================================================
+# 10. NEGATIVE PRICE ANALYSIS
+# ======================================================================
+st.header("10. Negative Price Analysis")
 
 neg = dff[dff[PRICE_COL] < 0]
 total_hours = len(dff)
@@ -497,10 +661,12 @@ neg_hours = len(neg)
 col1, col2, col3 = st.columns(3)
 col1.metric("Negative price hours", f"{neg_hours:,}")
 col2.metric("Pct of total", f"{neg_hours / total_hours * 100:.2f}%")
-col3.metric("Most negative", f"{neg[PRICE_COL].min():.1f} EUR/MWh" if neg_hours > 0 else "N/A")
+col3.metric(
+    "Most negative",
+    f"{neg[PRICE_COL].min():.1f} EUR/MWh" if neg_hours > 0 else "N/A",
+)
 
 if neg_hours > 0:
-    # Count per year
     neg_per_year = neg.groupby("year").size().reset_index(name="count")
     fig_neg_year = px.bar(
         neg_per_year,
@@ -514,7 +680,6 @@ if neg_hours > 0:
 
     col_l, col_r = st.columns(2)
     with col_l:
-        # When do negative prices happen? By hour
         neg_hourly = neg.groupby("hour").size().reset_index(name="count")
         fig_neg_hour = px.bar(
             neg_hourly,
@@ -527,10 +692,9 @@ if neg_hours > 0:
         st.plotly_chart(fig_neg_hour, use_container_width=True)
 
     with col_r:
-        # Renewable share during negative prices vs positive
         st.markdown("**Renewable share comparison:**")
-        ren_neg = neg["renewable_share"].mean()
-        ren_pos = dff[dff[PRICE_COL] >= 0]["renewable_share"].mean()
+        ren_neg = neg["renewable_share_pct"].mean()
+        ren_pos = dff[dff[PRICE_COL] >= 0]["renewable_share_pct"].mean()
         comp_df = pd.DataFrame(
             {
                 "Condition": ["Negative prices", "Non-negative prices"],
@@ -547,16 +711,21 @@ if neg_hours > 0:
         fig_comp.update_layout(height=300, showlegend=False)
         st.plotly_chart(fig_comp, use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 8. CORRELATION HEATMAP
-# ═══════════════════════════════════════════════════════════════════════════
-st.header("8. Correlation Heatmap")
+# ======================================================================
+# 11. CORRELATION HEATMAP
+# ======================================================================
+st.header("11. Correlation Heatmap")
 
 heatmap_cols = [PRICE_COL] + gen_cols_available + weather_cols_available
+# Add load/carbon/gas if present
+for extra in ["load_actual_mw", "carbon_price_usd", "gas_price_usd"]:
+    if extra in dff.columns:
+        heatmap_cols.append(extra)
 heatmap_labels = (
     ["Price"]
     + [GEN_COLS_DISPLAY.get(c, c) for c in gen_cols_available]
     + [WEATHER_COLS_DISPLAY.get(c, c) for c in weather_cols_available]
+    + [c for c in ["load_actual_mw", "carbon_price_usd", "gas_price_usd"] if c in dff.columns]
 )
 corr_matrix = dff[heatmap_cols].corr()
 
@@ -573,37 +742,38 @@ fig_hm = px.imshow(
 fig_hm.update_layout(height=800, width=900)
 st.plotly_chart(fig_hm, use_container_width=True)
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 9. SCATTER: RENEWABLE SHARE vs PRICE
-# ═══════════════════════════════════════════════════════════════════════════
-st.header("9. Renewable Share vs Price")
+# ======================================================================
+# 12. SCATTER: RENEWABLE SHARE vs PRICE
+# ======================================================================
+st.header("12. Renewable Share vs Price")
 
-# Subsample for performance (scatter with 60k points is heavy)
-scatter_df = dff[[PRICE_COL, "renewable_share", "year"]].dropna()
+scatter_df = dff[[PRICE_COL, "renewable_share_pct", "year"]].dropna()
 if len(scatter_df) > 10000:
     scatter_df = scatter_df.sample(10000, random_state=42)
 
 fig_scatter = px.scatter(
     scatter_df,
-    x="renewable_share",
+    x="renewable_share_pct",
     y=PRICE_COL,
     color="year",
     opacity=0.4,
-    labels={"renewable_share": "Renewable Share [%]", PRICE_COL: "EUR/MWh"},
+    labels={"renewable_share_pct": "Renewable Share [%]", PRICE_COL: "EUR/MWh"},
     title="Day-Ahead Price vs Renewable Share (10k sample)",
 )
 fig_scatter.update_layout(height=500)
 st.plotly_chart(fig_scatter, use_container_width=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 # FOOTER
-# ═══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 st.divider()
 st.markdown(
     """
-    **Data sources:** ENTSO-E Transparency Platform (prices & generation),
-    Open-Meteo Archive API / ERA5 (weather).
+    **Data sources:** ENTSO-E Transparency Platform (prices, generation, load,
+    forecasts, neighbour prices, cross-border flows, NTC),
+    Open-Meteo Archive API / ERA5 (weather),
+    Yahoo Finance (carbon EUA proxy, gas price proxy).
 
     **License:** CC-BY-4.0 | **Bidding zone:** DE-LU (Germany/Luxembourg)
     """

@@ -25,6 +25,19 @@ class DataCollectionConfig(BaseSettings):
     bidding_zone: str = "DE_LU"
     timezone: str = "Europe/Berlin"
 
+    # --- Neighbouring bidding zones (for prices, flows, NTC) ---
+    neighbour_zones: list[str] = [
+        "FR",
+        "NL",
+        "AT",
+        "PL",
+        "CZ",
+        "DK_1",
+        "DK_2",
+        "BE",
+        "SE_4",
+    ]
+
     # --- Weather grid point (central Germany) ---
     weather_latitude: float = 51.5
     weather_longitude: float = 10.5

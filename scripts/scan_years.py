@@ -1,19 +1,30 @@
 """Scan years backward from 2025 to assess data availability per source.
 
-For each year, probes:
-  1. ENTSO-E day-ahead prices (DE_LU)
-  2. ENTSO-E generation mix (DE_LU)
-  3. Open-Meteo ERA5 weather
+For each year, probes all 10 data sources:
+  1.  ENTSO-E day-ahead prices (DE_LU)
+  2.  ENTSO-E generation mix (DE_LU)
+  3.  Open-Meteo ERA5 weather
+  4.  ENTSO-E total load (actual + forecast)
+  5.  ENTSO-E wind/solar DA forecasts
+  6.  ENTSO-E neighbour zone day-ahead prices
+  7.  ENTSO-E cross-border physical flows
+  8.  ENTSO-E day-ahead NTC
+  9.  Carbon price (CARB.L via Yahoo Finance)
+  10. Gas price (TTF=F / NG=F via Yahoo Finance)
 
 Saves per-year Parquet files for successful fetches and prints a summary table.
 Stops when a year has severely limited data (prices AND generation both fail).
 
 Usage:
-    uv run python scripts/scan_years.py
+    uv run python scripts/scan_years.py [--force]
+
+Options:
+    --force   Re-fetch even if per-year Parquet files already exist.
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 import time
 from pathlib import Path
@@ -25,10 +36,17 @@ import pandas as pd
 from entsoe import EntsoePandasClient
 from loguru import logger
 
+from energy_modelling.data_collection.carbon_price import fetch_carbon_price
 from energy_modelling.data_collection.config import DataCollectionConfig
+from energy_modelling.data_collection.entsoe_flows import fetch_flows_for_year
+from energy_modelling.data_collection.entsoe_forecasts import fetch_forecasts_for_year
 from energy_modelling.data_collection.entsoe_generation import _clean_columns
 from energy_modelling.data_collection.entsoe_generation import _year_range as gen_year_range
+from energy_modelling.data_collection.entsoe_load import fetch_load_for_year
+from energy_modelling.data_collection.entsoe_neighbours import fetch_neighbour_prices_for_year
+from energy_modelling.data_collection.entsoe_ntc import fetch_ntc_for_year
 from energy_modelling.data_collection.entsoe_prices import _year_range as price_year_range
+from energy_modelling.data_collection.gas_price import fetch_gas_price
 from energy_modelling.data_collection.weather import fetch_weather_for_year
 
 # ---------------------------------------------------------------------------
@@ -38,9 +56,15 @@ START_YEAR = 2025
 END_YEAR = 2000  # will stop earlier if data is severely limited
 BIDDING_ZONE = "DE_LU"
 TIMEZONE = "Europe/Berlin"
+NEIGHBOUR_ZONES = ["FR", "NL", "AT", "PL", "CZ", "DK_1", "DK_2", "BE", "SE_4"]
 
 # Severity threshold: if a year has < this many price rows, it's "severely limited"
 MIN_PRICE_ROWS = 4000  # ~6 months of hourly data
+
+
+# ---------------------------------------------------------------------------
+# Per-source probe functions
+# ---------------------------------------------------------------------------
 
 
 def probe_prices(
@@ -50,7 +74,7 @@ def probe_prices(
     year_path = raw_dir / f"prices_da_{year}.parquet"
     if year_path.exists() and not force:
         df = pd.read_parquet(year_path)
-        return {"status": "cached", "rows": len(df), "path": year_path}
+        return {"status": "cached", "rows": len(df), "cols": 1, "path": year_path}
 
     try:
         start, end = price_year_range(year, TIMEZONE)
@@ -61,9 +85,9 @@ def probe_prices(
         df.index.name = "timestamp_utc"
         df = df.resample("1h").mean()
         df.to_parquet(year_path, engine="pyarrow")
-        return {"status": "ok", "rows": len(df), "path": year_path}
+        return {"status": "ok", "rows": len(df), "cols": 1, "path": year_path}
     except Exception as e:
-        return {"status": "error", "rows": 0, "error": str(e)[:200]}
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
 
 
 def probe_generation(
@@ -94,7 +118,7 @@ def probe_weather(year: int, raw_dir: Path, *, force: bool = False) -> dict:
     year_path = raw_dir / f"weather_{year}.parquet"
     if year_path.exists() and not force:
         df = pd.read_parquet(year_path)
-        return {"status": "cached", "rows": len(df), "path": year_path}
+        return {"status": "cached", "rows": len(df), "cols": len(df.columns), "path": year_path}
 
     try:
         df = fetch_weather_for_year(
@@ -112,12 +136,145 @@ def probe_weather(year: int, raw_dir: Path, *, force: bool = False) -> dict:
             ],
         )
         df.to_parquet(year_path, engine="pyarrow")
-        return {"status": "ok", "rows": len(df), "path": year_path}
+        return {"status": "ok", "rows": len(df), "cols": len(df.columns), "path": year_path}
     except Exception as e:
-        return {"status": "error", "rows": 0, "error": str(e)[:200]}
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
 
 
-def main() -> None:
+def probe_load(
+    client: EntsoePandasClient, year: int, raw_dir: Path, *, force: bool = False
+) -> dict:
+    """Try to fetch load (actual + forecast) for a year. Returns a result dict."""
+    year_path = raw_dir / f"load_{year}.parquet"
+    if year_path.exists() and not force:
+        df = pd.read_parquet(year_path)
+        return {"status": "cached", "rows": len(df), "cols": len(df.columns), "path": year_path}
+
+    try:
+        df = fetch_load_for_year(client, year, BIDDING_ZONE, TIMEZONE)
+        df.to_parquet(year_path, engine="pyarrow")
+        return {"status": "ok", "rows": len(df), "cols": len(df.columns), "path": year_path}
+    except Exception as e:
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
+
+
+def probe_forecasts(
+    client: EntsoePandasClient, year: int, raw_dir: Path, *, force: bool = False
+) -> dict:
+    """Try to fetch wind/solar DA forecasts for a year. Returns a result dict."""
+    year_path = raw_dir / f"forecasts_{year}.parquet"
+    if year_path.exists() and not force:
+        df = pd.read_parquet(year_path)
+        return {"status": "cached", "rows": len(df), "cols": len(df.columns), "path": year_path}
+
+    try:
+        df = fetch_forecasts_for_year(client, year, BIDDING_ZONE, TIMEZONE)
+        df.to_parquet(year_path, engine="pyarrow")
+        return {"status": "ok", "rows": len(df), "cols": len(df.columns), "path": year_path}
+    except Exception as e:
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
+
+
+def probe_neighbours(
+    client: EntsoePandasClient, year: int, raw_dir: Path, *, force: bool = False
+) -> dict:
+    """Try to fetch neighbour zone DA prices for a year. Returns a result dict."""
+    year_path = raw_dir / f"neighbour_prices_{year}.parquet"
+    if year_path.exists() and not force:
+        df = pd.read_parquet(year_path)
+        return {"status": "cached", "rows": len(df), "cols": len(df.columns), "path": year_path}
+
+    try:
+        df = fetch_neighbour_prices_for_year(client, year, TIMEZONE, NEIGHBOUR_ZONES)
+        df.to_parquet(year_path, engine="pyarrow")
+        cols = len(df.columns) if not df.empty else 0
+        return {"status": "ok", "rows": len(df), "cols": cols, "path": year_path}
+    except Exception as e:
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
+
+
+def probe_flows(
+    client: EntsoePandasClient, year: int, raw_dir: Path, *, force: bool = False
+) -> dict:
+    """Try to fetch cross-border flows for a year. Returns a result dict."""
+    year_path = raw_dir / f"flows_{year}.parquet"
+    if year_path.exists() and not force:
+        df = pd.read_parquet(year_path)
+        return {"status": "cached", "rows": len(df), "cols": len(df.columns), "path": year_path}
+
+    try:
+        df = fetch_flows_for_year(client, year, BIDDING_ZONE, TIMEZONE, NEIGHBOUR_ZONES)
+        df.to_parquet(year_path, engine="pyarrow")
+        cols = len(df.columns) if not df.empty else 0
+        return {"status": "ok", "rows": len(df), "cols": cols, "path": year_path}
+    except Exception as e:
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
+
+
+def probe_ntc(client: EntsoePandasClient, year: int, raw_dir: Path, *, force: bool = False) -> dict:
+    """Try to fetch day-ahead NTC for a year. Returns a result dict."""
+    year_path = raw_dir / f"ntc_{year}.parquet"
+    if year_path.exists() and not force:
+        df = pd.read_parquet(year_path)
+        return {"status": "cached", "rows": len(df), "cols": len(df.columns), "path": year_path}
+
+    try:
+        df = fetch_ntc_for_year(client, year, BIDDING_ZONE, TIMEZONE, NEIGHBOUR_ZONES)
+        df.to_parquet(year_path, engine="pyarrow")
+        cols = len(df.columns) if not df.empty else 0
+        return {"status": "ok", "rows": len(df), "cols": cols, "path": year_path}
+    except Exception as e:
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
+
+
+def probe_carbon(year: int, raw_dir: Path, *, force: bool = False) -> dict:
+    """Try to fetch carbon price (CARB.L) for a year. Returns a result dict."""
+    year_path = raw_dir / f"carbon_price_{year}.parquet"
+    if year_path.exists() and not force:
+        df = pd.read_parquet(year_path)
+        return {"status": "cached", "rows": len(df), "cols": len(df.columns), "path": year_path}
+
+    try:
+        df = fetch_carbon_price(f"{year}-01-01", f"{year + 1}-01-01")
+        df.to_parquet(year_path, engine="pyarrow")
+        cols = len(df.columns) if not df.empty else 0
+        return {"status": "ok", "rows": len(df), "cols": cols, "path": year_path}
+    except Exception as e:
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
+
+
+def probe_gas(year: int, raw_dir: Path, *, force: bool = False) -> dict:
+    """Try to fetch gas price (TTF=F / NG=F) for a year. Returns a result dict."""
+    year_path = raw_dir / f"gas_price_{year}.parquet"
+    if year_path.exists() and not force:
+        df = pd.read_parquet(year_path)
+        return {"status": "cached", "rows": len(df), "cols": len(df.columns), "path": year_path}
+
+    try:
+        df = fetch_gas_price(f"{year}-01-01", f"{year + 1}-01-01")
+        df.to_parquet(year_path, engine="pyarrow")
+        cols = len(df.columns) if not df.empty else 0
+        return {"status": "ok", "rows": len(df), "cols": cols, "path": year_path}
+    except Exception as e:
+        return {"status": "error", "rows": 0, "cols": 0, "error": str(e)[:200]}
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+
+def _probe_label(result: dict) -> str:
+    """Format a compact status label: ok/cached/error + rows[xcols]."""
+    status = result["status"]
+    rows = result["rows"]
+    cols = result.get("cols", "?")
+    if status == "error":
+        return "ERROR"
+    return f"{status}({rows}r/{cols}c)"
+
+
+def main(force: bool = False) -> None:
     config = DataCollectionConfig()
     config.ensure_dirs()
     raw_dir = config.raw_dir
@@ -126,109 +283,215 @@ def main() -> None:
     results: list[dict] = []
 
     for year in range(START_YEAR, END_YEAR - 1, -1):
-        logger.info("=" * 60)
+        logger.info("=" * 70)
         logger.info("Probing year {}", year)
-        logger.info("=" * 60)
+        logger.info("=" * 70)
 
-        # Prices
-        logger.info("  [prices] ...")
-        price_result = probe_prices(client, year, raw_dir)
-        logger.info("  [prices] {} -> {} rows", price_result["status"], price_result["rows"])
-        # Be nice to the API
-        if price_result["status"] == "ok":
-            time.sleep(1)
-
-        # Generation
-        logger.info("  [generation] ...")
-        gen_result = probe_generation(client, year, raw_dir)
+        # --- Mandatory sources ---
+        logger.info("  [prices] fetching...")
+        price_r = probe_prices(client, year, raw_dir, force=force)
         logger.info(
-            "  [generation] {} -> {} rows, {} cols",
-            gen_result["status"],
-            gen_result["rows"],
-            gen_result.get("cols", "?"),
+            "  [prices] {} rows={} cols={}", price_r["status"], price_r["rows"], price_r.get("cols")
         )
-        if gen_result["status"] == "ok":
+        if price_r["status"] == "ok":
             time.sleep(1)
 
-        # Weather
-        logger.info("  [weather] ...")
-        weather_result = probe_weather(year, raw_dir)
-        logger.info("  [weather] {} -> {} rows", weather_result["status"], weather_result["rows"])
-        if weather_result["status"] == "ok":
+        logger.info("  [generation] fetching... (slow ~2-3 min)")
+        gen_r = probe_generation(client, year, raw_dir, force=force)
+        logger.info(
+            "  [generation] {} rows={} cols={}", gen_r["status"], gen_r["rows"], gen_r.get("cols")
+        )
+        if gen_r["status"] == "ok":
+            time.sleep(1)
+
+        logger.info("  [weather] fetching...")
+        weather_r = probe_weather(year, raw_dir, force=force)
+        logger.info(
+            "  [weather] {} rows={} cols={}",
+            weather_r["status"],
+            weather_r["rows"],
+            weather_r.get("cols"),
+        )
+        if weather_r["status"] == "ok":
             time.sleep(0.5)
 
-        row = {
-            "year": year,
-            "prices_status": price_result["status"],
-            "prices_rows": price_result["rows"],
-            "gen_status": gen_result["status"],
-            "gen_rows": gen_result["rows"],
-            "gen_cols": gen_result.get("cols", 0),
-            "weather_status": weather_result["status"],
-            "weather_rows": weather_result["rows"],
-        }
-        # Add error messages if any
-        if "error" in price_result:
-            row["prices_error"] = price_result["error"]
-        if "error" in gen_result:
-            row["gen_error"] = gen_result["error"]
-        if "error" in weather_result:
-            row["weather_error"] = weather_result["error"]
-
-        results.append(row)
-
-        # Stop condition: both prices AND generation failed
-        if price_result["status"] == "error" and gen_result["status"] == "error":
-            logger.warning("STOPPING: Year {} has no prices and no generation data", year)
-            break
-
-        # Stop condition: prices exist but are severely limited
-        if price_result["status"] != "error" and price_result["rows"] < MIN_PRICE_ROWS:
-            logger.warning(
-                "STOPPING: Year {} has only {} price rows (< {} threshold)",
-                year,
-                price_result["rows"],
-                MIN_PRICE_ROWS,
+        # Stop early if mandatory sources are both missing
+        if price_r["status"] == "error" and gen_r["status"] == "error":
+            logger.warning("STOPPING: Year {} — no prices and no generation data", year)
+            results.append(
+                {
+                    "year": year,
+                    "price": price_r,
+                    "gen": gen_r,
+                    "weather": weather_r,
+                    "load": {"status": "skipped", "rows": 0, "cols": 0},
+                    "forecasts": {"status": "skipped", "rows": 0, "cols": 0},
+                    "neighbours": {"status": "skipped", "rows": 0, "cols": 0},
+                    "flows": {"status": "skipped", "rows": 0, "cols": 0},
+                    "ntc": {"status": "skipped", "rows": 0, "cols": 0},
+                    "carbon": {"status": "skipped", "rows": 0, "cols": 0},
+                    "gas": {"status": "skipped", "rows": 0, "cols": 0},
+                }
             )
             break
 
-    # Print summary table
-    logger.info("\n" + "=" * 80)
-    logger.info("DATA AVAILABILITY SUMMARY")
-    logger.info("=" * 80)
-    header = (
-        f"{'Year':<6} {'Prices':<10} {'P.Rows':<8} "
-        f"{'Gen':<10} {'G.Rows':<8} {'G.Cols':<7} "
-        f"{'Weather':<10} {'W.Rows':<8}"
-    )
-    logger.info(header)
-    logger.info("-" * 80)
-    for r in sorted(results, key=lambda x: x["year"]):
-        line = (
-            f"{r['year']:<6} {r['prices_status']:<10} {r['prices_rows']:<8} "
-            f"{r['gen_status']:<10} {r['gen_rows']:<8} {r['gen_cols']:<7} "
-            f"{r['weather_status']:<10} {r['weather_rows']:<8}"
-        )
-        logger.info(line)
-        if "prices_error" in r:
-            logger.info(f"  prices_error: {r['prices_error']}")
-        if "gen_error" in r:
-            logger.info(f"  gen_error: {r['gen_error']}")
-        if "weather_error" in r:
-            logger.info(f"  weather_error: {r['weather_error']}")
+        if price_r["status"] != "error" and price_r["rows"] < MIN_PRICE_ROWS:
+            logger.warning(
+                "STOPPING: Year {} has only {} price rows (< {} threshold)",
+                year,
+                price_r["rows"],
+                MIN_PRICE_ROWS,
+            )
+            results.append(
+                {
+                    "year": year,
+                    "price": price_r,
+                    "gen": gen_r,
+                    "weather": weather_r,
+                    "load": {"status": "skipped", "rows": 0, "cols": 0},
+                    "forecasts": {"status": "skipped", "rows": 0, "cols": 0},
+                    "neighbours": {"status": "skipped", "rows": 0, "cols": 0},
+                    "flows": {"status": "skipped", "rows": 0, "cols": 0},
+                    "ntc": {"status": "skipped", "rows": 0, "cols": 0},
+                    "carbon": {"status": "skipped", "rows": 0, "cols": 0},
+                    "gas": {"status": "skipped", "rows": 0, "cols": 0},
+                }
+            )
+            break
 
-    # Determine valid years
+        # --- Optional ENTSO-E sources ---
+        logger.info("  [load] fetching...")
+        load_r = probe_load(client, year, raw_dir, force=force)
+        logger.info(
+            "  [load] {} rows={} cols={}", load_r["status"], load_r["rows"], load_r.get("cols")
+        )
+        if load_r["status"] == "ok":
+            time.sleep(1)
+
+        logger.info("  [forecasts] fetching...")
+        forecasts_r = probe_forecasts(client, year, raw_dir, force=force)
+        logger.info(
+            "  [forecasts] {} rows={} cols={}",
+            forecasts_r["status"],
+            forecasts_r["rows"],
+            forecasts_r.get("cols"),
+        )
+        if forecasts_r["status"] == "ok":
+            time.sleep(1)
+
+        logger.info("  [neighbours] fetching...")
+        neighbours_r = probe_neighbours(client, year, raw_dir, force=force)
+        logger.info(
+            "  [neighbours] {} rows={} cols={}",
+            neighbours_r["status"],
+            neighbours_r["rows"],
+            neighbours_r.get("cols"),
+        )
+        if neighbours_r["status"] == "ok":
+            time.sleep(1)
+
+        logger.info("  [flows] fetching...")
+        flows_r = probe_flows(client, year, raw_dir, force=force)
+        logger.info(
+            "  [flows] {} rows={} cols={}", flows_r["status"], flows_r["rows"], flows_r.get("cols")
+        )
+        if flows_r["status"] == "ok":
+            time.sleep(1)
+
+        logger.info("  [ntc] fetching...")
+        ntc_r = probe_ntc(client, year, raw_dir, force=force)
+        logger.info("  [ntc] {} rows={} cols={}", ntc_r["status"], ntc_r["rows"], ntc_r.get("cols"))
+        if ntc_r["status"] == "ok":
+            time.sleep(1)
+
+        # --- Yahoo Finance sources (no ENTSO-E client needed) ---
+        logger.info("  [carbon] fetching...")
+        carbon_r = probe_carbon(year, raw_dir, force=force)
+        logger.info(
+            "  [carbon] {} rows={} cols={}",
+            carbon_r["status"],
+            carbon_r["rows"],
+            carbon_r.get("cols"),
+        )
+
+        logger.info("  [gas] fetching...")
+        gas_r = probe_gas(year, raw_dir, force=force)
+        logger.info("  [gas] {} rows={} cols={}", gas_r["status"], gas_r["rows"], gas_r.get("cols"))
+
+        results.append(
+            {
+                "year": year,
+                "price": price_r,
+                "gen": gen_r,
+                "weather": weather_r,
+                "load": load_r,
+                "forecasts": forecasts_r,
+                "neighbours": neighbours_r,
+                "flows": flows_r,
+                "ntc": ntc_r,
+                "carbon": carbon_r,
+                "gas": gas_r,
+            }
+        )
+
+    # ---------------------------------------------------------------------------
+    # Summary table
+    # ---------------------------------------------------------------------------
+    logger.info("\n" + "=" * 100)
+    logger.info("DATA AVAILABILITY SUMMARY  (rows/cols per source)")
+    logger.info("=" * 100)
+
+    sources = [
+        "price",
+        "gen",
+        "weather",
+        "load",
+        "forecasts",
+        "neighbours",
+        "flows",
+        "ntc",
+        "carbon",
+        "gas",
+    ]
+    header = f"{'Year':<6} " + " ".join(f"{s:<22}" for s in sources)
+    logger.info(header)
+    logger.info("-" * 100)
+
+    for r in sorted(results, key=lambda x: x["year"]):
+        line = f"{r['year']:<6} " + " ".join(f"{_probe_label(r[s]):<22}" for s in sources)
+        logger.info(line)
+        # Print errors on next line
+        for s in sources:
+            if "error" in r[s]:
+                logger.info(f"  [{s}] error: {r[s]['error'][:120]}")
+
+    # Valid years: prices and generation both OK, sufficient rows
     valid_years = sorted(
         [
             r["year"]
             for r in results
-            if r["prices_status"] in ("ok", "cached")
-            and r["gen_status"] in ("ok", "cached")
-            and r["prices_rows"] >= MIN_PRICE_ROWS
+            if r["price"]["status"] in ("ok", "cached")
+            and r["gen"]["status"] in ("ok", "cached")
+            and r["price"]["rows"] >= MIN_PRICE_ROWS
         ]
     )
-    logger.info("\nValid years for dataset: {}", valid_years)
+    logger.info("\nValid years for dataset (prices + generation OK): {}", valid_years)
+
+    # Per-source summary
+    logger.info("\nPer-source valid years:")
+    for s in sources:
+        ok_years = sorted(
+            [r["year"] for r in results if r[s]["status"] in ("ok", "cached") and r[s]["rows"] > 0]
+        )
+        logger.info("  {:12s}: {}", s, ok_years)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="Re-fetch even if cached Parquet files exist"
+    )
+    args = parser.parse_args()
+    main(force=args.force)

@@ -20,9 +20,10 @@ class TestDataCollectionConfig:
         assert cfg.weather_longitude == 10.5
         assert cfg.data_dir == Path("data")
 
-    def test_api_key_required_empty_default(self) -> None:
+    def test_api_key_required_empty_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """API key defaults to empty string (validated at usage time, not config time)."""
-        cfg = DataCollectionConfig()
+        monkeypatch.delenv("ENTSOE_API_KEY", raising=False)
+        cfg = DataCollectionConfig(_env_file=None)  # type: ignore[call-arg]
         assert cfg.entsoe_api_key == ""
 
     def test_custom_years(self) -> None:

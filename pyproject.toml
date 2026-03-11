@@ -22,6 +22,7 @@ dependencies = [
     "ruff>=0.14.0",
     "streamlit>=1.38",
     "plotly>=5.18",
+    "yfinance>=0.2.36",
 ]
 
 [dependency-groups]

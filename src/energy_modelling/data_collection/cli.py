@@ -13,13 +13,33 @@ from pathlib import Path
 import click
 from loguru import logger
 
+from energy_modelling.data_collection.carbon_price import download_carbon_price
 from energy_modelling.data_collection.config import DataCollectionConfig
+from energy_modelling.data_collection.entsoe_flows import download_flows
+from energy_modelling.data_collection.entsoe_forecasts import download_forecasts
 from energy_modelling.data_collection.entsoe_generation import download_generation
+from energy_modelling.data_collection.entsoe_load import download_load
+from energy_modelling.data_collection.entsoe_neighbours import download_neighbour_prices
+from energy_modelling.data_collection.entsoe_ntc import download_ntc
 from energy_modelling.data_collection.entsoe_prices import download_prices
+from energy_modelling.data_collection.gas_price import download_gas_price
 from energy_modelling.data_collection.join import join_datasets
 from energy_modelling.data_collection.weather import download_weather
 
-STEPS = ("prices", "generation", "weather", "join", "all")
+STEPS = (
+    "prices",
+    "generation",
+    "weather",
+    "load",
+    "forecasts",
+    "neighbours",
+    "flows",
+    "ntc",
+    "carbon",
+    "gas",
+    "join",
+    "all",
+)
 
 
 @click.command()
@@ -65,8 +85,10 @@ def main(
 ) -> None:
     """Download and join energy market data for DE-LU.
 
-    Fetches day-ahead prices, generation mix, and weather data, then
-    joins them into a single hourly dataset.
+    Fetches day-ahead prices, generation mix, total load, wind/solar
+    forecasts, neighbour prices, cross-border flows, NTC, carbon price,
+    gas price, and weather data, then joins them into a single hourly
+    dataset.
     """
     # Build config
     config_kwargs: dict = {}
@@ -80,6 +102,7 @@ def main(
     logger.info("Data collection pipeline starting")
     logger.info("  Zone: {}", config.bidding_zone)
     logger.info("  Years: {}", config.years)
+    logger.info("  Neighbours: {}", config.neighbour_zones)
     logger.info("  Data dir: {}", config.data_dir)
     logger.info("  Step: {}", step)
 
@@ -94,6 +117,34 @@ def main(
     if step in ("weather", "all"):
         logger.info("--- Downloading weather data ---")
         download_weather(config, force=force)
+
+    if step in ("load", "all"):
+        logger.info("--- Downloading total load ---")
+        download_load(config, force=force)
+
+    if step in ("forecasts", "all"):
+        logger.info("--- Downloading wind/solar forecasts ---")
+        download_forecasts(config, force=force)
+
+    if step in ("neighbours", "all"):
+        logger.info("--- Downloading neighbour prices ---")
+        download_neighbour_prices(config, force=force)
+
+    if step in ("flows", "all"):
+        logger.info("--- Downloading cross-border flows ---")
+        download_flows(config, force=force)
+
+    if step in ("ntc", "all"):
+        logger.info("--- Downloading NTC ---")
+        download_ntc(config, force=force)
+
+    if step in ("carbon", "all"):
+        logger.info("--- Downloading carbon price ---")
+        download_carbon_price(config, force=force)
+
+    if step in ("gas", "all"):
+        logger.info("--- Downloading gas price ---")
+        download_gas_price(config, force=force)
 
     if step in ("join", "all"):
         logger.info("--- Joining datasets ---")

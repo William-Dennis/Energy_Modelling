@@ -32,6 +32,34 @@ def _mock_all_steps(mocker: MockerFixture) -> dict[str, MagicMock]:
             "energy_modelling.data_collection.cli.download_weather",
             return_value=Path("data/raw/weather.parquet"),
         ),
+        "load": mocker.patch(
+            "energy_modelling.data_collection.cli.download_load",
+            return_value=Path("data/raw/load.parquet"),
+        ),
+        "forecasts": mocker.patch(
+            "energy_modelling.data_collection.cli.download_forecasts",
+            return_value=Path("data/raw/forecasts.parquet"),
+        ),
+        "neighbours": mocker.patch(
+            "energy_modelling.data_collection.cli.download_neighbour_prices",
+            return_value=Path("data/raw/neighbour_prices.parquet"),
+        ),
+        "flows": mocker.patch(
+            "energy_modelling.data_collection.cli.download_flows",
+            return_value=Path("data/raw/flows.parquet"),
+        ),
+        "ntc": mocker.patch(
+            "energy_modelling.data_collection.cli.download_ntc",
+            return_value=Path("data/raw/ntc.parquet"),
+        ),
+        "carbon": mocker.patch(
+            "energy_modelling.data_collection.cli.download_carbon_price",
+            return_value=Path("data/raw/carbon_price.parquet"),
+        ),
+        "gas": mocker.patch(
+            "energy_modelling.data_collection.cli.download_gas_price",
+            return_value=Path("data/raw/gas_price.parquet"),
+        ),
         "join": mocker.patch(
             "energy_modelling.data_collection.cli.join_datasets",
             return_value=Path("data/processed/dataset_de_lu.parquet"),
@@ -57,13 +85,11 @@ class TestCLI:
     def test_default_runs_all_steps(
         self, runner: CliRunner, _mock_all_steps: dict[str, MagicMock]
     ) -> None:
-        """Without --step, all four steps should run."""
+        """Without --step, all steps should run."""
         result = runner.invoke(main, ["--years", "2024"])
         assert result.exit_code == 0
-        _mock_all_steps["prices"].assert_called_once()
-        _mock_all_steps["generation"].assert_called_once()
-        _mock_all_steps["weather"].assert_called_once()
-        _mock_all_steps["join"].assert_called_once()
+        for key in _mock_all_steps:
+            _mock_all_steps[key].assert_called_once()
 
     @pytest.mark.usefixtures("_mock_all_steps")
     def test_step_prices_only(
@@ -78,21 +104,53 @@ class TestCLI:
         _mock_all_steps["join"].assert_not_called()
 
     @pytest.mark.usefixtures("_mock_all_steps")
-    def test_step_generation_only(
-        self, runner: CliRunner, _mock_all_steps: dict[str, MagicMock]
-    ) -> None:
-        result = runner.invoke(main, ["--years", "2024", "--step", "generation"])
+    def test_step_load_only(self, runner: CliRunner, _mock_all_steps: dict[str, MagicMock]) -> None:
+        result = runner.invoke(main, ["--years", "2024", "--step", "load"])
         assert result.exit_code == 0
-        _mock_all_steps["generation"].assert_called_once()
+        _mock_all_steps["load"].assert_called_once()
         _mock_all_steps["prices"].assert_not_called()
 
     @pytest.mark.usefixtures("_mock_all_steps")
-    def test_step_weather_only(
+    def test_step_forecasts_only(
         self, runner: CliRunner, _mock_all_steps: dict[str, MagicMock]
     ) -> None:
-        result = runner.invoke(main, ["--years", "2024", "--step", "weather"])
+        result = runner.invoke(main, ["--years", "2024", "--step", "forecasts"])
         assert result.exit_code == 0
-        _mock_all_steps["weather"].assert_called_once()
+        _mock_all_steps["forecasts"].assert_called_once()
+        _mock_all_steps["prices"].assert_not_called()
+
+    @pytest.mark.usefixtures("_mock_all_steps")
+    def test_step_neighbours_only(
+        self, runner: CliRunner, _mock_all_steps: dict[str, MagicMock]
+    ) -> None:
+        result = runner.invoke(main, ["--years", "2024", "--step", "neighbours"])
+        assert result.exit_code == 0
+        _mock_all_steps["neighbours"].assert_called_once()
+        _mock_all_steps["prices"].assert_not_called()
+
+    @pytest.mark.usefixtures("_mock_all_steps")
+    def test_step_flows_only(
+        self, runner: CliRunner, _mock_all_steps: dict[str, MagicMock]
+    ) -> None:
+        result = runner.invoke(main, ["--years", "2024", "--step", "flows"])
+        assert result.exit_code == 0
+        _mock_all_steps["flows"].assert_called_once()
+        _mock_all_steps["prices"].assert_not_called()
+
+    @pytest.mark.usefixtures("_mock_all_steps")
+    def test_step_carbon_only(
+        self, runner: CliRunner, _mock_all_steps: dict[str, MagicMock]
+    ) -> None:
+        result = runner.invoke(main, ["--years", "2024", "--step", "carbon"])
+        assert result.exit_code == 0
+        _mock_all_steps["carbon"].assert_called_once()
+        _mock_all_steps["prices"].assert_not_called()
+
+    @pytest.mark.usefixtures("_mock_all_steps")
+    def test_step_gas_only(self, runner: CliRunner, _mock_all_steps: dict[str, MagicMock]) -> None:
+        result = runner.invoke(main, ["--years", "2024", "--step", "gas"])
+        assert result.exit_code == 0
+        _mock_all_steps["gas"].assert_called_once()
         _mock_all_steps["prices"].assert_not_called()
 
     @pytest.mark.usefixtures("_mock_all_steps")
