@@ -23,6 +23,8 @@ dependencies = [
     "streamlit>=1.38",
     "plotly>=5.18",
     "yfinance>=0.2.36",
+    "kaggle>=1.6,<2.0",
+    "matplotlib>=3.10.8",
 ]
 
 [dependency-groups]
