@@ -7,7 +7,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from energy_modelling.market_simulation.types import DayState, Trade
+from energy_modelling.market_simulation.types import DayState, Signal
 from energy_modelling.strategy.naive_copy import NaiveCopyStrategy
 
 
@@ -27,50 +27,83 @@ def _make_day_state(
 class TestNaiveCopyStrategy:
     """Tests for NaiveCopyStrategy."""
 
-    def test_returns_trade(self) -> None:
+    def test_returns_signal(self) -> None:
+        """act() must return a Signal instance, never None."""
         strategy = NaiveCopyStrategy()
         state = _make_day_state()
-        trade = strategy.act(state)
-        assert isinstance(trade, Trade)
+        signal = strategy.act(state)
+        assert isinstance(signal, Signal)
 
-    def test_entry_price_matches_last_settlement(self) -> None:
-        strategy = NaiveCopyStrategy()
-        state = _make_day_state(last_settlement=42.5)
-        trade = strategy.act(state)
-        assert trade is not None
-        assert trade.entry_price == pytest.approx(42.5)
-
-    def test_position_is_long_1mw(self) -> None:
+    def test_never_returns_none(self) -> None:
+        """NaiveCopy always trades -- it never skips a day."""
         strategy = NaiveCopyStrategy()
         state = _make_day_state()
-        trade = strategy.act(state)
-        assert trade is not None
-        assert trade.position_mw == pytest.approx(1.0)
+        assert strategy.act(state) is not None
+
+    def test_direction_is_long(self) -> None:
+        """Strategy always signals long (+1)."""
+        strategy = NaiveCopyStrategy()
+        state = _make_day_state()
+        signal = strategy.act(state)
+        assert signal is not None
+        assert signal.direction == 1
 
     def test_delivery_date_matches(self) -> None:
+        """Signal delivery date must equal the state's delivery date."""
         strategy = NaiveCopyStrategy()
         target = date(2024, 6, 15)
         state = _make_day_state(delivery_date=target)
-        trade = strategy.act(state)
-        assert trade is not None
-        assert trade.delivery_date == target
+        signal = strategy.act(state)
+        assert signal is not None
+        assert signal.delivery_date == target
 
-    def test_hours_is_24(self) -> None:
+    def test_direction_independent_of_price_level(self) -> None:
+        """Direction is always +1 regardless of the settlement price."""
         strategy = NaiveCopyStrategy()
-        state = _make_day_state()
-        trade = strategy.act(state)
-        assert trade is not None
-        assert trade.hours == 24
+        for price in [0.0, 10.0, 50.0, 100.0, 200.0]:
+            state = _make_day_state(last_settlement=price)
+            signal = strategy.act(state)
+            assert signal is not None
+            assert signal.direction == 1, f"Expected long for price={price}"
 
-    def test_negative_price(self) -> None:
-        """Strategy should still trade when last settlement is negative."""
+    def test_direction_long_when_price_negative(self) -> None:
+        """Strategy still signals long when last settlement is negative."""
         strategy = NaiveCopyStrategy()
         state = _make_day_state(last_settlement=-15.0)
-        trade = strategy.act(state)
-        assert trade is not None
-        assert trade.entry_price == pytest.approx(-15.0)
+        signal = strategy.act(state)
+        assert signal is not None
+        assert signal.direction == 1
+
+    def test_direction_long_when_price_zero(self) -> None:
+        """Strategy signals long when last settlement is exactly zero."""
+        strategy = NaiveCopyStrategy()
+        state = _make_day_state(last_settlement=0.0)
+        signal = strategy.act(state)
+        assert signal is not None
+        assert signal.direction == 1
+
+    def test_no_entry_price_on_signal(self) -> None:
+        """Signal must not expose an entry_price attribute -- that is the
+        market's responsibility, not the strategy's."""
+        strategy = NaiveCopyStrategy()
+        state = _make_day_state()
+        signal = strategy.act(state)
+        assert signal is not None
+        assert not hasattr(signal, "entry_price")
 
     def test_reset_is_noop(self) -> None:
-        """Reset should not raise."""
+        """reset() should not raise and strategy should behave identically."""
         strategy = NaiveCopyStrategy()
         strategy.reset()
+        state = _make_day_state()
+        signal = strategy.act(state)
+        assert signal is not None
+        assert signal.direction == 1
+
+    def test_consistent_across_multiple_calls(self) -> None:
+        """Strategy is stateless -- repeated calls with the same state
+        produce the same signal."""
+        strategy = NaiveCopyStrategy()
+        state = _make_day_state()
+        signals = [strategy.act(state) for _ in range(5)]
+        assert all(s is not None and s.direction == 1 for s in signals)

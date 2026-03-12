@@ -182,3 +182,53 @@ class TestMarketEnvironmentSettle:
         )
         with pytest.raises(ValueError):
             env.settle(trade)
+
+
+class TestMarketEnvironmentSettlementPrices:
+    """Tests for MarketEnvironment.settlement_prices property."""
+
+    def test_returns_series(self, tmp_path: Path) -> None:
+        csv_path = _make_hourly_csv(tmp_path, days=5)
+        env = MarketEnvironment(csv_path)
+        prices = env.settlement_prices
+        assert isinstance(prices, pd.Series)
+
+    def test_covers_all_dataset_days(self, tmp_path: Path) -> None:
+        """settlement_prices covers the full dataset, not just the sim range."""
+        csv_path = _make_hourly_csv(tmp_path, days=5)
+        env = MarketEnvironment(csv_path)
+        prices = env.settlement_prices
+        assert len(prices) == 5
+
+    def test_index_contains_delivery_dates(self, tmp_path: Path) -> None:
+        """Every simulation delivery date must be present in settlement_prices."""
+        csv_path = _make_hourly_csv(tmp_path, days=5)
+        env = MarketEnvironment(csv_path)
+        prices = env.settlement_prices
+        for d in env.delivery_dates:
+            assert d in prices.index, f"{d} missing from settlement_prices"
+
+    def test_values_are_floats(self, tmp_path: Path) -> None:
+        csv_path = _make_hourly_csv(tmp_path, days=5)
+        env = MarketEnvironment(csv_path)
+        prices = env.settlement_prices
+        assert all(isinstance(v, float) for v in prices.values)
+
+    def test_returns_copy(self, tmp_path: Path) -> None:
+        """Mutating the returned series must not affect the market's internal state."""
+        csv_path = _make_hourly_csv(tmp_path, days=5)
+        env = MarketEnvironment(csv_path)
+        prices = env.settlement_prices
+        original_value = float(prices.iloc[0])
+        prices.iloc[0] = 9999.0
+        fresh = env.settlement_prices
+        assert float(fresh.iloc[0]) == pytest.approx(original_value)
+
+    def test_consistent_with_get_state_last_settlement(self, tmp_path: Path) -> None:
+        """settlement_prices[prior_date] must equal state.last_settlement_price."""
+        csv_path = _make_hourly_csv(tmp_path, days=5)
+        env = MarketEnvironment(csv_path)
+        prices = env.settlement_prices
+        # Jan 3 state should have last_settlement = settlement of Jan 2
+        state = env.get_state(date(2024, 1, 3))
+        assert prices[date(2024, 1, 2)] == pytest.approx(state.last_settlement_price)

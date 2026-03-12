@@ -79,6 +79,18 @@ class MarketEnvironment:
         """Return the list of delivery dates in the simulation range."""
         return [d for d in self._all_dates if self._start <= d <= self._end]
 
+    @property
+    def settlement_prices(self) -> pd.Series:
+        """Daily settlement prices (mean of 24 hourly DA prices) for all dates.
+
+        Returns the full series covering the entire dataset, not just the
+        simulation range, so strategies such as
+        :class:`~energy_modelling.strategy.perfect_foresight.PerfectForesightStrategy`
+        that require look-ahead data can be constructed at the call site
+        with the appropriate level of access control.
+        """
+        return self._settlement.copy()
+
     def get_state(self, delivery_date: date) -> DayState:
         """Build the observable state for a given delivery day.
 

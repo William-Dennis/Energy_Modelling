@@ -11,6 +11,10 @@ Run with::
 
 from __future__ import annotations
 
+import importlib
+import inspect
+import re
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
@@ -21,15 +25,124 @@ import streamlit as st
 
 from energy_modelling.market_simulation.market import MarketEnvironment
 from energy_modelling.strategy.analysis import compute_metrics, monthly_pnl, rolling_sharpe
-from energy_modelling.strategy.naive_copy import NaiveCopyStrategy
+from energy_modelling.strategy.base import Strategy
 from energy_modelling.strategy.runner import BacktestRunner
 
 _DATASET_DEFAULT = Path("kaggle_upload/dataset_de_lu.csv")
 
-# Registry of available strategies.
-_STRATEGIES: dict[str, type] = {
-    "Naive Copy (Long 1 MW at last settlement)": NaiveCopyStrategy,
-}
+# Files in the strategy package that are not user strategies.
+_STRATEGY_SKIP_MODULES = frozenset({"__init__", "base", "runner", "analysis", "template"})
+
+
+def _class_display_name(cls: type) -> str:
+    """Convert a CamelCase strategy class name to a human-readable display name.
+
+    E.g. ``NaiveCopyStrategy`` → ``Naive Copy``,
+         ``PerfectForesightStrategy`` → ``Perfect Foresight``.
+    """
+    name = cls.__name__
+    # Strip trailing "Strategy" suffix if present.
+    name = re.sub(r"Strategy$", "", name)
+    # Insert spaces before capital letters that follow a lowercase letter.
+    name = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
+    return name.strip()
+
+
+def _class_description(cls: type) -> str:
+    """Extract the Description section from a strategy module docstring.
+
+    Returns the paragraph of text immediately following a ``Description``
+    heading (``Description\\n-----------``) in the module's docstring, or
+    falls back to the class docstring's first paragraph.
+    """
+    module_doc = inspect.getmodule(cls).__doc__ or ""
+    # Look for the Description section in the module docstring.
+    m = re.search(
+        r"Description\s*\n[-]+\s*\n(.*?)(?:\n\s*\n|\Z)",
+        module_doc,
+        re.DOTALL,
+    )
+    if m:
+        # Collapse internal newlines and strip leading/trailing whitespace.
+        return " ".join(m.group(1).split())
+    # Fall back to the class docstring first paragraph.
+    class_doc = cls.__doc__ or ""
+    first_para = class_doc.strip().split("\n\n")[0]
+    return " ".join(first_para.split())
+
+
+def _discover_strategies() -> tuple[
+    dict[str, Callable[[MarketEnvironment], Strategy]],
+    dict[str, str],
+]:
+    """Auto-discover all concrete Strategy subclasses in the strategy package.
+
+    Scans every ``.py`` file in the ``energy_modelling.strategy`` package,
+    imports it, and collects concrete (non-abstract) subclasses of
+    :class:`~energy_modelling.strategy.base.Strategy`.
+
+    Files listed in ``_STRATEGY_SKIP_MODULES`` (infrastructure modules) and
+    ``template.py`` are excluded so scaffold files never appear in the
+    dashboard.
+
+    Returns
+    -------
+    tuple of:
+    - dict mapping display name → factory callable (MarketEnvironment → Strategy)
+    - dict mapping display name → human-readable description string
+    """
+    import energy_modelling.strategy as _strategy_pkg
+
+    strategy_dir = Path(_strategy_pkg.__file__).parent
+    factories: dict[str, Callable[[MarketEnvironment], Strategy]] = {}
+    descriptions: dict[str, str] = {}
+
+    for py_file in sorted(strategy_dir.glob("*.py")):
+        module_stem = py_file.stem
+        if module_stem in _STRATEGY_SKIP_MODULES:
+            continue
+
+        module_name = f"energy_modelling.strategy.{module_stem}"
+        try:
+            module = importlib.import_module(module_name)
+        except Exception:  # noqa: BLE001
+            continue
+
+        for _name, obj in inspect.getmembers(module, inspect.isclass):
+            if (
+                obj is not Strategy
+                and issubclass(obj, Strategy)
+                and not inspect.isabstract(obj)
+                and obj.__module__ == module_name
+            ):
+                display = _class_display_name(obj)
+                descriptions[display] = _class_description(obj)
+
+                # Build a factory that captures the class in the closure.
+                def _make_factory(cls: type[Strategy]) -> Callable[[MarketEnvironment], Strategy]:
+                    # Inspect the constructor to decide how to call it.
+                    sig = inspect.signature(cls.__init__)
+                    params = list(sig.parameters.keys())  # includes 'self'
+                    has_market = "market" in params
+                    has_settlement = "settlement_prices" in params
+
+                    def factory(market: MarketEnvironment) -> Strategy:
+                        if has_settlement:
+                            return cls(market.settlement_prices)  # type: ignore[call-arg]
+                        if has_market:
+                            return cls(market)  # type: ignore[call-arg]
+                        return cls()  # type: ignore[call-arg]
+
+                    return factory
+
+                factories[display] = _make_factory(obj)
+
+    return factories, descriptions
+
+
+# Build registries once at module load time so Streamlit doesn't re-scan on
+# every widget interaction.
+_STRATEGY_FACTORIES, _STRATEGY_DESCRIPTIONS = _discover_strategies()
 
 
 def main() -> None:
@@ -56,7 +169,7 @@ def main() -> None:
 
     strategy_name = st.sidebar.selectbox(
         "Strategy",
-        options=list(_STRATEGIES.keys()),
+        options=list(_STRATEGY_FACTORIES.keys()),
     )
 
     col_start, col_end = st.sidebar.columns(2)
@@ -72,6 +185,10 @@ def main() -> None:
     )
 
     run_btn = st.sidebar.button("Run Backtest", type="primary")
+
+    # Show strategy description beneath the selector
+    if strategy_name in _STRATEGY_DESCRIPTIONS:
+        st.sidebar.caption(_STRATEGY_DESCRIPTIONS[strategy_name])
 
     if not run_btn:
         st.info("Configure parameters in the sidebar and click **Run Backtest**.")
@@ -89,8 +206,7 @@ def main() -> None:
             start_date=start_date,
             end_date=end_date,
         )
-        strategy_cls = _STRATEGIES[strategy_name]
-        strategy = strategy_cls()
+        strategy = _STRATEGY_FACTORIES[strategy_name](market)
         runner = BacktestRunner(market, strategy)
         result = runner.run()
         metrics = compute_metrics(result)

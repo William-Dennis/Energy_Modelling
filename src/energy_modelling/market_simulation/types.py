@@ -13,6 +13,38 @@ import pandas as pd
 
 
 @dataclass(frozen=True)
+class Signal:
+    """Trading signal produced by a strategy.
+
+    Strategies emit a direction signal only -- they have no control over
+    entry price or position size.  The :class:`BacktestRunner` constructs
+    a :class:`Trade` from this signal by combining it with the market's
+    fixed entry price (prior day's DA settlement) and the default
+    quantity of 1 MW.
+
+    Parameters
+    ----------
+    delivery_date:
+        The calendar date of the delivery day the signal applies to.
+    direction:
+        ``+1`` for a long position, ``-1`` for a short position.
+
+    Raises
+    ------
+    ValueError
+        If *direction* is not ``+1`` or ``-1``.
+    """
+
+    delivery_date: date
+    direction: int  # +1 = long, -1 = short
+
+    def __post_init__(self) -> None:
+        if self.direction not in (1, -1):
+            msg = f"direction must be +1 or -1, got {self.direction!r}"
+            raise ValueError(msg)
+
+
+@dataclass(frozen=True)
 class DayState:
     """Observable market state for a given delivery day.
 

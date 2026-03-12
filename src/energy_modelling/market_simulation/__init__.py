@@ -12,12 +12,13 @@ from energy_modelling.market_simulation.data import (
     load_dataset,
 )
 from energy_modelling.market_simulation.market import MarketEnvironment
-from energy_modelling.market_simulation.types import DayState, Settlement, Trade
+from energy_modelling.market_simulation.types import DayState, Settlement, Signal, Trade
 
 __all__ = [
     "DayState",
     "MarketEnvironment",
     "Settlement",
+    "Signal",
     "Trade",
     "build_daily_features",
     "compute_daily_settlement",
