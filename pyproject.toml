@@ -25,6 +25,7 @@ dependencies = [
     "yfinance>=0.2.36",
     "kaggle>=1.6,<2.0",
     "matplotlib>=3.10.8",
+    "jupyter>=1.1.1",
 ]
 
 [dependency-groups]
@@ -40,6 +41,7 @@ build-backend = "uv_build"
 
 [project.scripts]
 collect-data = "energy_modelling.data_collection.cli:main"
+build-challenge-data = "energy_modelling.challenge.cli:main"
 
 [tool.ruff]
 line-length = 100
