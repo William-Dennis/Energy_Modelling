@@ -30,7 +30,7 @@ for _path in (_REPO_ROOT, _SRC_ROOT):
 from energy_modelling.challenge.runner import ChallengeBacktestResult, run_challenge_backtest
 from energy_modelling.challenge.scoring import leaderboard_score
 from energy_modelling.challenge.types import ChallengeStrategy
-from energy_modelling.challenge.data import write_challenge_data
+from energy_modelling.challenge.data import build_feature_glossary, write_challenge_data
 
 _DATASET_DEFAULT = Path("data/challenge/daily_public.csv")
 _HIDDEN_DATASET_DEFAULT = Path("data/challenge/daily_hidden_test_full.csv")
@@ -243,6 +243,18 @@ def _comparison_curve_frame(
     return pd.DataFrame(rows)
 
 
+def _format_leaderboard(frame: pd.DataFrame) -> pd.DataFrame:
+    return frame.drop(columns=["Leaderboard Score"]).assign(
+        **{
+            "Total PnL": lambda df: df["Total PnL"].map(lambda value: f"EUR {value:,.2f}"),
+            "Sharpe": lambda df: df["Sharpe"].map(lambda value: f"{value:.2f}"),
+            "Max Drawdown": lambda df: df["Max Drawdown"].map(lambda value: f"EUR {value:,.2f}"),
+            "Trades": lambda df: df["Trades"].map(lambda value: f"{value:.0f}"),
+            "Win Rate": lambda df: df["Win Rate"].map(lambda value: f"{value:.1%}"),
+        }
+    )
+
+
 def main() -> None:
     st.set_page_config(
         page_title="Challenge Submissions Dashboard",
@@ -295,6 +307,7 @@ def main() -> None:
 
     public_daily = _load_daily_dataset(public_path)
     hidden_daily = _load_daily_dataset(hidden_path_or_none) if hidden_path_or_none else None
+    glossary = build_feature_glossary(public_daily)
 
     with st.spinner("Evaluating submissions..."):
         try:
@@ -336,25 +349,25 @@ def main() -> None:
         use_container_width=True,
     )
 
+    st.header("Feature Timing")
+    timing_col1, timing_col2 = st.columns([1, 2])
+    with timing_col1:
+        counts = glossary.groupby("timing_group").size().reset_index(name="columns")
+        st.dataframe(counts, use_container_width=True)
+    with timing_col2:
+        timing_tab1, timing_tab2 = st.tabs(["Lagged Realised", "Same-Day Forecast"])
+        with timing_tab1:
+            realised_cols = glossary[glossary["timing_group"] == "lagged_realised"]
+            st.dataframe(realised_cols[["column", "description"]], use_container_width=True)
+        with timing_tab2:
+            forecast_cols = glossary[glossary["timing_group"] == "same_day_forecast"]
+            st.dataframe(forecast_cols[["column", "description"]], use_container_width=True)
+
     period_tabs = st.tabs(["2024 Validation", "2025 Hidden Test"])
     with period_tabs[0]:
         st.subheader("2024 Leaderboard")
-        st.dataframe(
-            leaderboard_2024.drop(columns=["Leaderboard Score"]).assign(
-                **{
-                    "Total PnL": lambda frame: frame["Total PnL"].map(
-                        lambda value: f"EUR {value:,.2f}"
-                    ),
-                    "Sharpe": lambda frame: frame["Sharpe"].map(lambda value: f"{value:.2f}"),
-                    "Max Drawdown": lambda frame: frame["Max Drawdown"].map(
-                        lambda value: f"EUR {value:,.2f}"
-                    ),
-                    "Trades": lambda frame: frame["Trades"].map(lambda value: f"{value:.0f}"),
-                    "Win Rate": lambda frame: frame["Win Rate"].map(lambda value: f"{value:.1%}"),
-                }
-            ),
-            use_container_width=True,
-        )
+        st.dataframe(_format_leaderboard(leaderboard_2024), use_container_width=True)
+        st.caption("Top 2024 strategies after the forecast-timing fix are often forecast-driven.")
     with period_tabs[1]:
         if leaderboard_2025.empty:
             st.info(
@@ -362,24 +375,18 @@ def main() -> None:
             )
         else:
             st.subheader("2025 Hidden-Test Leaderboard")
-            st.dataframe(
-                leaderboard_2025.drop(columns=["Leaderboard Score"]).assign(
-                    **{
-                        "Total PnL": lambda frame: frame["Total PnL"].map(
-                            lambda value: f"EUR {value:,.2f}"
-                        ),
-                        "Sharpe": lambda frame: frame["Sharpe"].map(lambda value: f"{value:.2f}"),
-                        "Max Drawdown": lambda frame: frame["Max Drawdown"].map(
-                            lambda value: f"EUR {value:,.2f}"
-                        ),
-                        "Trades": lambda frame: frame["Trades"].map(lambda value: f"{value:.0f}"),
-                        "Win Rate": lambda frame: frame["Win Rate"].map(
-                            lambda value: f"{value:.1%}"
-                        ),
-                    }
-                ),
-                use_container_width=True,
-            )
+            st.dataframe(_format_leaderboard(leaderboard_2025), use_container_width=True)
+
+    st.header("Leaderboard Snapshot")
+    snapshot_rows = (
+        leaderboard_2024[["Strategy", "Total PnL", "Sharpe", "Max Drawdown"]].head(5).copy()
+    )
+    snapshot_rows.columns = ["Strategy", "2024 PnL", "2024 Sharpe", "2024 Max DD"]
+    if not leaderboard_2025.empty:
+        top_2025 = leaderboard_2025[["Strategy", "Total PnL", "Sharpe", "Max Drawdown"]].copy()
+        top_2025.columns = ["Strategy", "2025 PnL", "2025 Sharpe", "2025 Max DD"]
+        snapshot_rows = snapshot_rows.merge(top_2025, on="Strategy", how="left")
+    st.dataframe(snapshot_rows, use_container_width=True)
 
     st.header("Cumulative PnL Comparison")
     cumulative_df = _comparison_curve_frame(

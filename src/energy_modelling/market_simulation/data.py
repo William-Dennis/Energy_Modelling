@@ -1,8 +1,15 @@
 """Data loading and feature engineering for the market simulation.
 
 Loads the DE-LU hourly dataset, computes daily settlement prices, and
-builds a feature matrix suitable for strategy consumption (with proper
-lagging to prevent look-ahead bias).
+builds a feature matrix suitable for strategy consumption.
+
+Feature timing follows a mixed-information contract:
+
+- realised or observed series are lagged by one day
+- day-ahead forecast series remain aligned to the delivery day
+
+This matches a day-ahead trading setting where forecasts for delivery day D
+are available before the auction closes, while realised values for D are not.
 """
 
 from __future__ import annotations
@@ -23,10 +30,9 @@ _GENERATION_COLS = [
     "gen_nuclear_mw",
 ]
 
-_LOAD_COLS = [
-    "load_actual_mw",
-    "load_forecast_mw",
-]
+_REALISED_LOAD_COLS = ["load_actual_mw"]
+
+_FORECAST_LOAD_COLS = ["load_forecast_mw"]
 
 _FORECAST_COLS = [
     "forecast_solar_mw",
@@ -59,15 +65,20 @@ _COMMODITY_COLS = [
     "gas_price_usd",
 ]
 
-_ALL_FEATURE_COLS = (
+_REALISED_FEATURE_COLS = (
     _GENERATION_COLS
-    + _LOAD_COLS
-    + _FORECAST_COLS
+    + _REALISED_LOAD_COLS
     + _WEATHER_COLS
     + _NEIGHBOR_PRICE_COLS
     + _FLOW_COLS
     + _COMMODITY_COLS
 )
+
+_FORECAST_FEATURE_COLS = _FORECAST_LOAD_COLS + _FORECAST_COLS
+
+_ALL_FEATURE_COLS = _REALISED_FEATURE_COLS + _FORECAST_FEATURE_COLS
+
+_PRICE_STAT_COLS = ["price_mean", "price_max", "price_min", "price_std"]
 
 
 def load_dataset(path: Path | str) -> pd.DataFrame:
@@ -125,9 +136,12 @@ def compute_daily_settlement(df: pd.DataFrame) -> pd.Series:
 def build_daily_features(df: pd.DataFrame) -> pd.DataFrame:
     """Build a daily feature matrix from the hourly dataset.
 
-    Aggregates hourly data to daily resolution and lags all features
-    by one day to ensure no look-ahead bias: features for delivery
-    day D are computed from data up to and including day D-1.
+    Aggregates hourly data to daily resolution using two timing groups:
+
+    - realised features are shifted forward by one day, so row ``D`` only
+      contains realised information from ``D-1`` or earlier
+    - day-ahead forecast features remain on row ``D``, because those values
+      are assumed to be known before trading delivery day ``D``
 
     Parameters
     ----------
@@ -137,31 +151,29 @@ def build_daily_features(df: pd.DataFrame) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        Daily feature matrix indexed by ``datetime.date``.  Includes
-        aggregated generation, load, weather, cross-border flows,
-        and neighbouring zone prices.
+        Daily feature matrix indexed by ``datetime.date``.
     """
-    # Select only columns that exist in the DataFrame
-    available = [c for c in _ALL_FEATURE_COLS if c in df.columns]
 
-    # Aggregate to daily means
-    daily = df[available].groupby(df.index.date).mean()
+    def _aggregate_mean(columns: list[str]) -> pd.DataFrame:
+        available = [column for column in columns if column in df.columns]
+        if not available:
+            return pd.DataFrame(index=pd.Index(sorted(set(df.index.date))))
+        daily = df[available].groupby(df.index.date).mean()
+        return daily.rename(columns={column: f"{column}_mean" for column in available})
 
-    # Add price stats (mean, max, min, std) from the day
-    daily["price_mean"] = df["price_eur_mwh"].groupby(df.index.date).mean()
-    daily["price_max"] = df["price_eur_mwh"].groupby(df.index.date).max()
-    daily["price_min"] = df["price_eur_mwh"].groupby(df.index.date).min()
-    daily["price_std"] = df["price_eur_mwh"].groupby(df.index.date).std()
+    realised_daily = _aggregate_mean(list(_REALISED_FEATURE_COLS))
 
-    # Rename columns to indicate aggregation
-    rename = {c: f"{c}_mean" for c in available}
-    daily = daily.rename(columns=rename)
+    if "price_eur_mwh" in df.columns:
+        price_group = df["price_eur_mwh"].groupby(df.index.date)
+        realised_daily["price_mean"] = price_group.mean()
+        realised_daily["price_max"] = price_group.max()
+        realised_daily["price_min"] = price_group.min()
+        realised_daily["price_std"] = price_group.std()
 
-    # Lag by one day: shift forward so that row for date D contains
-    # features computed from date D-1's data.
-    daily = daily.shift(1)
+    forecast_daily = _aggregate_mean(list(_FORECAST_FEATURE_COLS))
 
-    # Drop the first row (NaN from the shift)
+    realised_daily = realised_daily.shift(1)
+    daily = realised_daily.join(forecast_daily, how="outer")
     daily = daily.dropna(how="all")
 
     # Ensure index contains date objects

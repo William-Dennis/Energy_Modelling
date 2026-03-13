@@ -125,7 +125,8 @@ class MarketEnvironment:
         prior_date = prior_dates[-1]
         last_settlement = float(self._settlement[prior_date])
 
-        # Features: the row for this delivery_date (already lagged by 1 day)
+        # Features: the row for this delivery_date. Realised values are lagged
+        # by one day; day-ahead forecasts remain aligned to the delivery date.
         if delivery_date in self._features.index:
             features = self._features.loc[[delivery_date]]
         else:

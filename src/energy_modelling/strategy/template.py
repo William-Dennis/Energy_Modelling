@@ -53,9 +53,9 @@ class TemplateStrategy(Strategy):
         --------------------------------
         state.delivery_date          -- the date being traded (datetime.date)
         state.last_settlement_price  -- prior day's average DA price (EUR/MWh)
-        state.features               -- single-row DataFrame of lagged daily
-                                        features (generation, load, weather,
-                                        commodity prices, flows …)
+        state.features               -- single-row DataFrame of daily features:
+                                        lagged realised features plus any
+                                        same-day day-ahead forecast features
         state.neighbor_prices        -- dict of prior-day DA prices for
                                         neighbouring zones (FR, NL, AT, PL,
                                         CZ, DK1)

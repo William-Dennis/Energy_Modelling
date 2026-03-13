@@ -19,7 +19,8 @@ The strategy is evaluated on out-of-sample profit and loss.
 - Public validation period: **2024**
 - Final hidden test period: **2025**
 - At decision time for day `t`, the strategy may use:
-  - the current row's lagged features for day `t`
+  - the current row's lagged realised features for day `t`
+  - the current row's day-ahead forecast features for day `t`
   - all historical rows before day `t`
   - realised settlements up to `t-1`
 - The strategy may not use the true settlement for day `t` before acting.
@@ -66,6 +67,7 @@ uv run build-challenge-data
 This writes:
 
 - `data/challenge/daily_public.csv`
+- `data/challenge/daily_public_glossary.csv`
 
 For organizer-only private scoring, add `--include-hidden-test`.
 
@@ -76,6 +78,7 @@ Do not distribute the full hourly repository dataset or the existing dashboards 
 For the actual hackathon release, distribute only:
 
 - `data/challenge/daily_public.csv`
+- `data/challenge/daily_public_glossary.csv`
 - `submission/student_strategy.py`
 - `notebooks/hackathon_baseline.ipynb`
 - this challenge brief

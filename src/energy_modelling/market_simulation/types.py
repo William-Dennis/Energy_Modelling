@@ -48,8 +48,10 @@ class Signal:
 class DayState:
     """Observable market state for a given delivery day.
 
-    All information is available *before* the day-ahead auction closes
-    (i.e. data up to and including D-1 23:00 UTC).
+    All information is available *before* the day-ahead auction closes.
+    Realised series are lagged through ``D-1``, while day-ahead forecast
+    series for delivery day ``D`` may also be included when they are
+    available pre-auction.
 
     Parameters
     ----------
@@ -60,7 +62,8 @@ class DayState:
         recently completed delivery day.
     features:
         A single-row DataFrame of daily-aggregated features available
-        at decision time (lagged to prevent look-ahead).
+        at decision time. This may include lagged realised data and
+        same-day day-ahead forecast data.
     neighbor_prices:
         Most recent day-ahead prices from neighbouring bidding zones.
     """

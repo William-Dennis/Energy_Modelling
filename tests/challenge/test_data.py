@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+from datetime import date
 from functools import reduce
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+import pytest
 
-from energy_modelling.challenge.data import build_daily_challenge_frame, build_public_daily_dataset
+from energy_modelling.challenge.data import (
+    build_daily_challenge_frame,
+    build_feature_glossary,
+    build_public_daily_dataset,
+)
 
 
 def _make_selected_day_csv(path: Path) -> Path:
@@ -76,3 +83,49 @@ def test_build_public_daily_dataset_excludes_hidden_test_rows(tmp_path: Path) ->
 
     assert "hidden_test" not in set(public["split"])
     assert set(public["split"]) == {"train", "validation"}
+
+
+def test_challenge_frame_keeps_target_day_forecasts_but_lags_realised_values(
+    tmp_path: Path,
+) -> None:
+    timestamps = pd.date_range("2023-12-31", periods=72, freq="h", tz="UTC")
+    day_numbers = np.repeat([1.0, 2.0, 3.0], 24)
+    frame = pd.DataFrame(
+        {
+            "timestamp_utc": timestamps,
+            "price_eur_mwh": day_numbers * 10.0,
+            "load_actual_mw": day_numbers * 100.0,
+            "load_forecast_mw": day_numbers * 1000.0,
+            "forecast_solar_mw": day_numbers * 2000.0,
+            "forecast_wind_onshore_mw": day_numbers * 3000.0,
+            "forecast_wind_offshore_mw": day_numbers * 4000.0,
+            "weather_temperature_2m_degc": day_numbers * 5.0,
+        }
+    )
+    csv_path = tmp_path / "timing_case.csv"
+    frame.to_csv(csv_path, index=False)
+
+    daily = build_daily_challenge_frame(csv_path)
+    row = daily.loc[daily["delivery_date"] == date(2024, 1, 1)].iloc[0]
+
+    assert row["last_settlement_price"] == pytest.approx(10.0)
+    assert row["load_actual_mw_mean"] == pytest.approx(100.0)
+    assert row["weather_temperature_2m_degc_mean"] == pytest.approx(5.0)
+    assert row["load_forecast_mw_mean"] == pytest.approx(2000.0)
+    assert row["forecast_solar_mw_mean"] == pytest.approx(4000.0)
+
+
+def test_feature_glossary_classifies_timing_groups(tmp_path: Path) -> None:
+    csv_path = _make_selected_day_csv(tmp_path)
+    daily = build_daily_challenge_frame(csv_path)
+    glossary = build_feature_glossary(daily)
+
+    assert (
+        glossary.loc[glossary["column"] == "load_actual_mw_mean", "timing_group"].iloc[0]
+        == "lagged_realised"
+    )
+    assert (
+        glossary.loc[glossary["column"] == "load_forecast_mw_mean", "timing_group"].iloc[0]
+        == "same_day_forecast"
+    )
+    assert glossary.loc[glossary["column"] == "settlement_price", "timing_group"].iloc[0] == "label"

@@ -1,0 +1,38 @@
+column,timing_group,description
+pnl_long_eur,label,Target or score column. Not available to students on hidden test.
+pnl_short_eur,label,Target or score column. Not available to students on hidden test.
+price_change_eur_mwh,label,Target or score column. Not available to students on hidden test.
+settlement_price,label,Target or score column. Not available to students on hidden test.
+target_direction,label,Target or score column. Not available to students on hidden test.
+carbon_price_usd_mean,lagged_realised,Realised or observed data lagged by one day before use.
+flow_fr_net_import_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+flow_nl_net_import_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+gas_price_usd_mean,lagged_realised,Realised or observed data lagged by one day before use.
+gen_fossil_brown_coal_lignite_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+gen_fossil_gas_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+gen_fossil_hard_coal_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+gen_nuclear_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+gen_solar_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+gen_wind_offshore_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+gen_wind_onshore_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+load_actual_mw_mean,lagged_realised,Realised or observed data lagged by one day before use.
+price_at_eur_mwh_mean,lagged_realised,Realised or observed data lagged by one day before use.
+price_cz_eur_mwh_mean,lagged_realised,Realised or observed data lagged by one day before use.
+price_dk_1_eur_mwh_mean,lagged_realised,Realised or observed data lagged by one day before use.
+price_fr_eur_mwh_mean,lagged_realised,Realised or observed data lagged by one day before use.
+price_max,lagged_realised,Realised or observed data lagged by one day before use.
+price_mean,lagged_realised,Realised or observed data lagged by one day before use.
+price_min,lagged_realised,Realised or observed data lagged by one day before use.
+price_nl_eur_mwh_mean,lagged_realised,Realised or observed data lagged by one day before use.
+price_pl_eur_mwh_mean,lagged_realised,Realised or observed data lagged by one day before use.
+price_std,lagged_realised,Realised or observed data lagged by one day before use.
+weather_shortwave_radiation_wm2_mean,lagged_realised,Realised or observed data lagged by one day before use.
+weather_temperature_2m_degc_mean,lagged_realised,Realised or observed data lagged by one day before use.
+weather_wind_speed_10m_kmh_mean,lagged_realised,Realised or observed data lagged by one day before use.
+delivery_date,reference,Reference field such as split or prior settlement used by the runner.
+last_settlement_price,reference,Reference field such as split or prior settlement used by the runner.
+split,reference,Reference field such as split or prior settlement used by the runner.
+forecast_solar_mw_mean,same_day_forecast,Day-ahead forecast available for the delivery day at decision time.
+forecast_wind_offshore_mw_mean,same_day_forecast,Day-ahead forecast available for the delivery day at decision time.
+forecast_wind_onshore_mw_mean,same_day_forecast,Day-ahead forecast available for the delivery day at decision time.
+load_forecast_mw_mean,same_day_forecast,Day-ahead forecast available for the delivery day at decision time.

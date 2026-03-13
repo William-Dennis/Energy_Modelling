@@ -139,15 +139,13 @@ class TestBuildDailyFeatures:
         assert len(features) >= 2
 
     def test_no_look_ahead(self, tmp_path: Path) -> None:
-        """Features for day D must not contain any data from day D."""
+        """Realised features start on day 2, even if forecast rows can start on day 1."""
         csv_path = _make_hourly_csv(tmp_path, days=5)
         df = load_dataset(csv_path)
         features = build_daily_features(df)
-        # The features index should start at day 2 (day 1 features
-        # are only available for day 2's decision)
-        first_feature_date = features.index[0]
-        first_data_date = date(2024, 1, 1)
-        assert first_feature_date > first_data_date
+        first_row = features.iloc[0]
+        assert pd.isna(first_row["load_actual_mw_mean"])
+        assert pd.notna(first_row["load_forecast_mw_mean"])
 
     def test_has_expected_columns(self, tmp_path: Path) -> None:
         csv_path = _make_hourly_csv(tmp_path, days=3)
@@ -156,3 +154,31 @@ class TestBuildDailyFeatures:
         # Should have aggregated generation and load columns
         col_names = features.columns.tolist()
         assert len(col_names) > 0
+
+    def test_realised_features_are_shifted_but_forecast_features_stay_on_delivery_day(self) -> None:
+        timestamps = pd.date_range("2024-01-01", periods=72, freq="h", tz="UTC")
+        day_numbers = np.repeat([1.0, 2.0, 3.0], 24)
+        frame = pd.DataFrame(
+            {
+                "price_eur_mwh": day_numbers * 10.0,
+                "load_actual_mw": day_numbers * 100.0,
+                "load_forecast_mw": day_numbers * 1000.0,
+                "forecast_solar_mw": day_numbers * 2000.0,
+                "weather_temperature_2m_degc": day_numbers * 5.0,
+            },
+            index=timestamps,
+        )
+
+        features = build_daily_features(frame)
+
+        day_two = date(2024, 1, 2)
+        day_three = date(2024, 1, 3)
+
+        assert features.loc[day_two, "load_actual_mw_mean"] == pytest.approx(100.0)
+        assert features.loc[day_two, "weather_temperature_2m_degc_mean"] == pytest.approx(5.0)
+        assert features.loc[day_two, "price_mean"] == pytest.approx(10.0)
+        assert features.loc[day_two, "load_forecast_mw_mean"] == pytest.approx(2000.0)
+        assert features.loc[day_two, "forecast_solar_mw_mean"] == pytest.approx(4000.0)
+
+        assert features.loc[day_three, "load_actual_mw_mean"] == pytest.approx(200.0)
+        assert features.loc[day_three, "load_forecast_mw_mean"] == pytest.approx(3000.0)
