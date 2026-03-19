@@ -12,17 +12,7 @@ from entsoe import EntsoePandasClient
 from loguru import logger
 
 from energy_modelling.data_collection.config import DataCollectionConfig
-
-
-def _year_range(year: int, timezone: str) -> tuple[pd.Timestamp, pd.Timestamp]:
-    """Return (start, end) timestamps for a calendar year in the given timezone.
-
-    ``end`` is set to Jan 1 of the *next* year so that the ENTSO-E API returns
-    data up to and including Dec 31 23:00.
-    """
-    start = pd.Timestamp(f"{year}-01-01", tz=timezone)
-    end = pd.Timestamp(f"{year + 1}-01-01", tz=timezone)
-    return start, end
+from energy_modelling.data_collection.utils import year_range as _year_range
 
 
 def fetch_prices_for_year(

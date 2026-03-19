@@ -7,17 +7,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from energy_modelling.challenge.runner import _STATE_EXCLUDE_COLUMNS as _EXCLUDED_COLUMNS
 from energy_modelling.challenge.types import ChallengeState
-
-_EXCLUDED_COLUMNS = {
-    "delivery_date",
-    "split",
-    "settlement_price",
-    "price_change_eur_mwh",
-    "target_direction",
-    "pnl_long_eur",
-    "pnl_short_eur",
-}
 
 
 def feature_columns(frame: pd.DataFrame) -> list[str]:

@@ -30,8 +30,8 @@ def compute_metrics(result: BacktestResult) -> dict[str, float]:
 
         - ``total_pnl``: Total profit/loss in EUR.
         - ``num_trading_days``: Number of days traded.
-        - ``annualized_return_pct``: Annualized return percentage
-          (assuming notional of avg daily abs PnL * 252).
+        - ``annualized_pnl_eur``: Annualized PnL in EUR
+          (total PnL scaled to a 252-day trading year).
         - ``sharpe_ratio``: Annualized Sharpe ratio (daily, sqrt(252)).
         - ``max_drawdown``: Maximum drawdown in EUR.
         - ``max_drawdown_pct``: Maximum drawdown as a percentage of
@@ -75,14 +75,14 @@ def compute_metrics(result: BacktestResult) -> dict[str, float]:
     peak_at_max_dd = float(running_max[drawdown.idxmax()]) if len(drawdown) > 0 else 0.0
     max_dd_pct = (max_dd / peak_at_max_dd * 100.0) if peak_at_max_dd > 0 else 0.0
 
-    # Annualized return: total_pnl / years
+    # Annualized PnL: total_pnl scaled to a full trading year
     years = n / 252.0 if n > 0 else 1.0
-    annualized_return_pct = (total_pnl / years) if years > 0 else 0.0
+    annualized_pnl_eur = (total_pnl / years) if years > 0 else 0.0
 
     return {
         "total_pnl": total_pnl,
         "num_trading_days": float(n),
-        "annualized_return_pct": annualized_return_pct,
+        "annualized_pnl_eur": annualized_pnl_eur,
         "sharpe_ratio": sharpe,
         "max_drawdown": max_dd,
         "max_drawdown_pct": max_dd_pct,

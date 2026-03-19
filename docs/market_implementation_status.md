@@ -82,3 +82,20 @@ The market model ran successfully on all 12 submission strategies:
 - Market view: alongside original leaderboard (not replacing)
 - Students see real last_settlement_price (market price is scoring-only)
 - Non-convergence handled gracefully: dashboard shows convergence status, iteration count, and delta
+
+---
+
+## DRY Cleanup (Post-Market)
+
+### Completed
+
+| Task | Details |
+|------|---------|
+| Extract `_year_range()` | Moved from 7 `entsoe_*.py` files to `data_collection/utils.py` |
+| Extract `_normalise_name()` | Moved from `entsoe_generation.py` + `entsoe_forecasts.py` to `data_collection/utils.py` |
+| Extract `_class_display_name()` | Moved from `backtest.py` + `challenge_submissions.py` to `dashboard/__init__.py` |
+| DRY excluded columns | `submission/common.py` now imports `_STATE_EXCLUDE_COLUMNS` from `challenge/runner.py` |
+| Consolidate Kaggle docs | `docs/kaggle_description.md` + `docs/kaggle_upload.md` merged into `docs/kaggle.md` |
+| Delete `docs/code_review.md` | One-time review artifact removed |
+| Fix `annualized_return_pct` | Renamed to `annualized_pnl_eur` in `strategy/analysis.py` (was EUR, not a percentage) |
+| Replace stale `README.md` | Replaced template placeholder with real project description |

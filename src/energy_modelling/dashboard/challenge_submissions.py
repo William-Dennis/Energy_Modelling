@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import importlib
 import inspect
-import re
 import sys
 from collections.abc import Callable
 from datetime import date
@@ -32,18 +31,12 @@ from energy_modelling.challenge.scoring import leaderboard_score, market_leaderb
 from energy_modelling.challenge.types import ChallengeStrategy
 from energy_modelling.challenge.data import build_feature_glossary, write_challenge_data
 from energy_modelling.challenge.market_runner import MarketEvaluationResult, run_market_evaluation
+from energy_modelling.dashboard import class_display_name as _class_display_name
 
 _DATASET_DEFAULT = Path("data/challenge/daily_public.csv")
 _HIDDEN_DATASET_DEFAULT = Path("data/challenge/daily_hidden_test_full.csv")
 _SOURCE_DATASET_DEFAULT = Path("kaggle_upload/dataset_de_lu.csv")
 _SUBMISSION_SKIP_MODULES = frozenset({"__init__", "common"})
-
-
-def _class_display_name(cls: type) -> str:
-    name = cls.__name__
-    name = re.sub(r"Strategy$", "", name)
-    name = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
-    return name.strip()
 
 
 def _class_description(cls: type) -> str:

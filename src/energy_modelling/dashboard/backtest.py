@@ -23,6 +23,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from energy_modelling.dashboard import class_display_name as _class_display_name
 from energy_modelling.market_simulation.market import MarketEnvironment
 from energy_modelling.strategy.analysis import compute_metrics, monthly_pnl, rolling_sharpe
 from energy_modelling.strategy.base import Strategy
@@ -32,20 +33,6 @@ _DATASET_DEFAULT = Path("kaggle_upload/dataset_de_lu.csv")
 
 # Files in the strategy package that are not user strategies.
 _STRATEGY_SKIP_MODULES = frozenset({"__init__", "base", "runner", "analysis", "template"})
-
-
-def _class_display_name(cls: type) -> str:
-    """Convert a CamelCase strategy class name to a human-readable display name.
-
-    E.g. ``NaiveCopyStrategy`` → ``Naive Copy``,
-         ``PerfectForesightStrategy`` → ``Perfect Foresight``.
-    """
-    name = cls.__name__
-    # Strip trailing "Strategy" suffix if present.
-    name = re.sub(r"Strategy$", "", name)
-    # Insert spaces before capital letters that follow a lowercase letter.
-    name = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
-    return name.strip()
 
 
 def _class_description(cls: type) -> str:
