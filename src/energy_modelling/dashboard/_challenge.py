@@ -38,7 +38,7 @@ from energy_modelling.challenge.types import ChallengeStrategy
 _DATASET_DEFAULT = Path("data/challenge/daily_public.csv")
 _HIDDEN_DATASET_DEFAULT = Path("data/challenge/daily_hidden_test_full.csv")
 _SOURCE_DATASET_DEFAULT = Path("kaggle_upload/dataset_de_lu.csv")
-_SUBMISSION_SKIP_MODULES = frozenset({"__init__", "common"})
+_SUBMISSION_SKIP_MODULES = frozenset({"__init__", "common", "perfect_foresight"})
 
 
 # ---------------------------------------------------------------------------
@@ -55,7 +55,7 @@ def _discover_submission_strategies() -> tuple[
     dict[str, Callable[[], ChallengeStrategy]],
     dict[str, str],
 ]:
-    import submission as _pkg
+    import strategies as _pkg
 
     sub_dir = Path(_pkg.__file__).parent
     factories: dict[str, Callable[[], ChallengeStrategy]] = {}
@@ -65,7 +65,7 @@ def _discover_submission_strategies() -> tuple[
         stem = py_file.stem
         if stem in _SUBMISSION_SKIP_MODULES:
             continue
-        module_name = f"submission.{stem}"
+        module_name = f"strategies.{stem}"
         try:
             module = importlib.import_module(module_name)
         except Exception:  # noqa: BLE001

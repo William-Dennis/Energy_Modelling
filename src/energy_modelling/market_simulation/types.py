@@ -16,12 +16,6 @@ import pandas as pd
 class Signal:
     """Trading signal produced by a strategy.
 
-    Strategies emit a direction signal only -- they have no control over
-    entry price or position size.  The :class:`BacktestRunner` constructs
-    a :class:`Trade` from this signal by combining it with the market's
-    fixed entry price (prior day's DA settlement) and the default
-    quantity of 1 MW.
-
     Parameters
     ----------
     delivery_date:

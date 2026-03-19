@@ -21,8 +21,8 @@ import streamlit as st
 def class_display_name(cls: type) -> str:
     """Convert a CamelCase strategy class name to a human-readable display name.
 
-    E.g. ``NaiveCopyStrategy`` -> ``Naive Copy``,
-         ``PerfectForesightStrategy`` -> ``Perfect Foresight``.
+    E.g. ``AlwaysLongStrategy`` -> ``Always Long``,
+         ``AlwaysShortStrategy`` -> ``Always Short``.
     """
     name = cls.__name__
     name = re.sub(r"Strategy$", "", name)
@@ -56,8 +56,8 @@ def monthly_pnl_heatmap(
 ) -> go.Figure:
     """Build an RdYlGn monthly PnL heatmap from a daily PnL series.
 
-    Works with both ``BacktestResult.daily_pnl`` and
-    ``ChallengeBacktestResult.daily_pnl`` (any series indexed by date).
+    Works with ``ChallengeBacktestResult.daily_pnl`` or any series indexed
+    by date.
     """
     pnl = daily_pnl.copy()
     idx = pd.DatetimeIndex(pnl.index)

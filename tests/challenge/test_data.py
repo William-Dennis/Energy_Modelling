@@ -115,6 +115,76 @@ def test_challenge_frame_keeps_target_day_forecasts_but_lags_realised_values(
     assert row["forecast_solar_mw_mean"] == pytest.approx(4000.0)
 
 
+def test_build_daily_challenge_frame_applies_hourly_cleaning(tmp_path: Path) -> None:
+    """Cleaning pipeline removes NaN artefacts before daily aggregation.
+
+    We inject NaN values into columns that ``clean_hourly_data`` targets:
+    - first row all-NaN artefact (dropped)
+    - an interconnector column with NaN (zero-filled)
+    - a commodity column with NaN (interpolated)
+    - load_forecast_mw with a NaN gap (24 h-prior fill)
+
+    After ``build_daily_challenge_frame`` the resulting daily features must
+    contain **no** NaN values, proving cleaning runs inside the pipeline.
+    """
+    # 3 full days so we get at least 1 usable daily row after lagging
+    timestamps = pd.date_range("2023-12-30", periods=72, freq="h", tz="UTC")
+    n = len(timestamps)
+
+    frame = pd.DataFrame(
+        {
+            "timestamp_utc": timestamps,
+            "price_eur_mwh": [50.0] * n,
+            "load_actual_mw": [40_000.0] * n,
+            "load_forecast_mw": [39_500.0] * n,
+            "forecast_solar_mw": [2_000.0] * n,
+            "forecast_wind_onshore_mw": [6_000.0] * n,
+            "forecast_wind_offshore_mw": [1_500.0] * n,
+            "gen_solar_mw": [1_800.0] * n,
+            "gen_wind_onshore_mw": [5_500.0] * n,
+            "gen_wind_offshore_mw": [1_200.0] * n,
+            "gen_fossil_gas_mw": [3_500.0] * n,
+            "gen_fossil_hard_coal_mw": [2_500.0] * n,
+            "gen_fossil_brown_coal_lignite_mw": [4_500.0] * n,
+            "gen_nuclear_mw": [0.0] * n,
+            "weather_temperature_2m_degc": [10.0] * n,
+            "weather_wind_speed_10m_kmh": [12.0] * n,
+            "weather_shortwave_radiation_wm2": [150.0] * n,
+            "price_fr_eur_mwh": [55.0] * n,
+            "price_nl_eur_mwh": [54.0] * n,
+            "price_at_eur_mwh": [53.0] * n,
+            "price_pl_eur_mwh": [56.0] * n,
+            "price_cz_eur_mwh": [52.0] * n,
+            "price_dk_1_eur_mwh": [51.0] * n,
+            "flow_fr_net_import_mw": [100.0] * n,
+            "flow_nl_net_import_mw": [75.0] * n,
+            "carbon_price_usd": [80.0] * n,
+            "gas_price_usd": [35.0] * n,
+            # Interconnector columns with NaN (should be zero-filled)
+            "ntc_dk_2_export_mw": [np.nan] * n,
+            "ntc_nl_export_mw": [np.nan] * n,
+        }
+    )
+
+    # Inject NaN into commodity column (hour 25 = second day, hour 1)
+    frame.loc[25, "carbon_price_usd"] = np.nan
+
+    # Inject NaN into load_forecast_mw (hour 30 = second day, hour 6)
+    frame.loc[30, "load_forecast_mw"] = np.nan
+
+    csv_path = tmp_path / "dirty_data.csv"
+    frame.to_csv(csv_path, index=False)
+
+    daily = build_daily_challenge_frame(csv_path)
+
+    # The frame should have rows and NO NaN feature values
+    assert len(daily) > 0, "Expected at least one daily row"
+    feature_cols = [c for c in daily.columns if c not in ("delivery_date", "split")]
+    nan_counts = daily[feature_cols].isna().sum()
+    cols_with_nan = nan_counts[nan_counts > 0]
+    assert cols_with_nan.empty, f"NaN found after cleaning: {cols_with_nan.to_dict()}"
+
+
 def test_feature_glossary_classifies_timing_groups(tmp_path: Path) -> None:
     csv_path = _make_selected_day_csv(tmp_path)
     daily = build_daily_challenge_frame(csv_path)
