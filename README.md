@@ -9,7 +9,7 @@ src/energy_modelling/
   data_collection/   # ENTSOE & Open-Meteo data pipelines (prices, generation, load, flows, forecasts)
   strategy/          # Strategy base class, backtest runner, performance analysis
   challenge/         # Hackathon challenge runner, scoring, synthetic futures market
-  dashboard/         # Streamlit dashboards (EDA, backtest, leaderboard + market)
+  dashboard/         # Streamlit dashboard (modular: EDA, backtest, challenge, market, accuracy)
   market_simulation/ # Experimental market simulation utilities
 submission/          # Student strategy submissions (outside installable package)
 tests/               # Pytest test suite
@@ -31,17 +31,11 @@ uv sync
 collect-data --start 2023-01-01 --end 2024-12-31
 ```
 
-### Run Dashboards
+### Run Dashboard
 
 ```bash
-# Exploratory data analysis
+# Single consolidated dashboard (EDA, backtest, challenge, market, accuracy)
 streamlit run src/energy_modelling/dashboard/app.py
-
-# Strategy backtesting
-streamlit run src/energy_modelling/dashboard/backtest.py
-
-# Challenge leaderboard + synthetic market
-streamlit run src/energy_modelling/dashboard/challenge_submissions.py
 ```
 
 ### Run Tests

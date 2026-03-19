@@ -99,3 +99,36 @@ The market model ran successfully on all 12 submission strategies:
 | Delete `docs/code_review.md` | One-time review artifact removed |
 | Fix `annualized_return_pct` | Renamed to `annualized_pnl_eur` in `strategy/analysis.py` (was EUR, not a percentage) |
 | Replace stale `README.md` | Replaced template placeholder with real project description |
+
+## Dashboard Consolidation
+
+### Status: COMPLETE
+
+Consolidated three separate Streamlit dashboards (`app.py`, `backtest.py`,
+`challenge_submissions.py`) into one modular dashboard with 5 tabs.
+
+| File | Purpose | Status |
+|------|---------|--------|
+| `dashboard/app.py` | Thin orchestrator (page config + 5 tabs) | NEW |
+| `dashboard/__init__.py` | Shared helpers: `class_display_name`, `monthly_pnl_heatmap`, `render_metric_cards` | EXTENDED |
+| `dashboard/_eda.py` | Tab 1: EDA (12 sections from old `app.py`) | NEW |
+| `dashboard/_backtest.py` | Tab 2: Single-strategy backtest (from old `backtest.py`) | NEW |
+| `dashboard/_challenge.py` | Tab 3: Challenge leaderboard, yesterday-settlement pricing | NEW |
+| `dashboard/_market.py` | Tab 4: Synthetic futures market model | NEW |
+| `dashboard/_accuracy.py` | Tab 5: Market price accuracy (converged vs real settlement) | NEW |
+| `dashboard/backtest.py` | DELETED — replaced by `_backtest.py` | REMOVED |
+| `dashboard/challenge_submissions.py` | DELETED — replaced by `_challenge.py` + `_market.py` + `_accuracy.py` | REMOVED |
+
+### Architecture
+
+- Each tab is a module with a `render()` entry point
+- `app.py` is a thin orchestrator: page config, title, `st.tabs()`, calls each `render()`
+- Data flows via `st.session_state`: Challenge stores results, Market reads them, Accuracy reads market results
+- Shared chart/metric helpers in `dashboard/__init__.py` avoid duplication
+- Two parallel strategy discovery mechanisms preserved: `strategy.*` for backtest tab, `submission.*` for challenge/market tabs
+
+### Verification
+
+- All 332 tests pass (39s)
+- All 5 tab modules import without errors
+- Test import updated: `test_submission_strategies.py` now imports from `_challenge.py`

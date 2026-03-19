@@ -7,7 +7,7 @@ from datetime import date
 import pandas as pd
 
 from energy_modelling.challenge.runner import run_challenge_backtest
-from energy_modelling.dashboard.challenge_submissions import _discover_submission_strategies
+from energy_modelling.dashboard._challenge import _discover_submission_strategies
 from submission.student_strategy import StudentStrategy
 from submission.tiny_ml_strategy import TinyMLStrategy
 
