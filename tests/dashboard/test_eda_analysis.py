@@ -16,10 +16,15 @@ from energy_modelling.dashboard.eda_analysis import (
     compute_forecast_errors,
     compute_price_changes,
     compute_residual_load,
+    day_of_week_edge_by_year,
     direction_base_rates,
     direction_by_group,
+    feature_drift,
     lagged_direction_correlation,
+    quarterly_direction_rates,
     rolling_volatility,
+    volatility_regime_performance,
+    wind_quintile_analysis,
 )
 
 # ---------------------------------------------------------------------------
@@ -301,3 +306,147 @@ class TestDirectionByGroup:
         assert result.loc["A", "pct_up"] == pytest.approx(50.0)
         # B: 2 up, 0 down → 100%
         assert result.loc["B", "pct_up"] == pytest.approx(100.0)
+
+
+# ---------------------------------------------------------------------------
+# Phase 6: Feedback-loop analyses
+# ---------------------------------------------------------------------------
+
+
+class TestDayOfWeekEdgeByYear:
+    def test_returns_dataframe(self) -> None:
+        dates = pd.date_range("2024-01-01", periods=60, freq="D")
+        rng = np.random.RandomState(42)
+        changes = pd.Series(rng.randn(60), index=dates, name="price_change")
+        result = day_of_week_edge_by_year(changes, dates)
+        assert isinstance(result, pd.DataFrame)
+        assert "year" in result.columns
+        assert "dow" in result.columns
+        assert "up_rate" in result.columns
+        assert "edge" in result.columns
+
+    def test_edge_sums_to_roughly_zero(self) -> None:
+        """Across all days in a year, the mean edge should be near zero."""
+        dates = pd.date_range("2024-01-01", periods=365, freq="D")
+        rng = np.random.RandomState(0)
+        changes = pd.Series(rng.randn(365), index=dates, name="price_change")
+        result = day_of_week_edge_by_year(changes, dates)
+        yr_2024 = result[result["year"] == 2024]
+        # Weighted mean edge should be roughly zero (not exact due to unequal group sizes)
+        assert yr_2024["edge"].mean() == pytest.approx(0.0, abs=0.05)
+
+    def test_monday_edge_with_synthetic_signal(self) -> None:
+        """Create data where Monday always goes up → Monday should have positive edge."""
+        dates = pd.date_range("2024-01-01", periods=100, freq="D")
+        changes = pd.Series(-1.0, index=dates, name="price_change")
+        # Override Mondays (dow=0) to be positive
+        mondays = dates.dayofweek == 0
+        changes[mondays] = 1.0
+        result = day_of_week_edge_by_year(changes, dates)
+        mon_edge = result[(result["year"] == 2024) & (result["dow"] == 0)]["edge"].values[0]
+        assert mon_edge > 0
+
+
+class TestFeatureDrift:
+    def test_returns_dataframe(self) -> None:
+        train = pd.DataFrame({"a": [1.0, 2.0, 3.0], "b": [10.0, 20.0, 30.0]})
+        val = pd.DataFrame({"a": [2.0, 3.0, 4.0], "b": [15.0, 25.0, 35.0]})
+        result = feature_drift(train, val)
+        assert isinstance(result, pd.DataFrame)
+        assert "train_mean" in result.columns
+        assert "val_mean" in result.columns
+        assert "shift_pct" in result.columns
+        assert "std_ratio" in result.columns
+
+    def test_shift_pct_correct(self) -> None:
+        train = pd.DataFrame({"x": [100.0, 100.0, 100.0]})
+        val = pd.DataFrame({"x": [120.0, 120.0, 120.0]})
+        result = feature_drift(train, val)
+        assert result.loc["x", "shift_pct"] == pytest.approx(20.0)
+
+    def test_handles_disjoint_columns(self) -> None:
+        train = pd.DataFrame({"a": [1.0], "b": [2.0]})
+        val = pd.DataFrame({"a": [3.0], "c": [4.0]})
+        result = feature_drift(train, val)
+        assert len(result) == 1
+        assert "a" in result.index
+
+
+class TestQuarterlyDirectionRates:
+    def test_returns_dataframe(self) -> None:
+        dates = pd.date_range("2024-01-01", periods=365, freq="D")
+        rng = np.random.RandomState(0)
+        changes = pd.Series(rng.randn(365), index=dates, name="price_change")
+        result = quarterly_direction_rates(changes, dates)
+        assert isinstance(result, pd.DataFrame)
+        assert "year" in result.columns
+        assert "quarter" in result.columns
+        assert "up_rate" in result.columns
+        assert "mean_abs_change" in result.columns
+
+    def test_four_quarters(self) -> None:
+        dates = pd.date_range("2024-01-01", periods=365, freq="D")
+        rng = np.random.RandomState(0)
+        changes = pd.Series(rng.randn(365), index=dates, name="price_change")
+        result = quarterly_direction_rates(changes, dates)
+        assert len(result) == 4  # Q1-Q4 for one year
+
+    def test_up_rate_bounds(self) -> None:
+        dates = pd.date_range("2024-01-01", periods=365, freq="D")
+        rng = np.random.RandomState(0)
+        changes = pd.Series(rng.randn(365), index=dates, name="price_change")
+        result = quarterly_direction_rates(changes, dates)
+        assert (result["up_rate"] >= 0).all()
+        assert (result["up_rate"] <= 1).all()
+
+
+class TestVolatilityRegimePerformance:
+    def test_returns_dataframe(self) -> None:
+        rng = np.random.RandomState(42)
+        changes = pd.Series(rng.randn(200), name="price_change")
+        result = volatility_regime_performance(changes, window=20, n_regimes=3)
+        assert isinstance(result, pd.DataFrame)
+        assert "regime" in result.columns
+        assert "up_rate" in result.columns
+
+    def test_three_regimes(self) -> None:
+        rng = np.random.RandomState(42)
+        changes = pd.Series(rng.randn(200), name="price_change")
+        result = volatility_regime_performance(changes, window=20, n_regimes=3)
+        assert len(result) == 3
+        assert set(result["regime"]) == {"low", "mid", "high"}
+
+    def test_total_count(self) -> None:
+        rng = np.random.RandomState(42)
+        changes = pd.Series(rng.randn(200), name="price_change")
+        result = volatility_regime_performance(changes, window=20, n_regimes=3)
+        # Total n should equal 200 - 19 (rolling window drops first window-1 NaNs)
+        assert result["n"].sum() == 200 - 19
+
+
+class TestWindQuintileAnalysis:
+    def test_returns_dataframe(self) -> None:
+        n = 500
+        rng = np.random.RandomState(42)
+        wind = pd.Series(rng.uniform(0, 20000, n), name="wind")
+        direction = pd.Series(rng.choice([-1, 1], n), name="direction")
+        changes = pd.Series(rng.randn(n), name="change")
+        result = wind_quintile_analysis(wind, direction, changes, n_bins=5)
+        assert isinstance(result, pd.DataFrame)
+        assert "wind_bin" in result.columns
+        assert "up_rate" in result.columns
+        assert len(result) == 5
+
+    def test_low_wind_higher_up_rate(self) -> None:
+        """Synthetic: low wind → direction=+1, high wind → direction=-1."""
+        n = 1000
+        rng = np.random.RandomState(0)
+        wind = pd.Series(rng.uniform(0, 100, n), name="wind")
+        # Direction correlates negatively with wind
+        direction = pd.Series(np.where(wind < 50, 1, -1), name="direction")
+        changes = pd.Series(np.where(wind < 50, 1.0, -1.0), name="change")
+        result = wind_quintile_analysis(wind, direction, changes, n_bins=5)
+        # Q1 (low wind) should have higher up_rate than Q5 (high wind)
+        q1_rate = result[result["wind_bin"] == "Q1"]["up_rate"].values[0]
+        q5_rate = result[result["wind_bin"] == "Q5"]["up_rate"].values[0]
+        assert q1_rate > q5_rate
