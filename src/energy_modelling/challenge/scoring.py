@@ -53,3 +53,53 @@ def leaderboard_score(metrics: dict[str, float]) -> tuple[float, float, float]:
         float(metrics["sharpe_ratio"]),
         -float(metrics["max_drawdown"]),
     )
+
+
+# ---------------------------------------------------------------------------
+# Market-adjusted scoring
+# ---------------------------------------------------------------------------
+
+
+def compute_market_adjusted_metrics(
+    market_daily_pnl: pd.Series,
+    original_daily_pnl: pd.Series,
+    trade_count: int,
+) -> dict[str, float]:
+    """Compute leaderboard metrics that include market-relative fields.
+
+    The base metrics are computed from *market_daily_pnl* (PnL measured
+    against the converged market price).  Two additional fields compare the
+    strategy to its original (pre-market) performance:
+
+    * ``alpha_pnl``: excess PnL over the original entry-price PnL.
+    * ``original_total_pnl``: the strategy's PnL under the vanilla scoring.
+
+    Parameters
+    ----------
+    market_daily_pnl:
+        Daily PnL computed as ``direction * (settlement - market_price) * 24``.
+    original_daily_pnl:
+        Daily PnL computed as ``direction * (settlement - last_settlement) * 24``.
+    trade_count:
+        Number of days the strategy actively traded.
+    """
+
+    base = compute_challenge_metrics(market_daily_pnl, trade_count)
+    original_total = float(original_daily_pnl.astype(float).sum())
+    base["alpha_pnl"] = base["total_pnl"] - original_total
+    base["original_total_pnl"] = original_total
+    return base
+
+
+def market_leaderboard_score(metrics: dict[str, float]) -> tuple[float, float, float]:
+    """Sortable score under market pricing.
+
+    Same structure as :func:`leaderboard_score` but applied to
+    market-adjusted metrics.
+    """
+
+    return (
+        float(metrics["total_pnl"]),
+        float(metrics["sharpe_ratio"]),
+        -float(metrics["max_drawdown"]),
+    )

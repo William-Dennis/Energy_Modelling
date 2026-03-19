@@ -28,9 +28,10 @@ for _path in (_REPO_ROOT, _SRC_ROOT):
         sys.path.insert(0, _path_str)
 
 from energy_modelling.challenge.runner import ChallengeBacktestResult, run_challenge_backtest
-from energy_modelling.challenge.scoring import leaderboard_score
+from energy_modelling.challenge.scoring import leaderboard_score, market_leaderboard_score
 from energy_modelling.challenge.types import ChallengeStrategy
 from energy_modelling.challenge.data import build_feature_glossary, write_challenge_data
+from energy_modelling.challenge.market_runner import MarketEvaluationResult, run_market_evaluation
 
 _DATASET_DEFAULT = Path("data/challenge/daily_public.csv")
 _HIDDEN_DATASET_DEFAULT = Path("data/challenge/daily_hidden_test_full.csv")
@@ -255,6 +256,193 @@ def _format_leaderboard(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+# ---------------------------------------------------------------------------
+# Synthetic Futures Market helpers
+# ---------------------------------------------------------------------------
+
+
+def _run_market_for_period(
+    selected: list[str],
+    daily: pd.DataFrame,
+    training_end: date,
+    evaluation_start: date,
+    evaluation_end: date,
+) -> MarketEvaluationResult | None:
+    """Run the synthetic futures market for a single evaluation period."""
+    factories = {name: _STRATEGY_FACTORIES[name] for name in selected}
+    try:
+        return run_market_evaluation(
+            strategy_factories=factories,
+            daily_data=daily,
+            training_end=training_end,
+            evaluation_start=evaluation_start,
+            evaluation_end=evaluation_end,
+        )
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _market_leaderboard_frame(market_result: MarketEvaluationResult) -> pd.DataFrame:
+    """Build a leaderboard from market-adjusted results."""
+    rows = []
+    for name, result in market_result.market_results.items():
+        m = result.metrics
+        orig = market_result.original_results[name].metrics
+        score = market_leaderboard_score(m)
+        rows.append(
+            {
+                "Strategy": name,
+                "Market PnL": m["total_pnl"],
+                "Original PnL": orig["total_pnl"],
+                "Sharpe": m["sharpe_ratio"],
+                "Max Drawdown": m["max_drawdown"],
+                "Trades": m["trade_count"],
+                "Win Rate": m["win_rate"],
+                "Leaderboard Score": score,
+            }
+        )
+    frame = pd.DataFrame(rows)
+    if frame.empty:
+        return frame
+    return frame.sort_values(
+        ["Market PnL", "Sharpe", "Max Drawdown"], ascending=[False, False, True]
+    )
+
+
+def _format_market_leaderboard(frame: pd.DataFrame) -> pd.DataFrame:
+    return frame.drop(columns=["Leaderboard Score"]).assign(
+        **{
+            "Market PnL": lambda df: df["Market PnL"].map(lambda v: f"EUR {v:,.2f}"),
+            "Original PnL": lambda df: df["Original PnL"].map(lambda v: f"EUR {v:,.2f}"),
+            "Sharpe": lambda df: df["Sharpe"].map(lambda v: f"{v:.2f}"),
+            "Max Drawdown": lambda df: df["Max Drawdown"].map(lambda v: f"EUR {v:,.2f}"),
+            "Trades": lambda df: df["Trades"].map(lambda v: f"{v:.0f}"),
+            "Win Rate": lambda df: df["Win Rate"].map(lambda v: f"{v:.1%}"),
+        }
+    )
+
+
+def _render_market_section(
+    period_name: str,
+    market_result: MarketEvaluationResult | None,
+) -> None:
+    """Render the synthetic market view for one evaluation period."""
+    if market_result is None:
+        st.info(f"Market simulation not available for {period_name}.")
+        return
+
+    eq = market_result.equilibrium
+
+    # Convergence info
+    conv_col1, conv_col2, conv_col3 = st.columns(3)
+    conv_col1.metric("Converged", "Yes" if eq.converged else "No")
+    conv_col2.metric("Iterations", str(len(eq.iterations)))
+    conv_col3.metric("Final Delta", f"EUR {eq.convergence_delta:.4f}")
+
+    # Market leaderboard
+    st.subheader(f"Market-Adjusted Leaderboard - {period_name}")
+    lb = _market_leaderboard_frame(market_result)
+    if not lb.empty:
+        st.dataframe(_format_market_leaderboard(lb), use_container_width=True)
+
+    # Rank change comparison
+    st.subheader("Rank Change: Original vs Market")
+    orig_order = lb.sort_values("Original PnL", ascending=False)["Strategy"].reset_index(drop=True)
+    market_order = lb["Strategy"].reset_index(drop=True)  # already sorted by market PnL
+    rank_rows = []
+    for strategy in lb["Strategy"]:
+        orig_rank = int(orig_order[orig_order == strategy].index[0]) + 1
+        mkt_rank = int(market_order[market_order == strategy].index[0]) + 1
+        rank_rows.append(
+            {
+                "Strategy": strategy,
+                "Original Rank": orig_rank,
+                "Market Rank": mkt_rank,
+                "Change": orig_rank - mkt_rank,
+            }
+        )
+    st.dataframe(pd.DataFrame(rank_rows), use_container_width=True)
+
+    # Convergence plot
+    if len(eq.iterations) > 1:
+        st.subheader("Convergence")
+        deltas = []
+        for i, it in enumerate(eq.iterations):
+            if i == 0:
+                prev = market_result.original_results
+                # compute max delta from initial
+                init_prices = it.market_prices  # approximation for display
+                deltas.append({"Iteration": i, "Max Delta": 0.0})
+            else:
+                prev_prices = eq.iterations[i - 1].market_prices
+                d = float((it.market_prices - prev_prices).abs().max())
+                deltas.append({"Iteration": i, "Max Delta": d})
+        delta_df = pd.DataFrame(deltas)
+        fig_conv = px.line(
+            delta_df,
+            x="Iteration",
+            y="Max Delta",
+            title="Market Price Convergence (max absolute delta per iteration)",
+        )
+        fig_conv.add_hline(y=0.01, line_dash="dash", line_color="red", annotation_text="Threshold")
+        st.plotly_chart(fig_conv, use_container_width=True)
+
+    # Weight evolution
+    st.subheader("Strategy Weights Across Iterations")
+    weight_rows = []
+    for it in eq.iterations:
+        for name, w in it.strategy_weights.items():
+            weight_rows.append({"Iteration": it.iteration, "Strategy": name, "Weight": w})
+    if weight_rows:
+        weight_df = pd.DataFrame(weight_rows)
+        fig_w = px.area(
+            weight_df,
+            x="Iteration",
+            y="Weight",
+            color="Strategy",
+            title="Strategy Weight Evolution",
+        )
+        st.plotly_chart(fig_w, use_container_width=True)
+
+    # Market price vs settlement
+    st.subheader("Market Price vs Settlement Price")
+    mp = eq.final_market_prices.reset_index()
+    mp.columns = ["Date", "Market Price"]
+    # Get settlement from original results (any strategy will do)
+    first_orig = next(iter(market_result.original_results.values()))
+    settlement_data = first_orig.daily_pnl.copy()  # placeholder for getting dates
+    # Reconstruct settlement from original PnL and predictions
+    price_rows = []
+    for d in eq.final_market_prices.index:
+        price_rows.append({"Date": d, "Market Price": float(eq.final_market_prices.loc[d])})
+    price_df = pd.DataFrame(price_rows)
+    fig_price = px.line(
+        price_df,
+        x="Date",
+        y="Market Price",
+        title="Converged Market Price",
+    )
+    st.plotly_chart(fig_price, use_container_width=True)
+
+    # Cumulative market PnL
+    st.subheader("Cumulative PnL (Market-Adjusted)")
+    cum_rows = []
+    for name, result in market_result.market_results.items():
+        for d, val in result.cumulative_pnl.items():
+            cum_rows.append({"Date": d, "Strategy": name, "Cumulative PnL": val})
+    if cum_rows:
+        cum_df = pd.DataFrame(cum_rows)
+        fig_cum = px.line(
+            cum_df,
+            x="Date",
+            y="Cumulative PnL",
+            color="Strategy",
+            title=f"Cumulative Market-Adjusted PnL - {period_name}",
+        )
+        fig_cum.add_hline(y=0, line_dash="dash", line_color="gray")
+        st.plotly_chart(fig_cum, use_container_width=True)
+
+
 def main() -> None:
     st.set_page_config(
         page_title="Challenge Submissions Dashboard",
@@ -283,6 +471,15 @@ def main() -> None:
         default=list(_STRATEGY_FACTORIES.keys()),
     )
     run_btn = st.sidebar.button("Run Comparison", type="primary")
+
+    st.sidebar.divider()
+    st.sidebar.header("Organizer Tools")
+    enable_market = st.sidebar.checkbox(
+        "Enable Synthetic Market",
+        value=False,
+        help="Run the synthetic futures market model to see market-adjusted rankings. "
+        "This is an organizer-only tool — students do not see this.",
+    )
 
     if not selected:
         st.info("Select at least one strategy to compare.")
@@ -326,6 +523,28 @@ def main() -> None:
     leaderboard_2025 = _leaderboard_frame(hidden_results) if hidden_results else pd.DataFrame()
     period_summary = _period_summary_frame(validation_results, hidden_results)
 
+    # --- Synthetic market evaluation (organizer only) ---
+    market_2024: MarketEvaluationResult | None = None
+    market_2025: MarketEvaluationResult | None = None
+    if enable_market and len(selected) >= 2:
+        combined_daily = _combine_public_and_hidden(public_daily, hidden_daily)
+        with st.spinner("Running synthetic futures market..."):
+            market_2024 = _run_market_for_period(
+                selected,
+                public_daily,
+                training_end=date(2023, 12, 31),
+                evaluation_start=date(2024, 1, 1),
+                evaluation_end=date(2024, 12, 31),
+            )
+            if hidden_daily is not None:
+                market_2025 = _run_market_for_period(
+                    selected,
+                    combined_daily,
+                    training_end=date(2024, 12, 31),
+                    evaluation_start=date(2025, 1, 1),
+                    evaluation_end=date(2025, 12, 31),
+                )
+
     st.header("Period Summary")
     st.dataframe(
         period_summary.assign(
@@ -363,7 +582,10 @@ def main() -> None:
             forecast_cols = glossary[glossary["timing_group"] == "same_day_forecast"]
             st.dataframe(forecast_cols[["column", "description"]], use_container_width=True)
 
-    period_tabs = st.tabs(["2024 Validation", "2025 Hidden Test"])
+    tab_names = ["2024 Validation", "2025 Hidden Test"]
+    if enable_market:
+        tab_names += ["Market: 2024", "Market: 2025"]
+    period_tabs = st.tabs(tab_names)
     with period_tabs[0]:
         st.subheader("2024 Leaderboard")
         st.dataframe(_format_leaderboard(leaderboard_2024), use_container_width=True)
@@ -376,6 +598,19 @@ def main() -> None:
         else:
             st.subheader("2025 Hidden-Test Leaderboard")
             st.dataframe(_format_leaderboard(leaderboard_2025), use_container_width=True)
+    if enable_market:
+        with period_tabs[2]:
+            if len(selected) < 2:
+                st.info("Market simulation requires at least 2 strategies.")
+            else:
+                _render_market_section("2024", market_2024)
+        with period_tabs[3]:
+            if len(selected) < 2:
+                st.info("Market simulation requires at least 2 strategies.")
+            elif hidden_daily is None:
+                st.info("Hidden 2025 data is not available for market simulation.")
+            else:
+                _render_market_section("2025", market_2025)
 
     st.header("Leaderboard Snapshot")
     snapshot_rows = (
