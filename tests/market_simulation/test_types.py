@@ -132,6 +132,6 @@ class TestSignalVsTradeSemantics:
         direction -1 → position -1.0."""
         for direction in (1, -1):
             signal = Signal(delivery_date=_DATE, direction=direction)
-            # Simulate what BacktestRunner does
+            # Simulate what the challenge runner does
             position_mw = float(signal.direction) * 1.0
             assert position_mw == float(direction)

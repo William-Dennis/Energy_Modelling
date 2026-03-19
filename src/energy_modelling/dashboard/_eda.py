@@ -1,18 +1,34 @@
 """Tab 1 -- Exploratory Data Analysis.
 
-Renders 12 EDA sections (price time-series, generation mix, load,
-neighbour prices, weather, correlations, distributions, negative-price
-analysis, heatmap, scatter) from the processed Parquet dataset.
+Renders 18 EDA sections (12 original + 6 trading-focused from Phase 2):
+price time-series, generation mix, load, neighbour prices, weather,
+correlations, distributions, negative-price analysis, heatmap, scatter,
+plus price changes, autocorrelation, forecast errors, feature importance,
+volatility/regimes, and residual load.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+
+from energy_modelling.dashboard.eda_analysis import (
+    autocorrelation,
+    compute_daily_settlement,
+    compute_direction_streaks,
+    compute_forecast_errors,
+    compute_price_changes,
+    compute_residual_load,
+    direction_base_rates,
+    direction_by_group,
+    lagged_direction_correlation,
+    rolling_volatility,
+)
 
 # ---------------------------------------------------------------------------
 # Config
@@ -190,6 +206,20 @@ def render() -> None:
     _section_negative(dff)
     _section_heatmap(dff)
     _section_scatter(dff)
+
+    # --- Phase 2: Trading-focused analyses ---
+    st.divider()
+    st.subheader("Trading Signal Analysis")
+    st.caption(
+        "The sections below analyse daily price *changes* (settlement - last settlement) "
+        "— the actual quantity that trading strategies must predict."
+    )
+    _section_price_changes(dff)
+    _section_autocorrelation(dff)
+    _section_forecast_errors(dff)
+    _section_feature_importance(dff)
+    _section_volatility_regimes(dff)
+    _section_residual_load(dff)
 
 
 # ---------------------------------------------------------------------------
@@ -674,4 +704,579 @@ def _section_scatter(dff: pd.DataFrame) -> None:
         title="Day-Ahead Price vs Renewable Share (10k sample)",
     )
     fig.update_layout(height=500)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: Trading-focused section renderers
+# ---------------------------------------------------------------------------
+
+
+def _section_price_changes(dff: pd.DataFrame) -> None:
+    """P1: Daily price change distribution — the actual trading signal."""
+    st.header("13. Price Change Distribution")
+
+    settlements = compute_daily_settlement(dff[PRICE_COL])
+    changes = compute_price_changes(settlements)
+    rates = direction_base_rates(changes)
+
+    # --- Metric cards ---
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Up days", f"{rates['n_up']} ({rates['pct_up']:.1f}%)")
+    c2.metric("Down days", f"{rates['n_down']} ({rates['pct_down']:.1f}%)")
+    c3.metric("Mean up move", f"{rates['mean_up_move']:.2f} EUR")
+    c4.metric("Mean down move", f"{rates['mean_down_move']:.2f} EUR")
+    c5.metric("Median change", f"{rates['median_change']:.2f} EUR")
+
+    c6, c7, c8 = st.columns(3)
+    c6.metric("Skewness", f"{rates['skewness']:.3f}")
+    c7.metric("Kurtosis", f"{rates['kurtosis']:.3f}")
+    c8.metric("Total days", f"{rates['n_total']}")
+
+    # --- Histogram ---
+    col_l, col_r = st.columns(2)
+    with col_l:
+        fig = px.histogram(
+            changes,
+            nbins=80,
+            title="Daily Price Change Distribution",
+            labels={"value": "EUR/MWh", "count": "Days"},
+            marginal="box",
+        )
+        fig.add_vline(x=0, line_dash="dash", line_color="red")
+        fig.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_r:
+        # Direction by month
+        month_names = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ]
+        months = pd.Series(
+            changes.index.month.map(lambda m: month_names[m - 1]),
+            index=changes.index,
+            name="month",
+        )
+        monthly_dir = direction_by_group(changes, months)
+        # Reindex to calendar order
+        present = [m for m in month_names if m in monthly_dir.index]
+        monthly_dir = monthly_dir.reindex(present)
+        fig = px.bar(
+            monthly_dir.reset_index(),
+            x="group" if "group" in monthly_dir.reset_index().columns else monthly_dir.index.name,
+            y="pct_up",
+            title="% Up Days by Month",
+            labels={"pct_up": "% Up", "month": ""},
+        )
+        fig.add_hline(y=50, line_dash="dash", line_color="gray")
+        fig.update_layout(height=400)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Direction by day of week
+    dow_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    dow = pd.Series(
+        changes.index.dayofweek.map(lambda d: dow_names[d]),
+        index=changes.index,
+        name="day",
+    )
+    dow_dir = direction_by_group(changes, dow)
+    present_dow = [d for d in dow_names if d in dow_dir.index]
+    dow_dir = dow_dir.reindex(present_dow)
+    fig = px.bar(
+        dow_dir.reset_index(),
+        x="group" if "group" in dow_dir.reset_index().columns else dow_dir.index.name,
+        y="pct_up",
+        title="% Up Days by Day of Week",
+        labels={"pct_up": "% Up", "day": ""},
+    )
+    fig.add_hline(y=50, line_dash="dash", line_color="gray")
+    fig.update_layout(height=350)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _section_autocorrelation(dff: pd.DataFrame) -> None:
+    """P2: Autocorrelation and direction persistence of price changes."""
+    st.header("14. Autocorrelation & Direction Persistence")
+
+    settlements = compute_daily_settlement(dff[PRICE_COL])
+    changes = compute_price_changes(settlements)
+
+    col_l, col_r = st.columns(2)
+
+    with col_l:
+        max_lag = min(40, len(changes) // 3)
+        if max_lag < 1:
+            st.info("Not enough data for autocorrelation analysis.")
+            return
+        acf = autocorrelation(changes, max_lag=max_lag)
+        # Significance band: +/- 1.96/sqrt(n)
+        n = len(changes)
+        sig = 1.96 / np.sqrt(n)
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=acf.index, y=acf.values, name="ACF"))
+        fig.add_hline(y=sig, line_dash="dash", line_color="red", annotation_text="95% CI")
+        fig.add_hline(y=-sig, line_dash="dash", line_color="red")
+        fig.add_hline(y=0, line_color="black", line_width=0.5)
+        fig.update_layout(
+            title="Autocorrelation of Daily Price Changes",
+            xaxis_title="Lag (days)",
+            yaxis_title="ACF",
+            height=400,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_r:
+        streaks = compute_direction_streaks(changes)
+        st.markdown("**Direction Streaks**")
+        s1, s2 = st.columns(2)
+        s1.metric("Max up streak", f"{streaks['max_up_streak']} days")
+        s2.metric("Max down streak", f"{streaks['max_down_streak']} days")
+        s3, s4 = st.columns(2)
+        s3.metric("Mean up streak", f"{streaks['mean_up_streak']:.1f} days")
+        s4.metric("Mean down streak", f"{streaks['mean_down_streak']:.1f} days")
+
+        # Transition matrix
+        directions = np.sign(changes.values)
+        transitions = pd.DataFrame(
+            index=["After Up", "After Down"],
+            columns=["Next Up", "Next Down"],
+            dtype=float,
+        )
+        for prev, label in [(1, "After Up"), (-1, "After Down")]:
+            mask = directions[:-1] == prev
+            next_dirs = directions[1:][mask]
+            if len(next_dirs) > 0:
+                transitions.loc[label, "Next Up"] = (next_dirs > 0).mean() * 100
+                transitions.loc[label, "Next Down"] = (next_dirs < 0).mean() * 100
+            else:
+                transitions.loc[label] = [np.nan, np.nan]
+        st.markdown("**Transition Probabilities (%)**")
+        st.dataframe(transitions.style.format("{:.1f}"), use_container_width=True)
+
+
+def _section_forecast_errors(dff: pd.DataFrame) -> None:
+    """P3: Forecast error analysis for load, wind, solar."""
+    st.header("15. Forecast Error Analysis")
+
+    forecast_pairs = [
+        ("load_actual_mw", "load_forecast_mw", "Load"),
+        ("gen_solar_mw", "forecast_solar_mw", "Solar"),
+        ("gen_wind_onshore_mw", "forecast_wind_onshore_mw", "Wind Onshore"),
+        ("gen_wind_offshore_mw", "forecast_wind_offshore_mw", "Wind Offshore"),
+    ]
+
+    available_pairs = [
+        (act, fc, name)
+        for act, fc, name in forecast_pairs
+        if act in dff.columns and fc in dff.columns
+    ]
+
+    if not available_pairs:
+        st.info("No forecast/actual column pairs found in the data.")
+        return
+
+    selected = st.selectbox(
+        "Select forecast type",
+        [name for _, _, name in available_pairs],
+        key="eda_forecast_error_select",
+    )
+
+    act_col, fc_col, _ = next((a, f, n) for a, f, n in available_pairs if n == selected)
+
+    errors = compute_forecast_errors(dff[act_col], dff[fc_col])
+
+    # Metrics
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Mean Error", f"{errors['error'].mean():.1f} MW")
+    c2.metric("MAE", f"{errors['abs_error'].mean():.1f} MW")
+    c3.metric("RMSE", f"{np.sqrt((errors['error'] ** 2).mean()):.1f} MW")
+    c4.metric("Mean Bias", "Over" if errors["error"].mean() > 0 else "Under")
+
+    col_l, col_r = st.columns(2)
+    with col_l:
+        fig = px.histogram(
+            errors,
+            x="error",
+            nbins=80,
+            title=f"{selected}: Forecast Error Distribution (forecast - actual)",
+            labels={"error": "MW"},
+            marginal="box",
+        )
+        fig.add_vline(x=0, line_dash="dash", line_color="red")
+        fig.update_layout(height=400)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_r:
+        # Error by month
+        monthly_error = errors.copy()
+        monthly_error["month"] = monthly_error.index.month
+        monthly_stats = monthly_error.groupby("month")["error"].agg(["mean", "std"]).reset_index()
+        month_names = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ]
+        monthly_stats["month_name"] = monthly_stats["month"].map(lambda m: month_names[m - 1])
+        fig = px.bar(
+            monthly_stats,
+            x="month_name",
+            y="mean",
+            error_y="std",
+            title=f"{selected}: Mean Forecast Error by Month",
+            labels={"mean": "Mean Error (MW)", "month_name": ""},
+        )
+        fig.add_hline(y=0, line_dash="dash", line_color="red")
+        fig.update_layout(height=400)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Scatter: actual vs forecast
+    sample = dff[[act_col, fc_col]].dropna()
+    if len(sample) > 10_000:
+        sample = sample.sample(10_000, random_state=42)
+    fig = px.scatter(
+        sample,
+        x=act_col,
+        y=fc_col,
+        opacity=0.3,
+        title=f"{selected}: Actual vs Forecast",
+        labels={act_col: "Actual (MW)", fc_col: "Forecast (MW)"},
+    )
+    # Perfect prediction line
+    min_val = min(sample[act_col].min(), sample[fc_col].min())
+    max_val = max(sample[act_col].max(), sample[fc_col].max())
+    fig.add_trace(
+        go.Scatter(
+            x=[min_val, max_val],
+            y=[min_val, max_val],
+            mode="lines",
+            line={"dash": "dash", "color": "red"},
+            name="Perfect",
+        )
+    )
+    fig.update_layout(height=450)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _section_feature_importance(dff: pd.DataFrame) -> None:
+    """P4: Lagged feature importance for price direction."""
+    st.header("16. Feature Importance for Price Direction")
+
+    settlements = compute_daily_settlement(dff[PRICE_COL])
+    changes = compute_price_changes(settlements)
+    direction = np.sign(changes)
+    direction.name = "direction"
+
+    # Build daily feature means (lagged by 1 day, matching challenge data)
+    feature_cols = (
+        [c for c in GEN_COLS_DISPLAY if c in dff.columns]
+        + [c for c in WEATHER_COLS_DISPLAY if c in dff.columns]
+        + [c for c in ["load_actual_mw", "carbon_price_usd", "gas_price_usd"] if c in dff.columns]
+        + [
+            c
+            for c in dff.columns
+            if c.startswith("price_") and c.endswith("_eur_mwh") and c != PRICE_COL
+        ]
+        + [c for c in dff.columns if c.startswith("flow_")]
+    )
+    feature_cols = list(dict.fromkeys(feature_cols))  # deduplicate preserving order
+
+    if not feature_cols:
+        st.info("No feature columns available for importance analysis.")
+        return
+
+    # Aggregate to daily and lag by 1 day
+    daily_features = dff[feature_cols].groupby(dff.index.date).mean()
+    daily_features.index = pd.DatetimeIndex(daily_features.index)
+    daily_features_lagged = daily_features.shift(1)
+
+    # Rename for readability
+    rename_map = {**GEN_COLS_DISPLAY, **WEATHER_COLS_DISPLAY}
+    rename_map.update(
+        {
+            "load_actual_mw": "Load Actual",
+            "carbon_price_usd": "Carbon Price",
+            "gas_price_usd": "Gas Price",
+        }
+    )
+    for c in daily_features_lagged.columns:
+        if c.startswith("price_") and c.endswith("_eur_mwh"):
+            zone = c.replace("price_", "").replace("_eur_mwh", "").upper()
+            rename_map[c] = f"Price {zone}"
+        if c.startswith("flow_"):
+            border = c.replace("flow_", "").replace("_net_import_mw", "").upper()
+            rename_map[c] = f"Flow {border}"
+
+    daily_features_lagged = daily_features_lagged.rename(columns=rename_map)
+
+    # Align with direction
+    common_idx = daily_features_lagged.index.intersection(direction.index)
+    if len(common_idx) < 30:
+        st.info("Not enough data points for feature importance analysis.")
+        return
+
+    features_aligned = daily_features_lagged.loc[common_idx].dropna(axis=1, how="all")
+    direction_aligned = direction.loc[common_idx]
+
+    # Drop rows with any NaN
+    valid = features_aligned.dropna()
+    direction_valid = direction_aligned.loc[valid.index]
+
+    corr = lagged_direction_correlation(valid, direction_valid)
+
+    fig = px.bar(
+        x=corr.values,
+        y=corr.index,
+        orientation="h",
+        labels={"x": "Correlation with Next-Day Direction", "y": ""},
+        title="D-1 Feature Correlation with D Price Direction (lagged)",
+        color=corr.values,
+        color_continuous_scale="RdBu_r",
+        range_color=[-0.3, 0.3],
+    )
+    fig.update_layout(
+        height=max(500, len(corr) * 22),
+        showlegend=False,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander("Top predictive features"):
+        top_n = min(10, len(corr))
+        top = corr.head(top_n)
+        st.dataframe(
+            pd.DataFrame({"Feature": top.index, "Correlation": top.values}).style.format(
+                {"Correlation": "{:.4f}"}
+            ),
+            use_container_width=True,
+        )
+
+
+def _section_volatility_regimes(dff: pd.DataFrame) -> None:
+    """P5: Volatility clustering and regime detection."""
+    st.header("17. Volatility & Regime Analysis")
+
+    settlements = compute_daily_settlement(dff[PRICE_COL])
+    changes = compute_price_changes(settlements)
+
+    window = st.slider(
+        "Rolling window (days)",
+        min_value=7,
+        max_value=90,
+        value=30,
+        key="eda_vol_window",
+    )
+
+    vol = rolling_volatility(changes, window=window)
+
+    col_l, col_r = st.columns(2)
+
+    with col_l:
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=changes.index,
+                y=changes.values,
+                mode="lines",
+                name="Daily Change",
+                line={"color": "steelblue", "width": 0.8},
+                opacity=0.6,
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=vol.index,
+                y=vol.values,
+                mode="lines",
+                name=f"{window}d Volatility",
+                line={"color": "red", "width": 2},
+                yaxis="y2",
+            )
+        )
+        fig.update_layout(
+            title=f"Price Changes & {window}-Day Rolling Volatility",
+            yaxis={"title": "Price Change (EUR/MWh)"},
+            yaxis2={
+                "title": "Volatility (EUR/MWh)",
+                "overlaying": "y",
+                "side": "right",
+            },
+            height=450,
+            legend={"orientation": "h", "yanchor": "bottom", "y": -0.2},
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_r:
+        # Regime classification: high-vol vs low-vol
+        vol_median = vol.dropna().median()
+        vol_clean = vol.dropna()
+        is_high_vol = vol_clean > vol_median
+
+        # Direction base rates in each regime
+        changes_aligned = changes.loc[vol_clean.index]
+        high_vol_changes = changes_aligned[is_high_vol]
+        low_vol_changes = changes_aligned[~is_high_vol]
+
+        if len(high_vol_changes) > 0 and len(low_vol_changes) > 0:
+            high_rates = direction_base_rates(high_vol_changes)
+            low_rates = direction_base_rates(low_vol_changes)
+
+            regime_df = pd.DataFrame(
+                {
+                    "Metric": [
+                        "% Up days",
+                        "Mean up move (EUR)",
+                        "Mean down move (EUR)",
+                        "Std dev (EUR)",
+                        "N days",
+                    ],
+                    "High Volatility": [
+                        f"{high_rates['pct_up']:.1f}%",
+                        f"{high_rates['mean_up_move']:.2f}",
+                        f"{high_rates['mean_down_move']:.2f}",
+                        f"{high_vol_changes.std():.2f}",
+                        str(high_rates["n_total"]),
+                    ],
+                    "Low Volatility": [
+                        f"{low_rates['pct_up']:.1f}%",
+                        f"{low_rates['mean_up_move']:.2f}",
+                        f"{low_rates['mean_down_move']:.2f}",
+                        f"{low_vol_changes.std():.2f}",
+                        str(low_rates["n_total"]),
+                    ],
+                }
+            )
+            st.markdown("**Regime Comparison** (split at median volatility)")
+            st.dataframe(regime_df, use_container_width=True, hide_index=True)
+        else:
+            st.info("Not enough data to split into regimes.")
+
+    # Year-over-year volatility
+    if "year" not in dff.columns:
+        return
+    yearly_vol = changes.groupby(changes.index.year).std().reset_index()
+    yearly_vol.columns = ["year", "annual_std"]
+    fig = px.bar(
+        yearly_vol,
+        x="year",
+        y="annual_std",
+        title="Price Change Volatility by Year",
+        labels={"year": "Year", "annual_std": "Std Dev (EUR/MWh)"},
+    )
+    fig.update_layout(height=350)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _section_residual_load(dff: pd.DataFrame) -> None:
+    """P6: Residual load (load - renewables) analysis."""
+    st.header("18. Residual Load Analysis")
+
+    if "load_actual_mw" not in dff.columns:
+        st.info("Load data not available for residual load analysis.")
+        return
+
+    ren_cols = [c for c in RENEWABLE_COLS if c in dff.columns]
+    if not ren_cols:
+        st.info("Renewable generation data not available.")
+        return
+
+    load = dff["load_actual_mw"]
+    renewable = dff[ren_cols].sum(axis=1)
+    residual = compute_residual_load(load, renewable)
+
+    col_l, col_r = st.columns(2)
+
+    with col_l:
+        # Residual load vs price scatter (daily)
+        daily_residual = residual.groupby(residual.index.date).mean()
+        daily_residual.index = pd.DatetimeIndex(daily_residual.index)
+        daily_price = dff[PRICE_COL].groupby(dff.index.date).mean()
+        daily_price.index = pd.DatetimeIndex(daily_price.index)
+
+        scatter_df = pd.DataFrame(
+            {"Residual Load (MW)": daily_residual, "Price (EUR/MWh)": daily_price}
+        ).dropna()
+
+        if len(scatter_df) > 5_000:
+            scatter_df = scatter_df.sample(5_000, random_state=42)
+
+        fig = px.scatter(
+            scatter_df,
+            x="Residual Load (MW)",
+            y="Price (EUR/MWh)",
+            opacity=0.4,
+            title="Daily Residual Load vs Price",
+            trendline="ols",
+        )
+        fig.update_layout(height=450)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_r:
+        # Residual load CHANGE vs price CHANGE
+        daily_residual_change = daily_residual.diff().dropna()
+        settlements = compute_daily_settlement(dff[PRICE_COL])
+        price_change = compute_price_changes(settlements)
+
+        common = daily_residual_change.index.intersection(price_change.index)
+        if len(common) > 10:
+            delta_df = pd.DataFrame(
+                {
+                    "Residual Load Change (MW)": daily_residual_change.loc[common],
+                    "Price Change (EUR/MWh)": price_change.loc[common],
+                }
+            ).dropna()
+
+            fig = px.scatter(
+                delta_df,
+                x="Residual Load Change (MW)",
+                y="Price Change (EUR/MWh)",
+                opacity=0.4,
+                title="Change in Residual Load vs Change in Price",
+                trendline="ols",
+            )
+            fig.update_layout(height=450)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Not enough data for residual load change analysis.")
+
+    # Time series
+    ts = (
+        pd.DataFrame(
+            {
+                "Residual Load": residual,
+                "Load": load,
+                "Renewables": renewable,
+            }
+        )
+        .resample("1W")
+        .mean()
+    )
+
+    fig = px.line(
+        ts.reset_index(),
+        x="timestamp_utc",
+        y=["Residual Load", "Load", "Renewables"],
+        labels={"timestamp_utc": "", "value": "MW", "variable": ""},
+        title="Weekly Average: Load, Renewables, and Residual Load",
+    )
+    fig.update_layout(height=400)
     st.plotly_chart(fig, use_container_width=True)

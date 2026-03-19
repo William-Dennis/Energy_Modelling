@@ -1,16 +1,16 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASE 0 IN PROGRESS
+## Overall Status: PHASE 4 COMPLETE — PHASE 5 NEXT
 
 ## Phase Overview
 
 | Phase | Title | Status | Depends On | Key Deliverable |
 |-------|-------|--------|------------|-----------------|
-| 0 | [Codebase Consolidation](phase_0_consolidation.md) | NOT STARTED | - | Single framework, green tests |
-| 1 | [EDA Audit](phase_1_eda_audit.md) | NOT STARTED | Phase 0 | Audit report, gap priority list |
-| 2 | [Deepen EDA](phase_2_deepen_eda.md) | NOT STARTED | Phase 1 | New EDA sections with trading-relevant analysis |
-| 3 | [Hypothesis Checkpoints](phase_3_hypothesis_checkpoints.md) | NOT STARTED | Phase 2 | Ranked list of testable trading hypotheses |
-| 4 | [Implement Strategies](phase_4_implement_strategies.md) | NOT STARTED | Phase 0, 3 | New ChallengeStrategy implementations |
+| 0 | [Codebase Consolidation](phase_0_consolidation.md) | COMPLETE | - | Single framework, green tests |
+| 1 | [EDA Audit](phase_1_eda_audit.md) | COMPLETE | Phase 0 | Audit report, gap priority list |
+| 2 | [Deepen EDA](phase_2_deepen_eda.md) | COMPLETE | Phase 1 | New EDA sections with trading-relevant analysis |
+| 3 | [Hypothesis Checkpoints](phase_3_hypothesis_checkpoints.md) | COMPLETE | Phase 2 | Ranked list of testable trading hypotheses |
+| 4 | [Implement Strategies](phase_4_implement_strategies.md) | COMPLETE | Phase 0, 3 | 7 new ChallengeStrategy implementations + 70 tests |
 | 5 | [Run & Assess](phase_5_run_and_assess.md) | NOT STARTED | Phase 4 | Performance results, strategy assessment |
 | 6 | [EDA Feedback Loop](phase_6_feedback_loop.md) | NOT STARTED | Phase 5 | Deeper conditional analysis |
 | 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | NOT STARTED | Phase 4, 5 | Theoretical + empirical convergence proof |
@@ -42,6 +42,7 @@ Phase 0 (Consolidation)
 - **YAGNI**: Only build what's needed for the current phase
 - **Tight loops**: Code -> test -> verify -> update docs at each step
 - **Live documents**: Each phase `.md` is updated in real-time as work progresses
+- **GIT commits**: Frequent, descriptive commits tied to specific phase goals to maintain a clear history and revertibility
 
 ## Architecture (Post Phase 0)
 
@@ -50,7 +51,13 @@ strategies/                          # Student strategies (ChallengeStrategy sub
   __init__.py
   always_long.py
   always_short.py
-  [new strategies from Phase 4]
+  day_of_week.py           # H1: Calendar effect
+  wind_forecast.py         # H2: Wind forecast contrarian
+  load_forecast.py         # H3: Load forecast level
+  lag2_reversion.py        # H4: Lag-2 mean reversion
+  weekly_cycle.py          # H5: Weekly cycle exploitation
+  fossil_dispatch.py       # H6: Fossil dispatch contrarian
+  composite_signal.py      # H7: Weighted z-score composite
 
 src/energy_modelling/
   challenge/                         # THE strategy framework
@@ -83,4 +90,8 @@ src/energy_modelling/
 
 | Date | Phase | Change |
 |------|-------|--------|
-| | | |
+| 2026-03-19 | 0 | COMPLETE — 150 tests pass, single framework, all stale refs cleaned |
+| 2026-03-19 | 1 | COMPLETE — 12 sections audited, 10 gaps ranked by trading relevance |
+| 2026-03-19 | 2 | COMPLETE — 6 new trading-focused EDA sections, 24 tests, 10 pure functions |
+| 2026-03-19 | 3 | COMPLETE — 7 hypotheses (H1-H7) with formal specs, real data findings |
+| 2026-03-19 | 4 | COMPLETE — 7 strategies implemented (H1-H7), 70 new tests, 215 total passing |

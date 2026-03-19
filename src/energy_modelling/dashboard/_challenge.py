@@ -65,7 +65,7 @@ def _discover_submission_strategies() -> tuple[
         stem = py_file.stem
         if stem in _SUBMISSION_SKIP_MODULES:
             continue
-        module_name = f"submission.{stem}"
+        module_name = f"strategies.{stem}"
         try:
             module = importlib.import_module(module_name)
         except Exception:  # noqa: BLE001

@@ -25,6 +25,8 @@ from energy_modelling.challenge.scoring import (
     compute_market_adjusted_metrics,
     leaderboard_score,
     market_leaderboard_score,
+    monthly_pnl,
+    rolling_sharpe,
 )
 from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
 
@@ -45,6 +47,8 @@ __all__ = [
     "compute_market_adjusted_metrics",
     "leaderboard_score",
     "market_leaderboard_score",
+    "monthly_pnl",
+    "rolling_sharpe",
     "run_challenge_backtest",
     "run_market_evaluation",
     "run_market_to_convergence",

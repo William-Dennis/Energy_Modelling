@@ -1,4 +1,4 @@
-"""Tests for example submission strategies and dashboard discovery."""
+"""Tests for submission strategy baselines and dashboard discovery."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ import pandas as pd
 
 from energy_modelling.challenge.runner import run_challenge_backtest
 from energy_modelling.dashboard._challenge import _discover_submission_strategies
-from strategies.student_strategy import StudentStrategy
-from strategies.tiny_ml_strategy import TinyMLStrategy
+from strategies.always_long import AlwaysLongStrategy
+from strategies.always_short import AlwaysShortStrategy
 
 
 def _make_daily_frame() -> pd.DataFrame:
@@ -49,35 +49,112 @@ def _make_daily_frame() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def test_submission_dashboard_discovers_all_strategy_modules() -> None:
+# ---------------------------------------------------------------------------
+# Discovery tests
+# ---------------------------------------------------------------------------
+
+
+def test_discover_finds_always_long() -> None:
     factories, descriptions = _discover_submission_strategies()
-
-    assert "Student" in factories
-    assert "Tiny ML" in factories
-    assert "Price Level Mean Reversion" in factories
-    assert descriptions["Student"]
+    assert "Always Long" in factories
 
 
-def test_student_strategy_runs_on_public_validation() -> None:
+def test_discover_finds_always_short() -> None:
+    factories, descriptions = _discover_submission_strategies()
+    assert "Always Short" in factories
+
+
+def test_discover_returns_all_strategies() -> None:
+    factories, _ = _discover_submission_strategies()
+    assert len(factories) == 9
+
+
+def test_discover_returns_descriptions() -> None:
+    _, descriptions = _discover_submission_strategies()
+    assert descriptions["Always Long"]
+    assert descriptions["Always Short"]
+
+
+# ---------------------------------------------------------------------------
+# AlwaysLong tests
+# ---------------------------------------------------------------------------
+
+
+def test_always_long_returns_positive_one() -> None:
+    daily = _make_daily_frame()
     result = run_challenge_backtest(
-        strategy=StudentStrategy(),
-        daily_data=_make_daily_frame(),
+        strategy=AlwaysLongStrategy(),
+        daily_data=daily,
         training_end=date(2023, 12, 31),
         evaluation_start=date(2024, 1, 1),
         evaluation_end=date(2024, 1, 2),
     )
+    assert set(result.predictions.dropna().astype(int).unique()) == {1}
 
+
+def test_always_long_trades_every_day() -> None:
+    daily = _make_daily_frame()
+    result = run_challenge_backtest(
+        strategy=AlwaysLongStrategy(),
+        daily_data=daily,
+        training_end=date(2023, 12, 31),
+        evaluation_start=date(2024, 1, 1),
+        evaluation_end=date(2024, 1, 2),
+    )
     assert result.trade_count == 2
     assert result.days_evaluated == 2
 
 
-def test_tiny_ml_strategy_fits_and_returns_valid_predictions() -> None:
+# ---------------------------------------------------------------------------
+# AlwaysShort tests
+# ---------------------------------------------------------------------------
+
+
+def test_always_short_returns_negative_one() -> None:
+    daily = _make_daily_frame()
     result = run_challenge_backtest(
-        strategy=TinyMLStrategy(),
-        daily_data=_make_daily_frame(),
+        strategy=AlwaysShortStrategy(),
+        daily_data=daily,
         training_end=date(2023, 12, 31),
         evaluation_start=date(2024, 1, 1),
         evaluation_end=date(2024, 1, 2),
     )
+    assert set(result.predictions.dropna().astype(int).unique()) == {-1}
 
-    assert set(result.predictions.dropna().astype(int).unique()).issubset({-1, 1})
+
+def test_always_short_trades_every_day() -> None:
+    daily = _make_daily_frame()
+    result = run_challenge_backtest(
+        strategy=AlwaysShortStrategy(),
+        daily_data=daily,
+        training_end=date(2023, 12, 31),
+        evaluation_start=date(2024, 1, 1),
+        evaluation_end=date(2024, 1, 2),
+    )
+    assert result.trade_count == 2
+    assert result.days_evaluated == 2
+
+
+# ---------------------------------------------------------------------------
+# Symmetry: long + short PnL cancel out
+# ---------------------------------------------------------------------------
+
+
+def test_long_short_pnl_symmetry() -> None:
+    daily = _make_daily_frame()
+    long_result = run_challenge_backtest(
+        strategy=AlwaysLongStrategy(),
+        daily_data=daily,
+        training_end=date(2023, 12, 31),
+        evaluation_start=date(2024, 1, 1),
+        evaluation_end=date(2024, 1, 2),
+    )
+    short_result = run_challenge_backtest(
+        strategy=AlwaysShortStrategy(),
+        daily_data=daily,
+        training_end=date(2023, 12, 31),
+        evaluation_start=date(2024, 1, 1),
+        evaluation_end=date(2024, 1, 2),
+    )
+    total = long_result.daily_pnl.values + short_result.daily_pnl.values
+    assert all(abs(v) < 1e-10 for v in total)

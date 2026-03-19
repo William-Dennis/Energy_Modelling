@@ -10,7 +10,13 @@ _ANNUALISATION_FACTOR = math.sqrt(252)
 
 
 def compute_challenge_metrics(daily_pnl: pd.Series, trade_count: int) -> dict[str, float]:
-    """Compute simple leaderboard metrics from daily PnL."""
+    """Compute leaderboard metrics from daily PnL.
+
+    Returns a dict with keys: ``total_pnl``, ``days_evaluated``,
+    ``trade_count``, ``sharpe_ratio``, ``max_drawdown``, ``win_rate``,
+    ``avg_win``, ``avg_loss``, ``best_day``, ``worst_day``,
+    ``profit_factor``, ``annualized_pnl_eur``.
+    """
 
     pnl = daily_pnl.astype(float)
     active = pnl[pnl != 0.0]
@@ -27,8 +33,16 @@ def compute_challenge_metrics(daily_pnl: pd.Series, trade_count: int) -> dict[st
     wins = active[active > 0]
     losses = active[active < 0]
 
+    gross_profit = float(wins.sum()) if len(wins) > 0 else 0.0
+    gross_loss = float(abs(losses.sum())) if len(losses) > 0 else 0.0
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else float("inf")
+
+    total_pnl = float(pnl.sum())
+    years = n / 252.0 if n > 0 else 1.0
+    annualized_pnl_eur = total_pnl / years if years > 0 else 0.0
+
     return {
-        "total_pnl": float(pnl.sum()),
+        "total_pnl": total_pnl,
         "days_evaluated": float(n),
         "trade_count": float(trade_count),
         "sharpe_ratio": float(sharpe_ratio),
@@ -38,6 +52,8 @@ def compute_challenge_metrics(daily_pnl: pd.Series, trade_count: int) -> dict[st
         "avg_loss": float(losses.mean()) if len(losses) > 0 else 0.0,
         "best_day": float(pnl.max()) if n > 0 else 0.0,
         "worst_day": float(pnl.min()) if n > 0 else 0.0,
+        "profit_factor": profit_factor,
+        "annualized_pnl_eur": annualized_pnl_eur,
     }
 
 
@@ -103,3 +119,50 @@ def market_leaderboard_score(metrics: dict[str, float]) -> tuple[float, float, f
         float(metrics["sharpe_ratio"]),
         -float(metrics["max_drawdown"]),
     )
+
+
+# ---------------------------------------------------------------------------
+# Analysis helpers
+# ---------------------------------------------------------------------------
+
+
+def monthly_pnl(daily_pnl: pd.Series) -> pd.DataFrame:
+    """Compute monthly PnL breakdown from a daily PnL series.
+
+    Parameters
+    ----------
+    daily_pnl:
+        Series indexed by date with daily PnL values.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns ``year``, ``month``, ``pnl``.
+    """
+    pnl = daily_pnl.copy()
+    idx = pd.DatetimeIndex(pnl.index)
+    pnl.index = idx
+    monthly = pnl.groupby([idx.year, idx.month]).sum()
+    df = monthly.reset_index()
+    df.columns = ["year", "month", "pnl"]
+    return df
+
+
+def rolling_sharpe(daily_pnl: pd.Series, window: int = 30) -> pd.Series:
+    """Compute rolling annualized Sharpe ratio.
+
+    Parameters
+    ----------
+    daily_pnl:
+        Series indexed by date with daily PnL values.
+    window:
+        Rolling window size in trading days.
+
+    Returns
+    -------
+    pd.Series
+        Rolling Sharpe ratio indexed by delivery date.
+    """
+    rolling_mean = daily_pnl.rolling(window=window).mean()
+    rolling_std = daily_pnl.rolling(window=window).std(ddof=1)
+    return rolling_mean / rolling_std * _ANNUALISATION_FACTOR

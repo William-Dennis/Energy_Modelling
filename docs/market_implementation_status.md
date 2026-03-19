@@ -97,7 +97,7 @@ The market model ran successfully on all 12 submission strategies:
 | DRY excluded columns | `submission/common.py` now imports `_STATE_EXCLUDE_COLUMNS` from `challenge/runner.py` |
 | Consolidate Kaggle docs | `docs/kaggle_description.md` + `docs/kaggle_upload.md` merged into `docs/kaggle.md` |
 | Delete `docs/code_review.md` | One-time review artifact removed |
-| Fix `annualized_return_pct` | Renamed to `annualized_pnl_eur` in `strategy/analysis.py` (was EUR, not a percentage) |
+| Fix `annualized_return_pct` | Renamed to `annualized_pnl_eur` in `challenge/scoring.py` (was EUR, not a percentage) |
 | Replace stale `README.md` | Replaced template placeholder with real project description |
 
 ## Dashboard Consolidation
@@ -105,18 +105,18 @@ The market model ran successfully on all 12 submission strategies:
 ### Status: COMPLETE
 
 Consolidated three separate Streamlit dashboards (`app.py`, `backtest.py`,
-`challenge_submissions.py`) into one modular dashboard with 5 tabs.
+`challenge_submissions.py`) into one modular dashboard with 4 tabs.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `dashboard/app.py` | Thin orchestrator (page config + 5 tabs) | NEW |
+| `dashboard/app.py` | Thin orchestrator (page config + 4 tabs) | CURRENT |
 | `dashboard/__init__.py` | Shared helpers: `class_display_name`, `monthly_pnl_heatmap`, `render_metric_cards` | EXTENDED |
-| `dashboard/_eda.py` | Tab 1: EDA (12 sections from old `app.py`) | NEW |
-| `dashboard/_backtest.py` | Tab 2: Single-strategy backtest (from old `backtest.py`) | NEW |
-| `dashboard/_challenge.py` | Tab 3: Challenge leaderboard, yesterday-settlement pricing | NEW |
-| `dashboard/_market.py` | Tab 4: Synthetic futures market model | NEW |
-| `dashboard/_accuracy.py` | Tab 5: Market price accuracy (converged vs real settlement) | NEW |
-| `dashboard/backtest.py` | DELETED — replaced by `_backtest.py` | REMOVED |
+| `dashboard/_eda.py` | Tab 1: EDA (12 sections) | CURRENT |
+| `dashboard/_challenge.py` | Tab 2: Challenge leaderboard, yesterday-settlement pricing | CURRENT |
+| `dashboard/_market.py` | Tab 3: Synthetic futures market model | CURRENT |
+| `dashboard/_accuracy.py` | Tab 4: Market price accuracy (converged vs real settlement) | CURRENT |
+| `dashboard/_backtest.py` | DELETED — single-strategy backtest tab removed during framework consolidation | REMOVED |
+| `dashboard/backtest.py` | DELETED — replaced by `_backtest.py`, then both removed | REMOVED |
 | `dashboard/challenge_submissions.py` | DELETED — replaced by `_challenge.py` + `_market.py` + `_accuracy.py` | REMOVED |
 
 ### Architecture
@@ -125,10 +125,26 @@ Consolidated three separate Streamlit dashboards (`app.py`, `backtest.py`,
 - `app.py` is a thin orchestrator: page config, title, `st.tabs()`, calls each `render()`
 - Data flows via `st.session_state`: Challenge stores results, Market reads them, Accuracy reads market results
 - Shared chart/metric helpers in `dashboard/__init__.py` avoid duplication
-- Two parallel strategy discovery mechanisms preserved: `strategy.*` for backtest tab, `submission.*` for challenge/market tabs
+- Single strategy framework: all strategies use `ChallengeStrategy` ABC (the `strategy.*` framework was deleted)
 
 ### Verification
 
-- All 332 tests pass (39s)
-- All 5 tab modules import without errors
+- All 150 tests pass (excluding pre-existing `data_collection` failures due to missing `pytest-mock`)
+- All 4 tab modules import without errors
 - Test import updated: `test_submission_strategies.py` now imports from `_challenge.py`
+
+---
+
+## Framework Consolidation (Phase 0)
+
+### Status: COMPLETE
+
+Deleted the duplicate `strategy.*` framework, keeping only `challenge.*` as the single strategy framework.
+
+| Deleted | Reason |
+|---------|--------|
+| `src/energy_modelling/strategy/` (7 files) | Duplicate of `challenge.*` — identical PnL formula, same feature engineering |
+| `src/energy_modelling/market_simulation/market.py` | `MarketEnvironment` was only used by the deleted backtest tab |
+| `tests/strategy/` (4 test files) | Tests for deleted framework |
+| `tests/market_simulation/test_market.py` | Tests for deleted `MarketEnvironment` |
+| `dashboard/_backtest.py` | Only consumer of the `strategy.*` framework |

@@ -1,29 +1,27 @@
-"""Example challenge submissions and baselines."""
+"""Challenge strategy submissions.
 
+All ``ChallengeStrategy`` subclasses placed in this package are
+automatically discovered by the dashboard's Challenge tab.
+"""
+
+from strategies.always_long import AlwaysLongStrategy
 from strategies.always_short import AlwaysShortStrategy
-from strategies.de_france_spread_strategy import DEFranceSpreadStrategy
-from strategies.gas_trend_strategy import GasTrendStrategy
-from strategies.load_forecast_median_strategy import LoadForecastMedianStrategy
-from strategies.price_level_mean_reversion_strategy import PriceLevelMeanReversionStrategy
-from strategies.skip_all_strategy import SkipAllStrategy
-from strategies.solar_forecast_contrarian_strategy import SolarForecastContrarianStrategy
-from strategies.student_strategy import StudentStrategy
-from strategies.tiny_ml_strategy import TinyMLStrategy
-from strategies.wind_forecast_contrarian_strategy import WindForecastContrarianStrategy
-from strategies.yesterday_mean_reversion_strategy import YesterdayMeanReversionStrategy
-from strategies.yesterday_momentum_strategy import YesterdayMomentumStrategy
+from strategies.composite_signal import CompositeSignalStrategy
+from strategies.day_of_week import DayOfWeekStrategy
+from strategies.fossil_dispatch import FossilDispatchStrategy
+from strategies.lag2_reversion import Lag2ReversionStrategy
+from strategies.load_forecast import LoadForecastStrategy
+from strategies.weekly_cycle import WeeklyCycleStrategy
+from strategies.wind_forecast import WindForecastStrategy
 
 __all__ = [
+    "AlwaysLongStrategy",
     "AlwaysShortStrategy",
-    "DEFranceSpreadStrategy",
-    "GasTrendStrategy",
-    "LoadForecastMedianStrategy",
-    "PriceLevelMeanReversionStrategy",
-    "SkipAllStrategy",
-    "SolarForecastContrarianStrategy",
-    "StudentStrategy",
-    "TinyMLStrategy",
-    "WindForecastContrarianStrategy",
-    "YesterdayMeanReversionStrategy",
-    "YesterdayMomentumStrategy",
+    "CompositeSignalStrategy",
+    "DayOfWeekStrategy",
+    "FossilDispatchStrategy",
+    "Lag2ReversionStrategy",
+    "LoadForecastStrategy",
+    "WeeklyCycleStrategy",
+    "WindForecastStrategy",
 ]
