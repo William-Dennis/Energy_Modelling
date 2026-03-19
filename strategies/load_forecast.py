@@ -39,4 +39,4 @@ class LoadForecastStrategy(ChallengeStrategy):
         return 1 if load >= self._threshold else -1
 
     def reset(self) -> None:
-        self._threshold = None
+        pass

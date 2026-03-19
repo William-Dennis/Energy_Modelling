@@ -55,11 +55,11 @@ class TestFossilDispatchInterface:
         s.fit(_make_train_data())
         assert s._threshold is not None
 
-    def test_reset_clears_threshold(self) -> None:
+    def test_reset_preserves_threshold(self) -> None:
         s = FossilDispatchStrategy()
         s.fit(_make_train_data())
         s.reset()
-        assert s._threshold is None
+        assert s._threshold is not None
 
 
 class TestFossilDispatchThreshold:

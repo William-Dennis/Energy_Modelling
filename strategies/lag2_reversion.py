@@ -52,4 +52,4 @@ class Lag2ReversionStrategy(ChallengeStrategy):
         return -1 if change_2d_ago > 0 else 1
 
     def reset(self) -> None:
-        self._threshold = None
+        pass

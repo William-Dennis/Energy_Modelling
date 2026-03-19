@@ -54,11 +54,11 @@ class TestWindForecastInterface:
         s.fit(_make_train_data())
         assert s._threshold is not None
 
-    def test_reset_clears_threshold(self) -> None:
+    def test_reset_preserves_threshold(self) -> None:
         s = WindForecastStrategy()
         s.fit(_make_train_data())
         s.reset()
-        assert s._threshold is None
+        assert s._threshold is not None
 
 
 class TestWindForecastThreshold:
@@ -109,9 +109,9 @@ class TestWindForecastNotFitted:
         with pytest.raises(RuntimeError, match="fit"):
             s.act(_make_state())
 
-    def test_raises_after_reset(self) -> None:
+    def test_works_after_reset(self) -> None:
         s = WindForecastStrategy()
         s.fit(_make_train_data())
         s.reset()
-        with pytest.raises(RuntimeError, match="fit"):
-            s.act(_make_state())
+        # Should still work since reset preserves fitted params
+        assert s.act(_make_state(offshore=1000.0, onshore=2000.0)) == 1

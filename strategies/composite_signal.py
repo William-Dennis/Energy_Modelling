@@ -77,5 +77,4 @@ class CompositeSignalStrategy(ChallengeStrategy):
         return None
 
     def reset(self) -> None:
-        self._means = None
-        self._stds = None
+        pass

@@ -59,12 +59,12 @@ class TestCompositeSignalInterface:
         assert s._means is not None
         assert s._stds is not None
 
-    def test_reset_clears_params(self) -> None:
+    def test_reset_preserves_params(self) -> None:
         s = CompositeSignalStrategy()
         s.fit(_make_train_data())
         s.reset()
-        assert s._means is None
-        assert s._stds is None
+        assert s._means is not None
+        assert s._stds is not None
 
 
 class TestCompositeSignalDirection:

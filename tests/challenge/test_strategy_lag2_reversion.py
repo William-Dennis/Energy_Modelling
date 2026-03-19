@@ -57,11 +57,11 @@ class TestLag2ReversionInterface:
         assert s._threshold is not None
         assert s._threshold > 0
 
-    def test_reset_clears_threshold(self) -> None:
+    def test_reset_preserves_threshold(self) -> None:
         s = Lag2ReversionStrategy()
         s.fit(_make_train_data())
         s.reset()
-        assert s._threshold is None
+        assert s._threshold is not None
 
 
 class TestLag2ReversionSignal:

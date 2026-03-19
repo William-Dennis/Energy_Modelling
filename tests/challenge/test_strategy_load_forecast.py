@@ -34,11 +34,11 @@ class TestLoadForecastInterface:
         s.fit(_make_train_data())
         assert s._threshold is not None
 
-    def test_reset_clears_threshold(self) -> None:
+    def test_reset_preserves_threshold(self) -> None:
         s = LoadForecastStrategy()
         s.fit(_make_train_data())
         s.reset()
-        assert s._threshold is None
+        assert s._threshold is not None
 
 
 class TestLoadForecastThreshold:
@@ -83,9 +83,9 @@ class TestLoadForecastNotFitted:
         with pytest.raises(RuntimeError, match="fit"):
             s.act(_make_state())
 
-    def test_raises_after_reset(self) -> None:
+    def test_works_after_reset(self) -> None:
         s = LoadForecastStrategy()
         s.fit(_make_train_data())
         s.reset()
-        with pytest.raises(RuntimeError, match="fit"):
-            s.act(_make_state())
+        # Should still work since reset preserves fitted params
+        assert s.act(_make_state(load=50_000.0)) == 1

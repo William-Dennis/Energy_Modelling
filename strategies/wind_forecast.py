@@ -42,4 +42,4 @@ class WindForecastStrategy(ChallengeStrategy):
         return -1 if combined >= self._threshold else 1
 
     def reset(self) -> None:
-        self._threshold = None
+        pass
