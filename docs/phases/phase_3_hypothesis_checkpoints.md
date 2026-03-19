@@ -76,6 +76,10 @@ Near-zero predictors: solar forecast (0.002), solar generation (0.010), carbon p
 
 ### H1: Day-of-Week Calendar Strategy
 
+**EDA evidence**:
+- *Section 13 — Price Change Distribution*: Day-of-week % up breakdown
+- *Section 19 — Day-of-Week Edge Stability*: Year-by-year validation that Monday/Saturday edges persist
+
 **Pattern observed**: Monday has 90.7% up rate (stable 85-94% across all years).
 Saturday has 14.4% up (85.6% down). Sunday 26.5% up. The pattern is the strongest
 and most robust signal in the entire dataset.
@@ -106,6 +110,11 @@ positive; Friday-Saturday transition almost always negative.
 
 ### H2: Wind Forecast Contrarian
 
+**EDA evidence**:
+- *Section 15 — Forecast Error Analysis*: Wind forecast error magnitude and direction
+- *Section 16 — Feature Importance*: `forecast_wind_offshore_mw_mean` correlation -0.218
+- *Section 23 — Wind Quintile Analysis*: Up-rate decreases monotonically with wind quintile
+
 **Pattern observed**: `forecast_wind_offshore_mw_mean` has -0.218 correlation with
 direction. `forecast_wind_onshore_mw_mean` has -0.189. When DA wind forecasts are
 high, price tends to go down (more supply → lower price).
@@ -128,6 +137,10 @@ they are below it captures the renewable-supply effect on prices.
 
 ### H3: Load Forecast Level
 
+**EDA evidence**:
+- *Section 15 — Forecast Error Analysis*: Load forecast error distribution
+- *Section 16 — Feature Importance*: `load_forecast_mw_mean` correlation +0.234 (strongest single feature)
+
 **Pattern observed**: `load_forecast_mw_mean` has +0.234 correlation with direction
 (the strongest single feature). Higher load forecast → more likely up.
 
@@ -147,6 +160,10 @@ likely to increase (higher demand → higher clearing price).
 ---
 
 ### H4: Lag-2 Mean Reversion
+
+**EDA evidence**:
+- *Section 13 — Price Change Distribution*: Heavy tails (kurtosis 8.84) — large moves are common targets for reversion
+- *Section 14 — Autocorrelation & Direction Persistence*: Lag-2 ACF = -0.277 (strongly significant)
 
 **Pattern observed**: ACF at lag 2 is -0.277 (strongly significant). Two days after
 a large move, price tends to reverse.
@@ -169,6 +186,10 @@ is more likely to drop (and vice versa).
 
 ### H5: Weekly Cycle Exploitation
 
+**EDA evidence**:
+- *Section 14 — Autocorrelation & Direction Persistence*: Lag-7 ACF = +0.297 (significant positive)
+- *Section 13 — Price Change Distribution*: Day-of-week decomposition shows structural weekly pattern
+
 **Pattern observed**: ACF at lag 7 is +0.297 (significant positive). The price change
 on the same day of the week tends to repeat direction.
 
@@ -187,6 +208,10 @@ will also tend to be positive.
 ---
 
 ### H6: Fossil Dispatch Contrarian
+
+**EDA evidence**:
+- *Section 16 — Feature Importance*: `gen_fossil_gas_mw_mean` correlation -0.196
+- *Section 18 — Residual Load Analysis*: Residual load (load minus renewables) links fossil dispatch to price
 
 **Pattern observed**: `gen_fossil_gas_mw_mean` (-0.196), `gen_fossil_brown_coal_lignite_mw_mean`
 (-0.185), `gen_fossil_hard_coal_mw_mean` (-0.139) all negatively correlated with direction.
@@ -208,6 +233,11 @@ as conditions normalize).
 ---
 
 ### H7: Composite Signal (Multi-Feature)
+
+**EDA evidence**:
+- *Section 16 — Feature Importance*: Top 6 features have moderate but uncorrelated predictive power
+- *Section 17 — Volatility & Regime Analysis*: Regime-dependent signal strength suggests combining features
+- *Section 24 — Strategy Correlation Insights*: Decomposition of how individual strategy signals combine
 
 **Pattern observed**: Multiple features have moderate predictive power. Combining
 them should improve signal-to-noise ratio.
@@ -243,3 +273,22 @@ fossil generation) provides a stronger directional signal than any individual fe
 
 **Phase 4 implementation order**: H1 first (strongest, simplest), then H2-H3 (feature-based),
 then H4-H5 (time-series-based), then H6-H7 (ensemble).
+
+---
+
+## EDA Section → Strategy Cross-Reference
+
+| EDA Section | Dashboard Header | Strategies Supported |
+|-------------|-----------------|---------------------|
+| 13 | Price Change Distribution | H1 (DOW % up), H4 (heavy tails → reversion), H5 (weekly pattern) |
+| 14 | Autocorrelation & Direction Persistence | H4 (lag-2 = -0.277), H5 (lag-7 = +0.297) |
+| 15 | Forecast Error Analysis | H2 (wind forecast), H3 (load forecast) |
+| 16 | Feature Importance for Price Direction | H2, H3, H6, H7 (all feature-based strategies) |
+| 17 | Volatility & Regime Analysis | General regime awareness; informs H7 weight stability |
+| 18 | Residual Load Analysis | H6 (fossil dispatch linked to residual load) |
+| 19 | Day-of-Week Edge Stability | H1 validation (year-by-year robustness) |
+| 20 | Feature Drift (Train vs Validation) | All strategies (monitors signal stability) |
+| 21 | Quarterly Direction Rates | General (base rate stability check) |
+| 22 | Volatility Regime Performance | H4, H7 (regime-dependent signal strength) |
+| 23 | Wind Quintile Analysis | H2 validation (monotonic up-rate decline with wind) |
+| 24 | Strategy Correlation Insights | H7 (decomposition of composite signal) |

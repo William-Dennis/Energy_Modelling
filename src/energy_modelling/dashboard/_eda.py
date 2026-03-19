@@ -21,6 +21,7 @@ import streamlit as st
 
 from energy_modelling.dashboard.eda_analysis import (
     autocorrelation,
+    clean_hourly_data,
     compute_daily_settlement,
     compute_direction_streaks,
     compute_forecast_errors,
@@ -150,6 +151,7 @@ _DISPLAY_ORDER = [
 @st.cache_data
 def _load_data() -> pd.DataFrame:
     df = pd.read_parquet(DATA_PATH)
+    df = clean_hourly_data(df)
     df["hour"] = df.index.hour  # type: ignore[union-attr]
     df["dayofweek"] = df.index.dayofweek  # type: ignore[union-attr]
     df["month"] = df.index.month  # type: ignore[union-attr]
@@ -305,6 +307,7 @@ def _section_price_ts(dff: pd.DataFrame) -> None:
         ["Hourly (raw)", "Daily mean", "Weekly mean", "Monthly mean"],
         horizontal=True,
         key="eda_price_agg",
+        index=3,
     )
     freq_map = {
         "Hourly (raw)": None,
@@ -335,7 +338,11 @@ def _section_price_ts(dff: pd.DataFrame) -> None:
 def _section_generation(dff: pd.DataFrame) -> None:
     st.header("Generation Mix")
     gen_agg = st.radio(
-        "Aggregation", ["Daily", "Weekly", "Monthly"], horizontal=True, key="eda_gen_agg"
+        "Aggregation",
+        ["Daily", "Weekly", "Monthly"],
+        horizontal=True,
+        key="eda_gen_agg",
+        index=2,
     )
     gen_freq = _AGG_FREQ[gen_agg]
     gen_cols = [c for c in GEN_COLS_DISPLAY if c in dff.columns]
@@ -384,7 +391,11 @@ def _section_load(dff: pd.DataFrame) -> None:
         return
 
     agg = st.radio(
-        "Aggregation", ["Daily", "Weekly", "Monthly"], horizontal=True, key="eda_load_agg"
+        "Aggregation",
+        ["Daily", "Weekly", "Monthly"],
+        horizontal=True,
+        key="eda_load_agg",
+        index=2,
     )
     freq = _AGG_FREQ[agg]
 
@@ -422,7 +433,11 @@ def _section_neighbours(dff: pd.DataFrame) -> None:
     with col_l:
         if nb_avail:
             agg = st.radio(
-                "Aggregation", ["Daily", "Weekly", "Monthly"], horizontal=True, key="eda_nb_agg"
+                "Aggregation",
+                ["Daily", "Weekly", "Monthly"],
+                horizontal=True,
+                key="eda_nb_agg",
+                index=2,
             )
             freq = _AGG_FREQ[agg]
             plot_cols = [PRICE_COL] + list(nb_avail)
@@ -443,7 +458,11 @@ def _section_neighbours(dff: pd.DataFrame) -> None:
     with col_r:
         if flow_cols:
             agg = st.radio(
-                "Aggregation", ["Daily", "Weekly", "Monthly"], horizontal=True, key="eda_flow_agg"
+                "Aggregation",
+                ["Daily", "Weekly", "Monthly"],
+                horizontal=True,
+                key="eda_flow_agg",
+                index=2,
             )
             freq = _AGG_FREQ[agg]
             ts = dff[flow_cols].resample(freq).mean()
@@ -472,7 +491,11 @@ def _section_commodities(dff: pd.DataFrame) -> None:
         st.info("No carbon or gas price data available.")
         return
     agg = st.radio(
-        "Aggregation", ["Daily", "Weekly", "Monthly"], horizontal=True, key="eda_comm_agg"
+        "Aggregation",
+        ["Daily", "Weekly", "Monthly"],
+        horizontal=True,
+        key="eda_comm_agg",
+        index=2,
     )
     freq = _AGG_FREQ[agg]
     ts = dff[cols].resample(freq).mean()
@@ -499,13 +522,21 @@ def _section_weather(dff: pd.DataFrame) -> None:
         format_func=lambda x: WEATHER_COLS_DISPLAY[x],
         key="eda_weather_var",
     )
-    ts = dff[[var]].resample("1D").mean()
+    weather_agg = st.radio(
+        "Aggregation",
+        ["Daily", "Weekly", "Monthly"],
+        horizontal=True,
+        key="eda_weather_agg",
+        index=2,
+    )
+    weather_freq = _AGG_FREQ[weather_agg]
+    ts = dff[[var]].resample(weather_freq).mean()
     fig = px.line(
         ts.reset_index(),
         x="timestamp_utc",
         y=var,
         labels={"timestamp_utc": "", var: WEATHER_COLS_DISPLAY[var]},
-        title=f"{WEATHER_COLS_DISPLAY[var]} (Daily Mean)",
+        title=f"{WEATHER_COLS_DISPLAY[var]} ({weather_agg} Mean)",
     )
     fig.update_layout(height=350)
     st.plotly_chart(fig, use_container_width=True)

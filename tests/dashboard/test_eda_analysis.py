@@ -11,6 +11,7 @@ import pytest
 
 from energy_modelling.dashboard.eda_analysis import (
     autocorrelation,
+    clean_hourly_data,
     compute_daily_settlement,
     compute_direction_streaks,
     compute_forecast_errors,
@@ -26,6 +27,160 @@ from energy_modelling.dashboard.eda_analysis import (
     volatility_regime_performance,
     wind_quintile_analysis,
 )
+
+# ---------------------------------------------------------------------------
+# P0: Data Pre-processing / Cleaning (clean_hourly_data)
+# ---------------------------------------------------------------------------
+
+
+def _make_raw_hourly_df() -> pd.DataFrame:
+    """Build a synthetic raw DataFrame mimicking the DE-LU parquet structure.
+
+    The first row is a partial-NaN artefact (as in the real data).  The
+    remaining rows exercise every cleaning path:
+      - single-NaN columns (forward-fill)
+      - interconnector NTCs (zero-fill)
+      - commodity prices (interpolate + bfill)
+      - load_forecast_mw (24-hour-prior fill)
+    """
+    n = 49  # 1 artefact row + 48 real hours (2 full days)
+    idx = pd.date_range("2024-01-01", periods=n, freq="h", tz="UTC")
+
+    rng = np.random.RandomState(99)
+
+    df = pd.DataFrame(
+        {
+            "price_eur_mwh": rng.uniform(30, 80, n),
+            "gen_hydro_water_reservoir_mw": rng.uniform(500, 1500, n),
+            "weather_temperature_2m_degc": rng.uniform(-5, 25, n),
+            "load_forecast_mw": rng.uniform(40000, 70000, n),
+            "ntc_dk_2_export_mw": rng.uniform(0, 2000, n),
+            "ntc_dk_2_import_mw": rng.uniform(0, 2000, n),
+            "ntc_nl_export_mw": rng.uniform(0, 2000, n),
+            "ntc_nl_import_mw": rng.uniform(0, 2000, n),
+            "carbon_price_usd": rng.uniform(60, 90, n),
+            "gas_price_usd": rng.uniform(20, 50, n),
+        },
+        index=idx,
+    )
+    idx.name = "timestamp_utc"
+
+    # --- Artefact row (row 0): inject several NaNs ---
+    df.iloc[0, df.columns.get_loc("gen_hydro_water_reservoir_mw")] = np.nan
+    df.iloc[0, df.columns.get_loc("weather_temperature_2m_degc")] = np.nan
+    df.iloc[0, df.columns.get_loc("load_forecast_mw")] = np.nan
+
+    # --- Single-NaN columns: set exactly 1 NaN in rows 1..48 ---
+    # gen_hydro already has 1 NaN at row 0; after first-row drop it should be
+    # clean.  Instead, inject *additional* single NaN in weather col at row 5.
+    df.iloc[5, df.columns.get_loc("weather_temperature_2m_degc")] = np.nan
+    # After first-row drop, weather_temperature will have exactly 1 NaN → ffill.
+
+    # --- Interconnectors: set NaN blocks (simulate non-existent capacity) ---
+    for col in ("ntc_dk_2_export_mw", "ntc_dk_2_import_mw", "ntc_nl_export_mw", "ntc_nl_import_mw"):
+        df.loc[df.index[1:20], col] = np.nan  # rows 1-19 NaN
+
+    # --- Commodity prices: weekend-style gaps ---
+    df.iloc[10:15, df.columns.get_loc("carbon_price_usd")] = np.nan
+    df.iloc[12:17, df.columns.get_loc("gas_price_usd")] = np.nan
+
+    # --- load_forecast_mw: scatter a few NaN in the second day (hours 25-48) ---
+    # so the 24-h-prior lookup can find a valid value
+    df.iloc[30, df.columns.get_loc("load_forecast_mw")] = np.nan
+    df.iloc[35, df.columns.get_loc("load_forecast_mw")] = np.nan
+
+    return df
+
+
+class TestCleanHourlyData:
+    """Tests for the P0 clean_hourly_data() pipeline."""
+
+    def test_first_row_dropped(self) -> None:
+        raw = _make_raw_hourly_df()
+        cleaned = clean_hourly_data(raw)
+        assert len(cleaned) == len(raw) - 1
+        # The artefact timestamp should not appear in the cleaned index
+        assert raw.index[0] not in cleaned.index
+
+    def test_output_has_no_nans(self) -> None:
+        raw = _make_raw_hourly_df()
+        cleaned = clean_hourly_data(raw)
+        nan_counts = cleaned.isna().sum()
+        assert nan_counts.sum() == 0, f"NaN remaining:\n{nan_counts[nan_counts > 0]}"
+
+    def test_single_nan_column_is_forward_filled(self) -> None:
+        raw = _make_raw_hourly_df()
+        cleaned = clean_hourly_data(raw)
+        # weather_temperature_2m_degc had exactly 1 NaN at iloc[5] (after drop)
+        # ffill should have replaced it with the value at iloc[4] (i.e. raw iloc[4])
+        col = "weather_temperature_2m_degc"
+        assert cleaned[col].isna().sum() == 0
+
+    def test_interconnectors_zero_filled(self) -> None:
+        raw = _make_raw_hourly_df()
+        cleaned = clean_hourly_data(raw)
+        for col in (
+            "ntc_dk_2_export_mw",
+            "ntc_dk_2_import_mw",
+            "ntc_nl_export_mw",
+            "ntc_nl_import_mw",
+        ):
+            assert cleaned[col].isna().sum() == 0
+            # The previously-NaN region should now be 0.0
+            # (rows 1-19 of raw → rows 0-18 of cleaned after first-row drop)
+            zeros = cleaned[col].iloc[:19]
+            assert (zeros == 0.0).all(), f"{col} not zero-filled: {zeros.tolist()}"
+
+    def test_commodity_prices_interpolated(self) -> None:
+        raw = _make_raw_hourly_df()
+        cleaned = clean_hourly_data(raw)
+        for col in ("carbon_price_usd", "gas_price_usd"):
+            assert cleaned[col].isna().sum() == 0
+            # Values in the gap region should be between their neighbours
+            # (linear interpolation), not zero
+            gap_vals = cleaned[col].iloc[9:14]  # shifted by -1 from raw due to drop
+            assert (gap_vals > 0).all(), f"{col} gap has non-positive values"
+
+    def test_load_forecast_filled_with_24h_prior(self) -> None:
+        raw = _make_raw_hourly_df()
+        cleaned = clean_hourly_data(raw)
+        assert cleaned["load_forecast_mw"].isna().sum() == 0
+        # raw iloc[30] was NaN → cleaned iloc[29]. Its 24-h-prior is iloc[5]
+        # (29 - 24 = 5 in cleaned).  The value should match.
+        assert cleaned["load_forecast_mw"].iloc[29] == pytest.approx(
+            cleaned["load_forecast_mw"].iloc[5]
+        )
+
+    def test_does_not_modify_input(self) -> None:
+        raw = _make_raw_hourly_df()
+        original_nan_count = raw.isna().sum().sum()
+        _ = clean_hourly_data(raw)
+        assert raw.isna().sum().sum() == original_nan_count
+
+    def test_preserves_columns(self) -> None:
+        raw = _make_raw_hourly_df()
+        cleaned = clean_hourly_data(raw)
+        assert list(cleaned.columns) == list(raw.columns)
+
+    def test_handles_missing_optional_columns(self) -> None:
+        """If a column referenced by cleaning is absent, no error occurs."""
+        raw = _make_raw_hourly_df().drop(
+            columns=["ntc_dk_2_export_mw", "carbon_price_usd", "load_forecast_mw"]
+        )
+        cleaned = clean_hourly_data(raw)
+        assert len(cleaned) == len(raw) - 1
+
+    def test_real_parquet_zero_nans(self) -> None:
+        """Integration test: cleaning the real parquet leaves zero NaN."""
+        try:
+            df = pd.read_parquet("data/processed/dataset_de_lu.parquet")
+        except FileNotFoundError:
+            pytest.skip("Real parquet file not available")
+        cleaned = clean_hourly_data(df)
+        nan_total = cleaned.isna().sum().sum()
+        assert nan_total == 0, f"{nan_total} NaN values remain after cleaning"
+        assert len(cleaned) == len(df) - 1
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

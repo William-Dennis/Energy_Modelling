@@ -5,6 +5,7 @@ deepened EDA dashboard sections added in Phase 2. Each function is
 independently testable and operates on pandas/numpy data.
 
 Functions are grouped by the priority ranking from Phase 1 audit:
+  P0 - Data pre-processing / cleaning
   P1 - Price change distribution
   P2 - Autocorrelation & direction persistence
   P3 - Forecast error analysis
@@ -19,6 +20,82 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+
+
+# ---------------------------------------------------------------------------
+# P0: Data Pre-processing
+# ---------------------------------------------------------------------------
+
+# Interconnector columns that did not exist before a certain date and should
+# be zero-filled rather than dropped or forward-filled.
+_INTERCONNECTORS_FILL_ZERO = (
+    "ntc_dk_2_export_mw",
+    "ntc_dk_2_import_mw",
+    "ntc_nl_export_mw",
+    "ntc_nl_import_mw",
+)
+
+# Commodity columns that are missing on weekends / holidays and should be
+# linearly interpolated then back-filled.
+_COMMODITY_COLS = ("carbon_price_usd", "gas_price_usd")
+
+
+def clean_hourly_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply domain-specific cleaning to the raw hourly DE-LU dataset.
+
+    The cleaning steps replicate the notebook
+    ``notebooks/baseline-day-ahead-price-prediction-for-deu.ipynb`` and
+    are designed to fix **all** NaN values without dropping any rows:
+
+    1. Drop the first row (all-NaN artefact of the data collection join).
+    2. Forward-fill any column that has exactly 1 missing value.
+    3. Fill interconnector NTC columns with 0 (capacity did not exist).
+    4. Linearly interpolate + back-fill commodity prices (weekend gaps).
+    5. Fill ``load_forecast_mw`` gaps with the value from 24 h prior.
+
+    Parameters
+    ----------
+    df:
+        Raw hourly DataFrame with DatetimeIndex (as read from parquet).
+
+    Returns
+    -------
+    Cleaned DataFrame with the same shape (minus the first row) and
+    zero remaining NaN values.
+    """
+    df = df.copy()
+
+    # Step 1: drop the first row (artefact)
+    df = df.iloc[1:]
+
+    # Step 2: forward-fill single-NaN columns
+    for col in df.columns:
+        if df[col].isna().sum() == 1:
+            df[col] = df[col].ffill()
+
+    # Step 3: zero-fill interconnector NTCs
+    for col in _INTERCONNECTORS_FILL_ZERO:
+        if col in df.columns:
+            df[col] = df[col].fillna(0)
+
+    # Step 4: interpolate commodity prices
+    for col in _COMMODITY_COLS:
+        if col in df.columns:
+            df[col] = df[col].interpolate(method="linear")
+            df[col] = df[col].bfill()
+
+    # Step 5: fill load_forecast_mw with 24-hour-prior value
+    if "load_forecast_mw" in df.columns:
+        mask = df["load_forecast_mw"].isna()
+        if mask.any():
+            for idx in df.index[mask]:
+                prior = idx - pd.Timedelta("1d")
+                if prior in df.index:
+                    df.loc[idx, "load_forecast_mw"] = df.loc[prior, "load_forecast_mw"]
+            # Safety: if any remain (edge case at start of dataset), ffill
+            df["load_forecast_mw"] = df["load_forecast_mw"].ffill()
+
+    return df
 
 
 # ---------------------------------------------------------------------------

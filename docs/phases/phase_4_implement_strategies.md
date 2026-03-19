@@ -88,17 +88,17 @@ Where `direction` is `+1` (long) or `-1` (short). `None` means skip (PnL = 0).
 
 ## Strategies Implemented
 
-| Strategy | File | Hypothesis | Tests | Status |
-|----------|------|-----------|-------|--------|
-| AlwaysLong | `strategies/always_long.py` | Baseline (always +1) | 3 in submission tests | EXISTING |
-| AlwaysShort | `strategies/always_short.py` | Baseline (always -1) | 3 in submission tests | EXISTING |
-| DayOfWeek | `strategies/day_of_week.py` | H1: Mon long, Sat/Sun short, Wed/Thu skip | 12 | COMPLETE |
-| WindForecast | `strategies/wind_forecast.py` | H2: High wind → short, low wind → long | 10 | COMPLETE |
-| LoadForecast | `strategies/load_forecast.py` | H3: High load → long, low load → short | 10 | COMPLETE |
-| Lag2Reversion | `strategies/lag2_reversion.py` | H4: Fade large moves from 2 days ago | 10 | COMPLETE |
-| WeeklyCycle | `strategies/weekly_cycle.py` | H5: Follow same-day-of-week direction | 10 | COMPLETE |
-| FossilDispatch | `strategies/fossil_dispatch.py` | H6: High fossil gen → short | 9 | COMPLETE |
-| CompositeSignal | `strategies/composite_signal.py` | H7: Weighted z-score ensemble | 9 | COMPLETE |
+| Strategy | File | Hypothesis | EDA Sections | Tests | Status |
+|----------|------|-----------|-------------|-------|--------|
+| AlwaysLong | `strategies/always_long.py` | Baseline (always +1) | — | 3 in submission tests | EXISTING |
+| AlwaysShort | `strategies/always_short.py` | Baseline (always -1) | — | 3 in submission tests | EXISTING |
+| DayOfWeek | `strategies/day_of_week.py` | H1: Mon long, Sat/Sun short, Wed/Thu skip | 13, 19 | 12 | COMPLETE |
+| WindForecast | `strategies/wind_forecast.py` | H2: High wind → short, low wind → long | 15, 16, 23 | 10 | COMPLETE |
+| LoadForecast | `strategies/load_forecast.py` | H3: High load → long, low load → short | 15, 16 | 10 | COMPLETE |
+| Lag2Reversion | `strategies/lag2_reversion.py` | H4: Fade large moves from 2 days ago | 13, 14 | 10 | COMPLETE |
+| WeeklyCycle | `strategies/weekly_cycle.py` | H5: Follow same-day-of-week direction | 13, 14 | 10 | COMPLETE |
+| FossilDispatch | `strategies/fossil_dispatch.py` | H6: High fossil gen → short | 16, 18 | 9 | COMPLETE |
+| CompositeSignal | `strategies/composite_signal.py` | H7: Weighted z-score ensemble | 16, 17, 24 | 9 | COMPLETE |
 
 ## Implementation Notes
 
