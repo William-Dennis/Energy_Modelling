@@ -12,13 +12,7 @@ from entsoe import EntsoePandasClient
 from loguru import logger
 
 from energy_modelling.data_collection.config import DataCollectionConfig
-
-
-def _year_range(year: int, timezone: str) -> tuple[pd.Timestamp, pd.Timestamp]:
-    """Return (start, end) timestamps for a calendar year in the given timezone."""
-    start = pd.Timestamp(f"{year}-01-01", tz=timezone)
-    end = pd.Timestamp(f"{year + 1}-01-01", tz=timezone)
-    return start, end
+from energy_modelling.data_collection.utils import year_range as _year_range
 
 
 def _fetch_one_direction(

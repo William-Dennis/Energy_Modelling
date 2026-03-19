@@ -101,7 +101,7 @@ class TestComputeMetrics:
         expected_keys = {
             "total_pnl",
             "num_trading_days",
-            "annualized_return_pct",
+            "annualized_pnl_eur",
             "sharpe_ratio",
             "max_drawdown",
             "max_drawdown_pct",

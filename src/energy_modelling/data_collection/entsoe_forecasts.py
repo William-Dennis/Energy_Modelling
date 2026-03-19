@@ -12,20 +12,10 @@ from entsoe import EntsoePandasClient
 from loguru import logger
 
 from energy_modelling.data_collection.config import DataCollectionConfig
-
-
-def _year_range(year: int, timezone: str) -> tuple[pd.Timestamp, pd.Timestamp]:
-    """Return (start, end) timestamps for a calendar year in the given timezone."""
-    start = pd.Timestamp(f"{year}-01-01", tz=timezone)
-    end = pd.Timestamp(f"{year + 1}-01-01", tz=timezone)
-    return start, end
-
-
-def _normalise_name(name: str) -> str:
-    """Convert a raw column name string to snake_case."""
-    return (
-        name.strip().lower().replace(" ", "_").replace("-", "_").replace(".", "").replace("/", "_")
-    )
+from energy_modelling.data_collection.utils import (
+    normalise_name as _normalise_name,
+    year_range as _year_range,
+)
 
 
 def _clean_forecast_columns(df: pd.DataFrame) -> pd.DataFrame:
