@@ -38,7 +38,7 @@ from energy_modelling.challenge.types import ChallengeStrategy
 _DATASET_DEFAULT = Path("data/challenge/daily_public.csv")
 _HIDDEN_DATASET_DEFAULT = Path("data/challenge/daily_hidden_test_full.csv")
 _SOURCE_DATASET_DEFAULT = Path("kaggle_upload/dataset_de_lu.csv")
-_SUBMISSION_SKIP_MODULES = frozenset({"__init__", "common"})
+_SUBMISSION_SKIP_MODULES = frozenset({"__init__", "common", "perfect_foresight"})
 
 
 # ---------------------------------------------------------------------------

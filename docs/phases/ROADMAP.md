@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASE 6 COMPLETE — PHASE 7 NEXT
+## Overall Status: ALL 7 PHASES COMPLETE
 
 ## Phase Overview
 
@@ -13,7 +13,7 @@
 | 4 | [Implement Strategies](phase_4_implement_strategies.md) | COMPLETE | Phase 0, 3 | 7 new ChallengeStrategy implementations + 70 tests |
 | 5 | [Run & Assess](phase_5_run_and_assess.md) | COMPLETE | Phase 4 | Leaderboard, market sim, hypothesis assessment |
 | 6 | [EDA Feedback Loop](phase_6_feedback_loop.md) | COMPLETE | Phase 5 | 6 new dashboard sections, no strategy refinements needed |
-| 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | NOT STARTED | Phase 4, 5 | Theoretical + empirical convergence proof |
+| 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Theoretical proofs + empirical evidence: non-convergence explained |
 
 ## Dependency Graph
 
@@ -58,6 +58,7 @@ strategies/                          # Student strategies (ChallengeStrategy sub
   weekly_cycle.py          # H5: Weekly cycle exploitation
   fossil_dispatch.py       # H6: Fossil dispatch contrarian
   composite_signal.py      # H7: Weighted z-score composite
+  perfect_foresight.py     # Analysis-only (Phase 7, NOT in __init__.py)
 
 src/energy_modelling/
   challenge/                         # THE strategy framework
@@ -66,6 +67,7 @@ src/energy_modelling/
     scoring.py                       #   metrics, leaderboard, monthly_pnl, rolling_sharpe
     market.py                        #   Synthetic futures market engine
     market_runner.py                 #   Market evaluation orchestrator
+    convergence.py                   #   Convergence analysis (Phase 7)
     data.py                          #   Daily challenge data builder
     __init__.py
 
@@ -97,3 +99,4 @@ src/energy_modelling/
 | 2026-03-19 | 4 | COMPLETE — 7 strategies implemented (H1-H7), 70 new tests, 215 total passing |
 | 2026-03-19 | 5 | COMPLETE — All 7 hypotheses HELD; market sim non-convergence discovered; reset() bug fixed |
 | 2026-03-19 | 6 | COMPLETE — 5 new analysis functions, 14 new tests, 6 new dashboard sections (19-24); no strategy refinements warranted |
+| 2026-03-19 | 7 | COMPLETE — Convergence analysis: 3 theorems, 6 experiments, 29+7 new tests; non-convergence explained by constant step size |
