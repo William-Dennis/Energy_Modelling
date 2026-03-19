@@ -278,6 +278,16 @@ def render() -> None:
     hidden_daily = st.session_state.get("backtest_hidden_daily")
 
     if m24 is None and m25 is None:
+        from energy_modelling.backtest.io import RESULTS_DIR, load_market_results
+
+        m24 = load_market_results(RESULTS_DIR / "market_2024.pkl")
+        m25 = load_market_results(RESULTS_DIR / "market_2025.pkl")
+        if m24 is not None:
+            st.session_state["market_2024"] = m24
+        if m25 is not None:
+            st.session_state["market_2025"] = m25
+
+    if m24 is None and m25 is None:
         st.info(
             "Run the **Backtest** tab then the **Futures Market** tab first "
             "so converged market prices are available for comparison."

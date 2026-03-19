@@ -19,6 +19,14 @@ from energy_modelling.backtest.futures_market_runner import (
     FuturesMarketResult,
     run_futures_market_evaluation,
 )
+from energy_modelling.backtest.io import (
+    RESULTS_DIR,
+    load_backtest_results,
+    load_market_results,
+    results_exist,
+    save_backtest_results,
+    save_market_results,
+)
 from energy_modelling.backtest.benchmarks import (
     ALL_BENCHMARKS,
     biased_settlement,
@@ -40,6 +48,7 @@ from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 __all__ = [
     "ALL_BENCHMARKS",
+    "RESULTS_DIR",
     "BacktestResult",
     "BacktestState",
     "BacktestStrategy",
@@ -53,6 +62,8 @@ __all__ = [
     "build_daily_backtest_frame",
     "build_feature_glossary",
     "build_public_daily_dataset",
+    "load_backtest_results",
+    "load_market_results",
     "compute_backtest_metrics",
     "compute_market_adjusted_metrics",
     "get_benchmark",
@@ -61,7 +72,10 @@ __all__ = [
     "monthly_pnl",
     "noisy_settlement",
     "perfect_foresight_price",
+    "results_exist",
     "rolling_sharpe",
+    "save_backtest_results",
+    "save_market_results",
     "run_backtest",
     "run_futures_market_evaluation",
     "run_futures_market",

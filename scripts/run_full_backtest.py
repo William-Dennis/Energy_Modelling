@@ -28,6 +28,7 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from energy_modelling.backtest.futures_market_runner import run_futures_market_evaluation
+from energy_modelling.backtest.io import RESULTS_DIR, save_backtest_results, save_market_results
 from energy_modelling.backtest.runner import run_backtest
 from energy_modelling.backtest.scoring import leaderboard_score
 
@@ -91,9 +92,10 @@ def _load_public() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 
-def run_standard_backtests(daily: pd.DataFrame) -> pd.DataFrame:
-    """Run each strategy through standard backtest, return metrics table."""
+def run_standard_backtests(daily: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """Run each strategy through standard backtest, return metrics table and raw results."""
     rows = []
+    raw_results: dict = {}
     for name, factory in STRATEGY_FACTORIES.items():
         print(f"  Backtesting: {name} ... ", end="", flush=True)
         t0 = time.perf_counter()
@@ -105,6 +107,7 @@ def run_standard_backtests(daily: pd.DataFrame) -> pd.DataFrame:
             evaluation_start=EVAL_START,
             evaluation_end=EVAL_END,
         )
+        raw_results[name] = result
         elapsed = time.perf_counter() - t0
         m = result.metrics
         lb = leaderboard_score(m)
@@ -130,7 +133,7 @@ def run_standard_backtests(daily: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values("Total PnL", ascending=False).reset_index(drop=True)
     df.index = df.index + 1  # 1-based rank
     df.index.name = "Rank"
-    return df
+    return df, raw_results
 
 
 # ---------------------------------------------------------------------------
@@ -138,8 +141,8 @@ def run_standard_backtests(daily: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 
-def run_market_sim(daily: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
-    """Run market evaluation with all strategies, return metrics table + info."""
+def run_market_sim(daily: pd.DataFrame) -> tuple[pd.DataFrame, dict, object]:
+    """Run market evaluation with all strategies, return metrics table + info + raw result."""
     print("\n  Running market simulation (may take a few minutes) ...")
     t0 = time.perf_counter()
     market_result = run_futures_market_evaluation(
@@ -184,7 +187,7 @@ def run_market_sim(daily: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     df = df.sort_values("Market PnL", ascending=False).reset_index(drop=True)
     df.index = df.index + 1
     df.index.name = "Rank"
-    return df, info
+    return df, info, market_result
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +208,7 @@ def main() -> None:
 
     # --- Standard backtest ---
     print("\n--- Standard Backtest (2024 Validation) ---\n")
-    std_df = run_standard_backtests(daily)
+    std_df, backtest_results = run_standard_backtests(daily)
     print("\n" + "=" * 70)
     print("STANDARD LEADERBOARD")
     print("=" * 70)
@@ -215,11 +218,15 @@ def main() -> None:
     std_df.to_csv(std_path)
     print(f"\nSaved to {std_path}")
 
+    # Persist raw results for dashboard
+    save_backtest_results(backtest_results, RESULTS_DIR / "backtest_val_2024.pkl")
+    print(f"Saved backtest results to {RESULTS_DIR / 'backtest_val_2024.pkl'}")
+
     # --- Market evaluation ---
     print("\n--- Market Evaluation (2024 Validation) ---\n")
     # Need combined data for market sim? Let's check if hidden is needed
     # For 2024 validation we only need public data
-    mkt_df, mkt_info = run_market_sim(daily)
+    mkt_df, mkt_info, market_result = run_market_sim(daily)
     print(f"\n  Iterations: {mkt_info['iterations']}")
     print(f"  Converged: {mkt_info['converged']}")
     print(f"  Final delta: {mkt_info['final_delta']:.4f} EUR/MWh")
@@ -231,6 +238,10 @@ def main() -> None:
     mkt_path = OUTPUT_DIR / "market_results.csv"
     mkt_df.to_csv(mkt_path)
     print(f"\nSaved to {mkt_path}")
+
+    # Persist raw market result for dashboard
+    save_market_results(market_result, RESULTS_DIR / "market_2024.pkl")
+    print(f"Saved market results to {RESULTS_DIR / 'market_2024.pkl'}")
 
     print("\n" + "=" * 70)
     print("DONE")

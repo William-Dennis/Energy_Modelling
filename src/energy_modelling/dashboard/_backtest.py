@@ -234,42 +234,83 @@ def render() -> None:
     )
     run_btn = st.button("Run Comparison", type="primary", key="ch_run")
 
+    # Try loading saved results if we don't have any yet
+    if not run_btn and "backtest_val_results" not in st.session_state:
+        from energy_modelling.backtest.io import RESULTS_DIR, load_backtest_results
+
+        cached_val = load_backtest_results(RESULTS_DIR / "backtest_val_2024.pkl")
+        cached_hid = load_backtest_results(RESULTS_DIR / "backtest_hid_2025.pkl")
+        if cached_val is not None:
+            pub = _resolve_path(pub_path)
+            hid = _resolve_path(hid_path)
+            pub, hid_or_none = _ensure_datasets(pub, hid)
+            public_daily = load_daily(pub) if pub.exists() else None
+            hidden_daily = load_daily(hid_or_none) if hid_or_none and hid_or_none.exists() else None
+
+            st.session_state["backtest_val_results"] = cached_val
+            st.session_state["backtest_hid_results"] = cached_hid if cached_hid else {}
+            st.session_state["backtest_selected"] = list(cached_val.keys())
+            if public_daily is not None:
+                st.session_state["backtest_public_daily"] = public_daily
+            if hidden_daily is not None:
+                st.session_state["backtest_hidden_daily"] = hidden_daily
+            st.success("Loaded pre-computed results from disk.")
+
     if not selected:
         st.info("Select at least one strategy.")
         return
-    if not run_btn:
-        st.info("Choose strategies and click **Run Comparison**.")
+
+    # Check if we have results from cache or previous run
+    val_results = st.session_state.get("backtest_val_results")
+    if not run_btn and val_results is None:
+        st.info("Choose strategies and click **Run Comparison**, or pre-compute results via CLI.")
         return
 
-    pub = _resolve_path(pub_path)
-    hid = _resolve_path(hid_path)
-    pub, hid_or_none = _ensure_datasets(pub, hid)
+    if run_btn:
+        pub = _resolve_path(pub_path)
+        hid = _resolve_path(hid_path)
+        pub, hid_or_none = _ensure_datasets(pub, hid)
 
-    if not pub.exists():
-        st.error(f"Public dataset not found: {pub}")
-        return
-
-    public_daily = load_daily(pub)
-    hidden_daily = load_daily(hid_or_none) if hid_or_none else None
-    glossary = build_feature_glossary(public_daily)
-
-    with st.spinner("Evaluating submissions on yesterday-settlement pricing..."):
-        try:
-            val_results, hid_results = evaluate_all(selected, public_daily, hidden_daily)
-        except Exception as exc:  # noqa: BLE001
-            st.error(f"Evaluation failed: {exc}")
+        if not pub.exists():
+            st.error(f"Public dataset not found: {pub}")
             return
 
+        public_daily = load_daily(pub)
+        hidden_daily = load_daily(hid_or_none) if hid_or_none else None
+
+        with st.spinner("Evaluating submissions on yesterday-settlement pricing..."):
+            try:
+                val_results, hid_results = evaluate_all(selected, public_daily, hidden_daily)
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Evaluation failed: {exc}")
+                return
+
+        if not val_results:
+            st.error("No strategies completed successfully.")
+            return
+
+        # Store results in session state so the Market & Accuracy tabs can reuse them
+        st.session_state["backtest_val_results"] = val_results
+        st.session_state["backtest_hid_results"] = hid_results
+        st.session_state["backtest_selected"] = selected
+        st.session_state["backtest_public_daily"] = public_daily
+        st.session_state["backtest_hidden_daily"] = hidden_daily
+
+        # Persist to disk for future dashboard loads
+        from energy_modelling.backtest.io import RESULTS_DIR, save_backtest_results
+
+        save_backtest_results(val_results, RESULTS_DIR / "backtest_val_2024.pkl")
+        if hid_results:
+            save_backtest_results(hid_results, RESULTS_DIR / "backtest_hid_2025.pkl")
+
+    val_results = st.session_state.get("backtest_val_results", {})
+    hid_results = st.session_state.get("backtest_hid_results", {})
+    public_daily = st.session_state.get("backtest_public_daily")
+
     if not val_results:
-        st.error("No strategies completed successfully.")
         return
 
-    # Store results in session state so the Market & Accuracy tabs can reuse them
-    st.session_state["backtest_val_results"] = val_results
-    st.session_state["backtest_hid_results"] = hid_results
-    st.session_state["backtest_selected"] = selected
-    st.session_state["backtest_public_daily"] = public_daily
-    st.session_state["backtest_hidden_daily"] = hidden_daily
+    glossary = build_feature_glossary(public_daily) if public_daily is not None else pd.DataFrame()
 
     lb_2024 = leaderboard_frame(val_results)
     lb_2025 = leaderboard_frame(hid_results) if hid_results else pd.DataFrame()
@@ -279,8 +320,9 @@ def render() -> None:
     _render_period_summary(val_results, hid_results)
 
     # --- Feature timing ---------------------------------------------------------
-    st.header("Feature Timing")
-    _render_feature_timing(glossary)
+    if not glossary.empty:
+        st.header("Feature Timing")
+        _render_feature_timing(glossary)
 
     # --- Leaderboards -----------------------------------------------------------
     tabs = st.tabs(["2024 Validation", "2025 Hidden Test"])

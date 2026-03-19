@@ -211,6 +211,16 @@ def render() -> None:
 
     run_btn = st.button("Run Synthetic Market", type="primary", key="mkt_run")
     if not run_btn and "market_2024" not in st.session_state:
+        from energy_modelling.backtest.io import RESULTS_DIR, load_market_results
+
+        m24 = load_market_results(RESULTS_DIR / "market_2024.pkl")
+        m25 = load_market_results(RESULTS_DIR / "market_2025.pkl")
+        if m24 is not None:
+            st.session_state["market_2024"] = m24
+        if m25 is not None:
+            st.session_state["market_2025"] = m25
+
+    if not run_btn and "market_2024" not in st.session_state:
         st.info("Click **Run Synthetic Market** to compute equilibrium prices.")
         return
 
@@ -227,6 +237,13 @@ def render() -> None:
                 )
         st.session_state["market_2024"] = m24
         st.session_state["market_2025"] = m25
+
+        from energy_modelling.backtest.io import RESULTS_DIR, save_market_results
+
+        if m24 is not None:
+            save_market_results(m24, RESULTS_DIR / "market_2024.pkl")
+        if m25 is not None:
+            save_market_results(m25, RESULTS_DIR / "market_2025.pkl")
 
     m24 = st.session_state.get("market_2024")
     m25 = st.session_state.get("market_2025")
