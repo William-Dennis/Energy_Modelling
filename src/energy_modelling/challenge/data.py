@@ -12,6 +12,7 @@ from energy_modelling.market_simulation.data import (
     _FORECAST_FEATURE_COLS,
     _REALISED_FEATURE_COLS,
     build_daily_features,
+    clean_hourly_data,
     compute_daily_settlement,
     load_dataset,
 )
@@ -56,6 +57,7 @@ def build_daily_challenge_frame(dataset_path: Path | str) -> pd.DataFrame:
     """
 
     hourly = load_dataset(dataset_path)
+    hourly = clean_hourly_data(hourly)
     settlements = compute_daily_settlement(hourly).astype(float)
     features = build_daily_features(hourly)
 

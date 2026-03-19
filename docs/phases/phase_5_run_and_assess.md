@@ -278,6 +278,52 @@ An optimal portfolio should combine:
 6. **Load Forecast weakness**: Only 56.3% accuracy, 3 losing months. May need different threshold or interaction with other features.
 7. **Q4 outperformance**: All strategies are strongest in Q4. Is this stable across years?
 
+---
+
+## Re-Run with Cleaned Data Pipeline (Post-EDA Integration)
+
+### Context
+
+After integrating `clean_hourly_data()` into the challenge data pipeline
+(`challenge/data.py`), we regenerated `daily_public.csv` and
+`daily_hidden_test_full.csv` from the raw hourly CSV with the full 5-step
+cleaning pipeline applied:
+
+1. Drop first row (partial-NaN artefact)
+2. Forward-fill single-NaN columns (weather, gen_hydro, flow_fr)
+3. Zero-fill interconnector NTCs (ntc_dk_2, ntc_nl — 14k-16k NaN each)
+4. Interpolate commodity prices (carbon, gas — 477-501 NaN each)
+5. Fill load_forecast_mw gaps with 24h-prior value (42 NaN)
+
+### Re-Run Results
+
+**Standard backtest numbers are identical to the original run.** All 9
+strategies produce the exact same PnL, Sharpe, drawdown, and trade counts.
+
+This is expected because:
+- The cleaned columns (interconnectors, commodity prices, load_forecast gaps)
+  are not directly used as features by any of the 9 current strategies.
+- The `price_eur_mwh` column (which determines settlement prices and PnL)
+  had **zero** NaN values in both the raw and cleaned data.
+- Features used by strategies (wind/solar forecasts, load_actual, fossil gen,
+  day-of-week) had no NaN issues during the 2024 evaluation period.
+
+The cleaning pipeline's value is **forward-looking**: it ensures that future
+strategies using interconnector NTCs, commodity prices, or load forecast data
+as features will receive clean inputs without needing per-strategy NaN handling.
+
+**Market simulation also produces identical results**: same convergence
+behavior (2-cycle oscillation, does not converge), same final rankings.
+
+### Data Shape Change
+
+The regenerated `daily_public.csv` has **2191 rows** (was 2192). The
+difference is from Step 1: dropping the first hourly row shifts the first
+available daily settlement by one day, so `2019-01-01` no longer has a prior
+settlement and is excluded.
+
+---
+
 ## Questions for Phase 7 (Convergence Analysis)
 
 1. **Why doesn't the market converge?** The 2-cycle oscillation between Always Long and Always Short is a structural property of the weighting scheme. Can we prove this analytically?
