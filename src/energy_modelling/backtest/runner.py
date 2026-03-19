@@ -65,6 +65,7 @@ def run_backtest(
     training_end: date,
     evaluation_start: date,
     evaluation_end: date,
+    entry_prices: pd.Series | None = None,
 ) -> BacktestResult:
     """Fit a strategy, then evaluate it one day at a time."""
 
@@ -85,6 +86,12 @@ def run_backtest(
     pnl_values: list[float] = []
     eval_dates: list[date] = []
 
+    if entry_prices is not None:
+        missing = set(evaluation_data.index) - set(entry_prices.index)
+        if missing:
+            msg = f"entry_prices is missing dates present in evaluation data: {sorted(missing)[:5]}"
+            raise ValueError(msg)
+
     for delivery_date, row in evaluation_data.iterrows():
         state = BacktestState(
             delivery_date=delivery_date,
@@ -95,7 +102,12 @@ def run_backtest(
         prediction = strategy.act(state)
         _validate_prediction(prediction, delivery_date)
 
-        price_change = float(row["settlement_price"] - row["last_settlement_price"])
+        entry = (
+            float(entry_prices[delivery_date])
+            if entry_prices is not None
+            else float(row["last_settlement_price"])
+        )
+        price_change = float(row["settlement_price"] - entry)
         pnl = 0.0 if prediction is None else price_change * float(prediction) * 24.0
 
         predictions.append(prediction)

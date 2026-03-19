@@ -65,6 +65,7 @@ def run_futures_market_evaluation(
     convergence_threshold: float = 0.01,
     forecast_spread: float | None = None,
     dampening: float = 0.5,
+    initial_market_prices: pd.Series | None = None,
 ) -> FuturesMarketResult:
     """Run all strategies, then evaluate them under the synthetic market.
 
@@ -108,7 +109,8 @@ def run_futures_market_evaluation(
     eval_data = data.loc[eval_mask]
 
     settlement_prices = eval_data["settlement_price"].astype(float)
-    initial_market_prices = eval_data["last_settlement_price"].astype(float)
+    if initial_market_prices is None:
+        initial_market_prices = eval_data["last_settlement_price"].astype(float)
 
     # Phase 3: Run market convergence
     equilibrium = run_futures_market(
