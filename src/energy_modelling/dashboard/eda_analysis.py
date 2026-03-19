@@ -341,12 +341,12 @@ def day_of_week_edge_by_year(
     -------
     DataFrame with columns: year, dow (0=Mon..6=Sun), up_rate, overall_up_rate, edge.
     """
-    dates = pd.to_datetime(dates)
+    dates = pd.Series(pd.to_datetime(dates))
     df = pd.DataFrame(
         {
             "change": price_changes.values,
-            "year": dates.year,
-            "dow": dates.dayofweek,
+            "year": dates.dt.year.values,
+            "dow": dates.dt.dayofweek.values,
         }
     )
     df["is_up"] = df["change"] > 0
