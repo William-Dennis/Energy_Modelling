@@ -55,7 +55,7 @@ def _discover_submission_strategies() -> tuple[
     dict[str, Callable[[], ChallengeStrategy]],
     dict[str, str],
 ]:
-    import submission as _pkg
+    import strategies as _pkg
 
     sub_dir = Path(_pkg.__file__).parent
     factories: dict[str, Callable[[], ChallengeStrategy]] = {}

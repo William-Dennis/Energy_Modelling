@@ -8,8 +8,8 @@ import pandas as pd
 
 from energy_modelling.challenge.runner import run_challenge_backtest
 from energy_modelling.dashboard._challenge import _discover_submission_strategies
-from submission.student_strategy import StudentStrategy
-from submission.tiny_ml_strategy import TinyMLStrategy
+from strategies.student_strategy import StudentStrategy
+from strategies.tiny_ml_strategy import TinyMLStrategy
 
 
 def _make_daily_frame() -> pd.DataFrame:

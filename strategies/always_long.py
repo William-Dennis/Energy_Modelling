@@ -1,4 +1,4 @@
-"""Always-short baseline for the challenge dashboard."""
+"""Always-long baseline for the challenge dashboard."""
 
 from __future__ import annotations
 
@@ -7,11 +7,11 @@ import pandas as pd
 from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
 
 
-class AlwaysShortStrategy(ChallengeStrategy):
-    """Always short. Useful as a symmetry check against naive copy."""
+class AlwaysLongStrategy(ChallengeStrategy):
+    """Always go long. Useful as a naive baseline (bet price goes up)."""
 
     def fit(self, train_data: pd.DataFrame) -> None:
-        self.training_rows = len(train_data)
+        pass
 
     def act(self, state: ChallengeState) -> int | None:
         return 1

@@ -8,10 +8,10 @@ from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
 
 
 class AlwaysShortStrategy(ChallengeStrategy):
-    """Always short. Useful as a symmetry check against naive copy."""
+    """Always go short. Useful as a symmetry check against always-long."""
 
     def fit(self, train_data: pd.DataFrame) -> None:
-        self.training_rows = len(train_data)
+        pass
 
     def act(self, state: ChallengeState) -> int | None:
         return -1
