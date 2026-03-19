@@ -18,10 +18,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 
-class Lag2ReversionStrategy(ChallengeStrategy):
+class Lag2ReversionStrategy(BacktestStrategy):
     """Fade large price moves from 2 days ago.
 
     The threshold is the median absolute price change from training,
@@ -35,7 +35,7 @@ class Lag2ReversionStrategy(ChallengeStrategy):
         abs_changes = train_data["price_change_eur_mwh"].abs()
         self._threshold = float(abs_changes.median())
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         if self._threshold is None:
             msg = "Lag2ReversionStrategy.act() called before fit()"
             raise RuntimeError(msg)

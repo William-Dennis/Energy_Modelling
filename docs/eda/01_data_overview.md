@@ -133,7 +133,7 @@ No columns are entirely null. No duplicate delivery dates exist.
 import pandas as pd
 
 # Load data
-df = pd.read_csv("data/challenge/daily_public.csv", parse_dates=["delivery_date"])
+df = pd.read_csv("data/backtest/daily_public.csv", parse_dates=["delivery_date"])
 
 # Check shape
 print(df.shape)  # (2192, 37)
@@ -162,7 +162,7 @@ for d in [train, val]:
 
 ## 1.8 Glossary Reference
 
-The complete column glossary is available at `data/challenge/daily_public_glossary.csv`. It lists every column's `timing_group` and a short `description`. Cross-referencing the glossary with this document is the recommended starting point for any feature engineering.
+The complete column glossary is available at `data/backtest/daily_public_glossary.csv`. It lists every column's `timing_group` and a short `description`. Cross-referencing the glossary with this document is the recommended starting point for any feature engineering.
 
 ---
 

@@ -23,7 +23,7 @@ import pandas as pd
 
 # Re-export clean_hourly_data from its canonical location so that existing
 # imports (dashboard, tests) continue to work unchanged.
-from energy_modelling.market_simulation.data import clean_hourly_data  # noqa: F401
+from energy_modelling.futures_market.data import clean_hourly_data  # noqa: F401
 
 
 # ---------------------------------------------------------------------------

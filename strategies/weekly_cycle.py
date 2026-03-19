@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 
-class WeeklyCycleStrategy(ChallengeStrategy):
+class WeeklyCycleStrategy(BacktestStrategy):
     """Follow the same day-of-week's direction from last week.
 
     No fitting required — the signal is purely from recent history.
@@ -29,7 +29,7 @@ class WeeklyCycleStrategy(ChallengeStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         history = state.history
         if history.empty or len(history) < 7:
             return None

@@ -1,6 +1,6 @@
 """Challenge strategy submissions.
 
-All ``ChallengeStrategy`` subclasses placed in this package are
+All ``BacktestStrategy`` subclasses placed in this package are
 automatically discovered by the dashboard's Challenge tab.
 """
 

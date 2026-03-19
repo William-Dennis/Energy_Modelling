@@ -214,4 +214,4 @@ Maximum total score (including bonus) is capped at 100.
 
 **End of EDA reference documents.**
 
-← Back to [Part 4 — Signal Extraction](04_signal_extraction.md) | [Challenge Brief](../hackathon_challenge.md)
+← Back to [Part 4 — Signal Extraction](04_signal_extraction.md) | [Challenge Brief](../hackathon_backtest.md)

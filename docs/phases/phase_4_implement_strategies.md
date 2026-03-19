@@ -4,7 +4,7 @@
 
 ## Objective
 
-Implement new `ChallengeStrategy` classes in the `strategies/` directory based on
+Implement new `BacktestStrategy` classes in the `strategies/` directory based on
 the hypotheses identified in Phase 3. Follow TDD: write tests first, then implement.
 
 ## Prerequisites
@@ -15,13 +15,13 @@ the hypotheses identified in Phase 3. Follow TDD: write tests first, then implem
 ## Checklist
 
 ### 4a. Implement hypothesis-driven strategies (H1-H7)
-- [x] H1: DayOfWeekStrategy — `strategies/day_of_week.py` + `tests/challenge/test_strategy_day_of_week.py` (12 tests)
-- [x] H2: WindForecastStrategy — `strategies/wind_forecast.py` + `tests/challenge/test_strategy_wind_forecast.py` (10 tests)
-- [x] H3: LoadForecastStrategy — `strategies/load_forecast.py` + `tests/challenge/test_strategy_load_forecast.py` (10 tests)
-- [x] H4: Lag2ReversionStrategy — `strategies/lag2_reversion.py` + `tests/challenge/test_strategy_lag2_reversion.py` (10 tests)
-- [x] H5: WeeklyCycleStrategy — `strategies/weekly_cycle.py` + `tests/challenge/test_strategy_weekly_cycle.py` (10 tests)
-- [x] H6: FossilDispatchStrategy — `strategies/fossil_dispatch.py` + `tests/challenge/test_strategy_fossil_dispatch.py` (9 tests)
-- [x] H7: CompositeSignalStrategy — `strategies/composite_signal.py` + `tests/challenge/test_strategy_composite_signal.py` (9 tests)
+- [x] H1: DayOfWeekStrategy — `strategies/day_of_week.py` + `tests/backtest/test_strategy_day_of_week.py` (12 tests)
+- [x] H2: WindForecastStrategy — `strategies/wind_forecast.py` + `tests/backtest/test_strategy_wind_forecast.py` (10 tests)
+- [x] H3: LoadForecastStrategy — `strategies/load_forecast.py` + `tests/backtest/test_strategy_load_forecast.py` (10 tests)
+- [x] H4: Lag2ReversionStrategy — `strategies/lag2_reversion.py` + `tests/backtest/test_strategy_lag2_reversion.py` (10 tests)
+- [x] H5: WeeklyCycleStrategy — `strategies/weekly_cycle.py` + `tests/backtest/test_strategy_weekly_cycle.py` (10 tests)
+- [x] H6: FossilDispatchStrategy — `strategies/fossil_dispatch.py` + `tests/backtest/test_strategy_fossil_dispatch.py` (9 tests)
+- [x] H7: CompositeSignalStrategy — `strategies/composite_signal.py` + `tests/backtest/test_strategy_composite_signal.py` (9 tests)
 
 ### 4b. Update `strategies/__init__.py`
 - [x] Add imports for all 7 new strategies (9 total with baselines)
@@ -36,23 +36,23 @@ the hypotheses identified in Phase 3. Follow TDD: write tests first, then implem
 ## Strategy Implementation Template
 
 ```python
-"""[Description] strategy for the challenge dashboard."""
+"""[Description] strategy for the backtest dashboard."""
 
 from __future__ import annotations
 
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 
-class [Name]Strategy(ChallengeStrategy):
+class [Name]Strategy(BacktestStrategy):
     """[Docstring explaining the hypothesis and signal logic]."""
 
     def fit(self, train_data: pd.DataFrame) -> None:
         # Optional: compute parameters from training data
         pass
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         # Return +1 (long), -1 (short), or None (skip)
         pass
 
@@ -60,18 +60,18 @@ class [Name]Strategy(ChallengeStrategy):
         pass
 ```
 
-## ChallengeStrategy Interface Reference
+## BacktestStrategy Interface Reference
 
 ```python
-class ChallengeStrategy(ABC):
+class BacktestStrategy(ABC):
     def fit(self, train_data: pd.DataFrame) -> None: ...   # optional training
-    def act(self, state: ChallengeState) -> int | None: ... # abstract
+    def act(self, state: BacktestState) -> int | None: ... # abstract
     def reset(self) -> None: ...                             # reset between runs
 ```
 
 ```python
 @dataclass(frozen=True)
-class ChallengeState:
+class BacktestState:
     delivery_date: date
     last_settlement_price: float
     features: pd.Series           # current-day features (no labels)

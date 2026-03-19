@@ -13,12 +13,12 @@ from __future__ import annotations
 
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 _LOAD_COL = "load_forecast_mw_mean"
 
 
-class LoadForecastStrategy(ChallengeStrategy):
+class LoadForecastStrategy(BacktestStrategy):
     """Go long when load forecast is high, short when low.
 
     The threshold is the median of load_forecast_mw_mean from the
@@ -31,7 +31,7 @@ class LoadForecastStrategy(ChallengeStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         self._threshold = float(train_data[_LOAD_COL].median())
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         if self._threshold is None:
             msg = "LoadForecastStrategy.act() called before fit()"
             raise RuntimeError(msg)

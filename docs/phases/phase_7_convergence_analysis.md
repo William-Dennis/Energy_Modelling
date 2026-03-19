@@ -257,7 +257,7 @@ P_real. This prevents the formation of a contraction mapping. Binary directions
 
 ### Implications for the hackathon platform
 
-The market simulation engine, as designed, is better understood as a **mechanism for
+The futures market engine, as designed, is better understood as a **mechanism for
 ranking strategy differentiation** than a convergence-to-truth engine. It rewards
 strategies that are correct AND contrarian (different from the consensus). This is
 actually a reasonable market design for a hackathon — it prevents the trivial strategy
@@ -269,7 +269,7 @@ mechanism that converges to real settlement prices.
 ## Code Deliverables
 
 ### New files
-- `src/energy_modelling/challenge/convergence.py` — Convergence analysis module
+- `src/energy_modelling/backtest/convergence.py` — Convergence analysis module
   - `fixed_perfect_foresight_directions()` — Static PF directions
   - `adaptive_perfect_foresight_directions()` — Dynamic PF directions
   - `compute_theoretical_steps_to_arrival()` — Step count formula
@@ -279,11 +279,11 @@ mechanism that converges to real settlement prices.
   - `ConvergenceTrajectory` — Result dataclass
 
 - `strategies/perfect_foresight.py` — PerfectForesightStrategy
-  - ChallengeStrategy that cheats by looking up real settlement prices
+  - BacktestStrategy that cheats by looking up real settlement prices
   - For analysis only, not a legitimate competitor
 
 ### New tests
-- `tests/challenge/test_convergence.py` — 29 tests
-- `tests/challenge/test_perfect_foresight.py` — 7 tests
+- `tests/backtest/test_convergence.py` — 29 tests
+- `tests/backtest/test_perfect_foresight.py` — 7 tests
 
 All 36 new tests pass. Total test count: 38 (EDA) + 145 (challenge) + 36 (Phase 7) = 219+.

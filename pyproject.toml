@@ -42,7 +42,7 @@ build-backend = "uv_build"
 
 [project.scripts]
 collect-data = "energy_modelling.data_collection.cli:main"
-build-challenge-data = "energy_modelling.challenge.cli:main"
+build-backtest-data = "energy_modelling.backtest.cli:main"
 
 [tool.ruff]
 line-length = 100

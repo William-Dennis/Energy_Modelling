@@ -56,7 +56,7 @@ def monthly_pnl_heatmap(
 ) -> go.Figure:
     """Build an RdYlGn monthly PnL heatmap from a daily PnL series.
 
-    Works with ``ChallengeBacktestResult.daily_pnl`` or any series indexed
+    Works with ``BacktestResult.daily_pnl`` or any series indexed
     by date.
     """
     pnl = daily_pnl.copy()
@@ -97,7 +97,7 @@ def render_metric_cards(
     """Render two rows of metric cards (6 primary + 4 secondary).
 
     Expects the union of keys from ``compute_metrics`` and
-    ``compute_challenge_metrics``.  Missing keys are silently skipped.
+    ``compute_backtest_metrics``.  Missing keys are silently skipped.
     """
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("Total PnL", f"{prefix} {metrics.get('total_pnl', 0):,.0f}")

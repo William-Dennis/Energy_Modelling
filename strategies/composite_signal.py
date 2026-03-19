@@ -25,7 +25,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 # Feature names and their EDA-derived correlation weights
 _FEATURE_WEIGHTS: list[tuple[str, float]] = [
@@ -38,7 +38,7 @@ _FEATURE_WEIGHTS: list[tuple[str, float]] = [
 ]
 
 
-class CompositeSignalStrategy(ChallengeStrategy):
+class CompositeSignalStrategy(BacktestStrategy):
     """Weighted z-score composite of top directional features.
 
     During fit(), computes per-feature mean and std from training data.
@@ -58,7 +58,7 @@ class CompositeSignalStrategy(ChallengeStrategy):
         # Guard against zero std (constant feature)
         self._stds[self._stds == 0] = 1.0
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         if self._means is None or self._stds is None:
             msg = "CompositeSignalStrategy.act() called before fit()"
             raise RuntimeError(msg)

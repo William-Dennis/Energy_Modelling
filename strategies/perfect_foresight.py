@@ -12,10 +12,10 @@ from datetime import date
 
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 
-class PerfectForesightStrategy(ChallengeStrategy):
+class PerfectForesightStrategy(BacktestStrategy):
     """Always predicts the correct direction by peeking at the settlement price.
 
     Constructed with a lookup of delivery_date → settlement_price for the
@@ -35,7 +35,7 @@ class PerfectForesightStrategy(ChallengeStrategy):
     def __init__(self, settlement_lookup: dict[date, float]) -> None:
         self._settlement_lookup = settlement_lookup
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         """Return the correct direction by looking up the real settlement."""
         real_price = self._settlement_lookup.get(state.delivery_date)
         if real_price is None:

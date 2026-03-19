@@ -4,34 +4,34 @@
 
 | Module | Status | Tests | Notes |
 |--------|--------|-------|-------|
-| `challenge/market.py` | DONE | 23/23 pass | Core engine: types, iteration, convergence |
-| `challenge/market_runner.py` | DONE | 11/11 pass | Orchestrator: collects strategies, runs market |
-| `challenge/scoring.py` ext | DONE | 9/9 pass | Market-adjusted metrics |
-| `challenge/__init__.py` | DONE | - | Export new public API |
-| `dashboard/challenge_submissions.py` | DONE | - | Market view tabs + sidebar toggle |
-| `tests/challenge/test_market.py` | DONE | 23/23 pass | Unit tests for market engine |
-| `tests/challenge/test_market_runner.py` | DONE | 11/11 pass | Integration tests |
-| `tests/challenge/test_scoring.py` | DONE | 9/9 pass | Scoring extension tests |
+| `backtest/futures_market_engine.py` | DONE | 23/23 pass | Core engine: types, iteration, convergence |
+| `backtest/futures_market_runner.py` | DONE | 11/11 pass | Orchestrator: collects strategies, runs market |
+| `backtest/scoring.py` ext | DONE | 9/9 pass | Market-adjusted metrics |
+| `backtest/__init__.py` | DONE | - | Export new public API |
+| `dashboard/_futures_market.py` | DONE | - | Market view tabs + sidebar toggle |
+| `tests/backtest/test_market.py` | DONE | 23/23 pass | Unit tests for market engine |
+| `tests/backtest/test_market_runner.py` | DONE | 11/11 pass | Integration tests |
+| `tests/backtest/test_scoring.py` | DONE | 9/9 pass | Scoring extension tests |
 
 **Full test suite: 185/185 pass** (excluding pre-existing data_collection failures unrelated to market work)
 
 ## Build Log
 
 ### Loop 1: market.py core engine
-- [x] Write types (MarketIteration, MarketEquilibrium)
+- [x] Write types (FuturesMarketIteration, FuturesMarketEquilibrium)
 - [x] Write compute_strategy_profits()
 - [x] Write compute_weights()
 - [x] Write compute_market_prices()
-- [x] Write run_market_iteration()
-- [x] Write run_market_to_convergence()
+- [x] Write run_futures_market_iteration()
+- [x] Write run_futures_market()
 - [x] Write test_market.py - 23 tests
 - [x] Run tests: 23/23 pass (0.54s)
 - [x] Fix 3 keyword-arg mismatches (spread -> forecast_spread)
 
 ### Loop 2: market_runner.py orchestrator
-- [x] Write MarketEvaluationResult type
+- [x] Write FuturesMarketResult type
 - [x] Write _recompute_pnl_against_market()
-- [x] Write run_market_evaluation()
+- [x] Write run_futures_market_evaluation()
 - [x] Write test_market_runner.py - 11 tests
 - [x] Run tests: 11/11 pass (0.62s)
 - [x] Fixed 1 test assertion (market overshoot is correct economics)
@@ -94,10 +94,10 @@ The market model ran successfully on all 12 submission strategies:
 | Extract `_year_range()` | Moved from 7 `entsoe_*.py` files to `data_collection/utils.py` |
 | Extract `_normalise_name()` | Moved from `entsoe_generation.py` + `entsoe_forecasts.py` to `data_collection/utils.py` |
 | Extract `_class_display_name()` | Moved from `backtest.py` + `challenge_submissions.py` to `dashboard/__init__.py` |
-| DRY excluded columns | `submission/common.py` now imports `_STATE_EXCLUDE_COLUMNS` from `challenge/runner.py` |
+| DRY excluded columns | `submission/common.py` now imports `_STATE_EXCLUDE_COLUMNS` from `backtest/runner.py` |
 | Consolidate Kaggle docs | `docs/kaggle_description.md` + `docs/kaggle_upload.md` merged into `docs/kaggle.md` |
 | Delete `docs/code_review.md` | One-time review artifact removed |
-| Fix `annualized_return_pct` | Renamed to `annualized_pnl_eur` in `challenge/scoring.py` (was EUR, not a percentage) |
+| Fix `annualized_return_pct` | Renamed to `annualized_pnl_eur` in `backtest/scoring.py` (was EUR, not a percentage) |
 | Replace stale `README.md` | Replaced template placeholder with real project description |
 
 ## Dashboard Consolidation
@@ -112,26 +112,26 @@ Consolidated three separate Streamlit dashboards (`app.py`, `backtest.py`,
 | `dashboard/app.py` | Thin orchestrator (page config + 4 tabs) | CURRENT |
 | `dashboard/__init__.py` | Shared helpers: `class_display_name`, `monthly_pnl_heatmap`, `render_metric_cards` | EXTENDED |
 | `dashboard/_eda.py` | Tab 1: EDA (12 sections) | CURRENT |
-| `dashboard/_challenge.py` | Tab 2: Challenge leaderboard, yesterday-settlement pricing | CURRENT |
-| `dashboard/_market.py` | Tab 3: Synthetic futures market model | CURRENT |
-| `dashboard/_accuracy.py` | Tab 4: Market price accuracy (converged vs real settlement) | CURRENT |
+| `dashboard/_backtest.py` | Tab 2: Backtest leaderboard, yesterday-settlement pricing | CURRENT |
+| `dashboard/_futures_market.py` | Tab 3: Synthetic futures market model | CURRENT |
+| `dashboard/_accuracy.py` | Tab 4: Futures Market Simulation accuracy (converged vs real settlement) | CURRENT |
 | `dashboard/_backtest.py` | DELETED — single-strategy backtest tab removed during framework consolidation | REMOVED |
 | `dashboard/backtest.py` | DELETED — replaced by `_backtest.py`, then both removed | REMOVED |
-| `dashboard/challenge_submissions.py` | DELETED — replaced by `_challenge.py` + `_market.py` + `_accuracy.py` | REMOVED |
+| `dashboard/challenge_submissions.py` | DELETED — replaced by `_backtest.py` + `_futures_market.py` + `_accuracy.py` | REMOVED |
 
 ### Architecture
 
 - Each tab is a module with a `render()` entry point
 - `app.py` is a thin orchestrator: page config, title, `st.tabs()`, calls each `render()`
-- Data flows via `st.session_state`: Challenge stores results, Market reads them, Accuracy reads market results
+- Data flows via `st.session_state`: Backtest stores results, Futures Market reads them, Accuracy reads market results
 - Shared chart/metric helpers in `dashboard/__init__.py` avoid duplication
-- Single strategy framework: all strategies use `ChallengeStrategy` ABC (the `strategy.*` framework was deleted)
+- Single strategy framework: all strategies use `BacktestStrategy` ABC (the `strategy.*` framework was deleted)
 
 ### Verification
 
 - All 150 tests pass (excluding pre-existing `data_collection` failures due to missing `pytest-mock`)
 - All 4 tab modules import without errors
-- Test import updated: `test_submission_strategies.py` now imports from `_challenge.py`
+- Test import updated: `test_submission_strategies.py` now imports from `_backtest.py`
 
 ---
 
@@ -139,12 +139,12 @@ Consolidated three separate Streamlit dashboards (`app.py`, `backtest.py`,
 
 ### Status: COMPLETE
 
-Deleted the duplicate `strategy.*` framework, keeping only `challenge.*` as the single strategy framework.
+Deleted the duplicate `strategy.*` framework, keeping only `backtest.*` as the single strategy framework.
 
 | Deleted | Reason |
 |---------|--------|
-| `src/energy_modelling/strategy/` (7 files) | Duplicate of `challenge.*` — identical PnL formula, same feature engineering |
+| `src/energy_modelling/strategy/` (7 files) | Duplicate of `backtest.*` — identical PnL formula, same feature engineering |
 | `src/energy_modelling/market_simulation/market.py` | `MarketEnvironment` was only used by the deleted backtest tab |
 | `tests/strategy/` (4 test files) | Tests for deleted framework |
-| `tests/market_simulation/test_market.py` | Tests for deleted `MarketEnvironment` |
+| `tests/futures_market/test_market.py` | Tests for deleted `MarketEnvironment` |
 | `dashboard/_backtest.py` | Only consumer of the `strategy.*` framework |

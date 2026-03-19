@@ -10,7 +10,7 @@
 | 1 | [EDA Audit](phase_1_eda_audit.md) | COMPLETE | Phase 0 | Audit report, gap priority list |
 | 2 | [Deepen EDA](phase_2_deepen_eda.md) | COMPLETE | Phase 1 | New EDA sections with trading-relevant analysis |
 | 3 | [Hypothesis Checkpoints](phase_3_hypothesis_checkpoints.md) | COMPLETE | Phase 2 | Ranked list of testable trading hypotheses |
-| 4 | [Implement Strategies](phase_4_implement_strategies.md) | COMPLETE | Phase 0, 3 | 7 new ChallengeStrategy implementations + 70 tests |
+| 4 | [Implement Strategies](phase_4_implement_strategies.md) | COMPLETE | Phase 0, 3 | 7 new BacktestStrategy implementations + 70 tests |
 | 5 | [Run & Assess](phase_5_run_and_assess.md) | COMPLETE | Phase 4 | Leaderboard, market sim, hypothesis assessment |
 | 6 | [EDA Feedback Loop](phase_6_feedback_loop.md) | COMPLETE | Phase 5 | 6 new dashboard sections, no strategy refinements needed |
 | 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Theoretical proofs + empirical evidence: non-convergence explained |
@@ -47,7 +47,7 @@ Phase 0 (Consolidation)
 ## Architecture (Post Phase 0)
 
 ```
-strategies/                          # Student strategies (ChallengeStrategy subclasses)
+strategies/                          # Student strategies (BacktestStrategy subclasses)
   __init__.py
   always_long.py
   always_short.py
@@ -61,17 +61,17 @@ strategies/                          # Student strategies (ChallengeStrategy sub
   perfect_foresight.py     # Analysis-only (Phase 7, NOT in __init__.py)
 
 src/energy_modelling/
-  challenge/                         # THE strategy framework
-    types.py                         #   ChallengeStrategy ABC, ChallengeState
-    runner.py                        #   run_challenge_backtest()
+  backtest/                          # THE strategy framework
+    types.py                         #   BacktestStrategy ABC, BacktestState
+    runner.py                        #   run_backtest()
     scoring.py                       #   metrics, leaderboard, monthly_pnl, rolling_sharpe
-    market.py                        #   Synthetic futures market engine
-    market_runner.py                 #   Market evaluation orchestrator
+    futures_market_engine.py         #   Synthetic futures market engine
+    futures_market_runner.py         #   Market evaluation orchestrator
     convergence.py                   #   Convergence analysis (Phase 7)
-    data.py                          #   Daily challenge data builder
+    data.py                          #   Daily backtest data builder
     __init__.py
 
-  market_simulation/                 # Shared data utilities (kept)
+  futures_market/                    # Shared data utilities (kept)
     data.py                          #   load_dataset, build_daily_features, compute_daily_settlement
     contract.py                      #   compute_pnl, compute_settlement_price
     types.py                         #   DayState, Signal, Trade, Settlement (retained for data.py)
@@ -81,9 +81,9 @@ src/energy_modelling/
     app.py                           #   Thin orchestrator
     __init__.py                      #   Shared helpers
     _eda.py                          #   Tab 1: EDA
-    _challenge.py                    #   Tab 2: Challenge leaderboard
-    _market.py                       #   Tab 3: Futures market
-    _accuracy.py                     #   Tab 4: Market price accuracy
+    _backtest.py                     #   Tab 2: Backtest leaderboard
+    _futures_market.py               #   Tab 3: Futures market
+    _accuracy.py                     #   Tab 4: Futures Market Simulation accuracy
 
   data_collection/                   # ENTSO-E + weather + commodity data collection
 ```

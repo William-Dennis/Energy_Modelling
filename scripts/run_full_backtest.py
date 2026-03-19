@@ -9,8 +9,8 @@ Produces two tables:
 1. Standard backtest leaderboard (vs last_settlement_price)
 2. Market-adjusted leaderboard (vs converged equilibrium price)
 
-Results are printed to stdout and saved to ``data/challenge/backtest_results.csv``
-and ``data/challenge/market_results.csv``.
+Results are printed to stdout and saved to ``data/backtest/backtest_results.csv``
+and ``data/backtest/market_results.csv``.
 """
 
 from __future__ import annotations
@@ -27,9 +27,9 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from energy_modelling.challenge.market_runner import run_market_evaluation
-from energy_modelling.challenge.runner import run_challenge_backtest
-from energy_modelling.challenge.scoring import leaderboard_score
+from energy_modelling.backtest.futures_market_runner import run_futures_market_evaluation
+from energy_modelling.backtest.runner import run_backtest
+from energy_modelling.backtest.scoring import leaderboard_score
 
 from strategies import (  # noqa: E402
     AlwaysLongStrategy,
@@ -59,9 +59,9 @@ STRATEGY_FACTORIES: dict[str, type] = {
     "Wind Forecast": WindForecastStrategy,
 }
 
-PUBLIC_CSV = Path("data/challenge/daily_public.csv")
-HIDDEN_CSV = Path("data/challenge/daily_hidden_test_full.csv")
-OUTPUT_DIR = Path("data/challenge")
+PUBLIC_CSV = Path("data/backtest/daily_public.csv")
+HIDDEN_CSV = Path("data/backtest/daily_hidden_test_full.csv")
+OUTPUT_DIR = Path("data/backtest")
 
 # Evaluation on 2024 validation split
 TRAINING_END = date(2023, 12, 31)
@@ -98,7 +98,7 @@ def run_standard_backtests(daily: pd.DataFrame) -> pd.DataFrame:
         print(f"  Backtesting: {name} ... ", end="", flush=True)
         t0 = time.perf_counter()
         strategy = factory()
-        result = run_challenge_backtest(
+        result = run_backtest(
             strategy=strategy,
             daily_data=daily,
             training_end=TRAINING_END,
@@ -142,7 +142,7 @@ def run_market_sim(daily: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """Run market evaluation with all strategies, return metrics table + info."""
     print("\n  Running market simulation (may take a few minutes) ...")
     t0 = time.perf_counter()
-    market_result = run_market_evaluation(
+    market_result = run_futures_market_evaluation(
         strategy_factories=STRATEGY_FACTORIES,
         daily_data=daily,
         training_end=TRAINING_END,

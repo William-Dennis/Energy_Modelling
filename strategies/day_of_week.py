@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 # isoweekday(): Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=7
 _DAY_SIGNAL: dict[int, int | None] = {
@@ -32,7 +32,7 @@ _DAY_SIGNAL: dict[int, int | None] = {
 }
 
 
-class DayOfWeekStrategy(ChallengeStrategy):
+class DayOfWeekStrategy(BacktestStrategy):
     """Go long Mon/Tue, short Fri/Sat/Sun, skip Wed/Thu.
 
     Based on the structural weekly pattern in European electricity
@@ -43,7 +43,7 @@ class DayOfWeekStrategy(ChallengeStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         return _DAY_SIGNAL[state.delivery_date.isoweekday()]
 
     def reset(self) -> None:

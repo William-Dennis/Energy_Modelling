@@ -14,14 +14,14 @@ from __future__ import annotations
 
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 _GAS_COL = "gen_fossil_gas_mw_mean"
 _COAL_COL = "gen_fossil_hard_coal_mw_mean"
 _LIGNITE_COL = "gen_fossil_brown_coal_lignite_mw_mean"
 
 
-class FossilDispatchStrategy(ChallengeStrategy):
+class FossilDispatchStrategy(BacktestStrategy):
     """Go short when yesterday's fossil generation was high, long when low.
 
     The threshold is the median of combined fossil generation from the
@@ -35,7 +35,7 @@ class FossilDispatchStrategy(ChallengeStrategy):
         combined = train_data[_GAS_COL] + train_data[_COAL_COL] + train_data[_LIGNITE_COL]
         self._threshold = float(combined.median())
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         if self._threshold is None:
             msg = "FossilDispatchStrategy.act() called before fit()"
             raise RuntimeError(msg)

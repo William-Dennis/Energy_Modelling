@@ -35,7 +35,7 @@ This directory contains the reference Exploratory Data Analysis (EDA) for the DE
 
 ## Related Documents
 
-- [Challenge Brief](../hackathon_challenge.md) — Task definition, scoring rules, submission contract
+- [Challenge Brief](../hackathon_backtest.md) — Task definition, scoring rules, submission contract
 - [Kaggle Dataset Description](../kaggle_description.md) — Full hourly data dictionary
 - [Strategy Development Guide](../../src/energy_modelling/strategy/STRATEGIES.md) — How to implement strategies
 - [Baseline Notebook](../../notebooks/hackathon_baseline.ipynb) — Student starting point

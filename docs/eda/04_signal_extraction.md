@@ -41,7 +41,7 @@ Day-ahead electricity futures settle at different prices for weekday versus week
 ### Implementation
 
 ```python
-def act(self, state: ChallengeState) -> int | None:
+def act(self, state: BacktestState) -> int | None:
     dow = state.delivery_date.weekday()  # 0=Mon, 6=Sun
     if dow == 0:   return  1   # Monday: almost always long
     if dow == 1:   return  1   # Tuesday: positive bias
@@ -92,7 +92,7 @@ def fit(self, train_data: pd.DataFrame) -> None:
         + train_data['forecast_wind_offshore_mw_mean']
     ).median()
 
-def act(self, state: ChallengeState) -> int | None:
+def act(self, state: BacktestState) -> int | None:
     total_wind = (
         state.features['forecast_wind_onshore_mw_mean']
         + state.features['forecast_wind_offshore_mw_mean']
@@ -199,7 +199,7 @@ When price is more than 1 standard deviation above its 20-day average, a downwar
 ### Threshold Strategy
 
 ```python
-def act(self, state: ChallengeState) -> int | None:
+def act(self, state: BacktestState) -> int | None:
     zscore = compute_price_zscore(state)  # from historical data
     if zscore > 1.0:  return -1   # elevated price → short
     if zscore < -1.0: return  1   # depressed price → long

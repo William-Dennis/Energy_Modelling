@@ -7,9 +7,9 @@ Launch with::
 Tabs
 ----
 1. **EDA** -- Exploratory data analysis (hourly Parquet dataset).
-2. **Challenge** -- Multi-strategy leaderboard (yesterday-settlement pricing).
+2. **Backtest** -- Multi-strategy leaderboard (yesterday-settlement pricing).
 3. **Futures Market** -- Synthetic futures market model (organizer tool).
-4. **Market Price Accuracy** -- Converged market price vs real settlement.
+4. **Futures Market Simulation** -- Converged market price vs real settlement.
 """
 
 from __future__ import annotations
@@ -31,9 +31,9 @@ st.caption(
 tab_eda, tab_ch, tab_mkt, tab_acc = st.tabs(
     [
         "EDA",
-        "Challenge",
+        "Backtest",
         "Futures Market",
-        "Market Price Accuracy",
+        "Futures Market Simulation",
     ]
 )
 
@@ -43,12 +43,12 @@ with tab_eda:
     _render_eda()
 
 with tab_ch:
-    from energy_modelling.dashboard._challenge import render as _render_ch
+    from energy_modelling.dashboard._backtest import render as _render_ch
 
     _render_ch()
 
 with tab_mkt:
-    from energy_modelling.dashboard._market import render as _render_mkt
+    from energy_modelling.dashboard._futures_market import render as _render_mkt
 
     _render_mkt()
 

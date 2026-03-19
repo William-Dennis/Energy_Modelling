@@ -127,12 +127,12 @@ All 7 Phase 4 strategies remain as-is. The existing strategy portfolio is well-d
 All 38 tests pass (24 Phase 2 + 14 Phase 6).
 
 ### New dashboard sections in `_eda.py` (6 sections, 19-24)
-- Added `_load_challenge_data()` cached loader for daily challenge CSV
-- Added 6 section renderers using daily challenge data
+- Added `_load_backtest_data()` cached loader for daily backtest CSV
+- Added 6 section renderers using daily backtest data
 - Dashboard now has 24 total sections (12 original + 6 Phase 2 + 6 Phase 6)
 
 ## Cross-References
 
 - **Phase 3 Hypotheses**: All 7 hypotheses (H1-H7) remain validated. Phase 6 findings reinforce rather than contradict Phase 3.
 - **Phase 5 Results**: All strategy tiers confirmed. No tier changes from Phase 6 analysis.
-- **Phase 7**: The market simulation oscillation (discovered in Phase 5) remains the key open question. Phase 6 analysis of feature stability suggests the oscillation is structural, not data-dependent.
+- **Phase 7**: The futures market oscillation (discovered in Phase 5) remains the key open question. Phase 6 analysis of feature stability suggests the oscillation is structural, not data-dependent.

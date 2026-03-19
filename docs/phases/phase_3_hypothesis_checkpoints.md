@@ -95,7 +95,7 @@ adapts behavior on other days will significantly outperform naive strategies.
 - Friday → short (-1) (38.7% up, 61.3% down)
 - Wednesday, Thursday → skip (None) (~50/50, no edge)
 
-**Features used**: Day of week (derived from `delivery_date` in ChallengeState)
+**Features used**: Day of week (derived from `delivery_date` in BacktestState)
 **Expected edge**: ~65% overall win rate (weighted by trading days)
 **Robustness**: Extremely robust — Monday pattern holds 85-94% in every single year
 **Implementation complexity**: LOW

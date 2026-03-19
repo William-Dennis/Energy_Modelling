@@ -43,7 +43,7 @@ from energy_modelling.dashboard.eda_analysis import (
 # ---------------------------------------------------------------------------
 
 DATA_PATH = Path("data/processed/dataset_de_lu.parquet")
-CHALLENGE_DATA_PATH = Path("data/challenge/daily_public.csv")
+BACKTEST_DATA_PATH = Path("data/backtest/daily_public.csv")
 PRICE_COL = "price_eur_mwh"
 
 GEN_COLS_DISPLAY = {
@@ -169,11 +169,11 @@ def _load_data() -> pd.DataFrame:
 
 
 @st.cache_data
-def _load_challenge_data() -> pd.DataFrame | None:
-    """Load the daily challenge CSV for Phase 6 feedback sections."""
-    if not CHALLENGE_DATA_PATH.exists():
+def _load_backtest_data() -> pd.DataFrame | None:
+    """Load the daily backtest CSV for Phase 6 feedback sections."""
+    if not BACKTEST_DATA_PATH.exists():
         return None
-    df = pd.read_csv(CHALLENGE_DATA_PATH, parse_dates=["delivery_date"])
+    df = pd.read_csv(BACKTEST_DATA_PATH, parse_dates=["delivery_date"])
     df["year"] = df["delivery_date"].dt.year
     return df
 
@@ -242,18 +242,18 @@ def render() -> None:
     _section_residual_load(dff)
 
     # --- Phase 6: Strategy feedback analyses ---
-    challenge_df = _load_challenge_data()
-    if challenge_df is not None:
+    backtest_df = _load_backtest_data()
+    if backtest_df is not None:
         # Apply same year filter
-        cdf = challenge_df[
-            (challenge_df["year"] >= year_range[0]) & (challenge_df["year"] <= year_range[1])
+        cdf = backtest_df[
+            (backtest_df["year"] >= year_range[0]) & (backtest_df["year"] <= year_range[1])
         ]
         if not cdf.empty:
             st.divider()
             st.subheader("Strategy Feedback Analysis (Phase 6)")
             st.caption(
                 "The sections below feed Phase 5 strategy performance insights "
-                "back into deeper EDA — using the daily challenge dataset."
+                "back into deeper EDA — using the daily backtest dataset."
             )
             _section_dow_edge_stability(cdf)
             _section_feature_drift(cdf)

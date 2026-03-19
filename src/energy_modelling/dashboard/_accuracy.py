@@ -1,10 +1,10 @@
-"""Tab 5 -- Market Price Accuracy.
+"""Tab 5 -- Futures Market Simulation Accuracy.
 
 Compares the converged synthetic-futures market price against the real
 day-ahead settlement price to assess whether this pool of strategies
 collectively produces realistic price forecasts.
 
-Expects that the Market tab has already been run (results stored in
+Expects that the Futures Market tab has already been run (results stored in
 ``st.session_state``).
 """
 
@@ -16,11 +16,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from energy_modelling.challenge.market_runner import MarketEvaluationResult
+from energy_modelling.backtest.futures_market_runner import FuturesMarketResult
 
 
 def _build_comparison(
-    market_result: MarketEvaluationResult,
+    market_result: FuturesMarketResult,
     daily_data: pd.DataFrame,
     eval_start: str,
     eval_end: str,
@@ -72,7 +72,7 @@ def _error_stats(errors: pd.Series, label: str) -> dict[str, float]:
 
 def _render_period(
     period: str,
-    mr: MarketEvaluationResult | None,
+    mr: FuturesMarketResult | None,
     daily: pd.DataFrame,
     eval_start: str,
     eval_end: str,
@@ -270,16 +270,16 @@ def _render_period(
 
 
 def render() -> None:
-    """Render the market-price-accuracy tab."""
+    """Render the futures-market-simulation-accuracy tab."""
 
     m24 = st.session_state.get("market_2024")
     m25 = st.session_state.get("market_2025")
-    public_daily = st.session_state.get("challenge_public_daily")
-    hidden_daily = st.session_state.get("challenge_hidden_daily")
+    public_daily = st.session_state.get("backtest_public_daily")
+    hidden_daily = st.session_state.get("backtest_hidden_daily")
 
     if m24 is None and m25 is None:
         st.info(
-            "Run the **Challenge** tab then the **Futures Market** tab first "
+            "Run the **Backtest** tab then the **Futures Market** tab first "
             "so converged market prices are available for comparison."
         )
         return
@@ -298,7 +298,7 @@ def render() -> None:
         if hidden_daily is None:
             st.info("Hidden 2025 data not available.")
         else:
-            from energy_modelling.dashboard._challenge import combine_public_hidden
+            from energy_modelling.dashboard._backtest import combine_public_hidden
 
             combined = combine_public_hidden(public_daily, hidden_daily)
             _render_period("2025", m25, combined, "2025-01-01", "2025-12-31")

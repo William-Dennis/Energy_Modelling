@@ -66,8 +66,8 @@ uv run build-challenge-data
 
 This writes:
 
-- `data/challenge/daily_public.csv`
-- `data/challenge/daily_public_glossary.csv`
+- `data/backtest/daily_public.csv`
+- `data/backtest/daily_public_glossary.csv`
 
 For organizer-only private scoring, add `--include-hidden-test`.
 
@@ -77,8 +77,8 @@ Do not distribute the full hourly repository dataset or the existing dashboards 
 
 For the actual hackathon release, distribute only:
 
-- `data/challenge/daily_public.csv`
-- `data/challenge/daily_public_glossary.csv`
+- `data/backtest/daily_public.csv`
+- `data/backtest/daily_public_glossary.csv`
 - `submission/student_strategy.py`
 - `notebooks/hackathon_baseline.ipynb`
 - this challenge brief

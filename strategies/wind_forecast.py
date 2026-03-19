@@ -14,13 +14,13 @@ from __future__ import annotations
 
 import pandas as pd
 
-from energy_modelling.challenge.types import ChallengeState, ChallengeStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 _OFFSHORE_COL = "forecast_wind_offshore_mw_mean"
 _ONSHORE_COL = "forecast_wind_onshore_mw_mean"
 
 
-class WindForecastStrategy(ChallengeStrategy):
+class WindForecastStrategy(BacktestStrategy):
     """Go short when wind forecast is high, long when low.
 
     The threshold is the median of combined offshore + onshore wind
@@ -34,7 +34,7 @@ class WindForecastStrategy(ChallengeStrategy):
         combined = train_data[_OFFSHORE_COL] + train_data[_ONSHORE_COL]
         self._threshold = float(combined.median())
 
-    def act(self, state: ChallengeState) -> int | None:
+    def act(self, state: BacktestState) -> int | None:
         if self._threshold is None:
             msg = "WindForecastStrategy.act() called before fit()"
             raise RuntimeError(msg)
