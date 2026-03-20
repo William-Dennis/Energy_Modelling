@@ -1,19 +1,22 @@
 """Synthetic Futures Market engine for strategy aggregation.
 
-Implements a prediction-market-style mechanism that aggregates multiple
-strategy forecasts into a consensus market price.  Strategies are weighted
-by their profitability against the real settlement price, and only profitable
-strategies influence the next market price.
+Implements the prediction-market model from ``docs/energy_market_spec.md``:
 
-The market price replaces ``last_settlement_price`` as the entry price for
-PnL computation, rewarding strategies that are correct *and* differentiated
-from the consensus.
+1. **Trading decision**: q_{i,t} = sign(forecast_{i,t} - P^m_t)
+2. **Profit**: r_{i,t} = q_{i,t} * (P_real_t - P^m_t)
+3. **Selection**: w_i = max(Pi_i, 0) / sum(max(Pi_j, 0))
+4. **Price update**: P^m_{t}^(k+1) = sum_i w_i * forecast_{i,t}
+5. **Iteration**: repeat until convergence.
+
+Every strategy must provide explicit price forecasts.  The market price
+is the profit-weighted average of forecasts from profitable strategies.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 # ---------------------------------------------------------------------------
@@ -77,72 +80,45 @@ class FuturesMarketEquilibrium:
 
 
 def compute_strategy_profits(
-    directions: dict[str, pd.Series],
     market_prices: pd.Series,
     real_prices: pd.Series,
-    strategy_forecasts: dict[str, dict] | None = None,
+    strategy_forecasts: dict[str, dict],
 ) -> dict[str, float]:
-    """Compute total profit for each strategy against the market price.
+    """Compute total profit for each strategy (spec Steps 1-2).
 
-    When a strategy provides explicit price forecasts via ``strategy_forecasts``,
-    the profit is computed as a forecast-alignment bonus:
+    For each strategy *i* on each day *t*:
 
-        r_{i,t} = sign(forecast_{i,t} - market_t) * (real_t - market_t) * 24
-
-    This makes profit adaptive to the *current* market price rather than
-    frozen binary directions from the initial backtest.  Strategies whose
-    forecasts match the direction of the real price movement are rewarded;
-    those that forecast in the wrong direction are penalised.
-
-    Without forecasts, the legacy formula is used:
-
-        r_{i,t} = direction_{i,t} * (real_t - market_t) * 24
+        q_{i,t} = sign(forecast_{i,t} - market_t)
+        r_{i,t} = q_{i,t} * (real_t - market_t)
+        Pi_i    = sum_t r_{i,t}
 
     Parameters
     ----------
-    directions:
-        ``{strategy_name: series_of_directions}`` where values are +1, -1,
-        or ``pd.NA``/``None`` for skip days.
     market_prices:
-        Current market price per delivery date (same index as directions).
+        Current market price per delivery date.
     real_prices:
         Ground-truth settlement price per delivery date.
     strategy_forecasts:
-        Optional ``{strategy_name: {date: forecast_price}}`` of explicit
-        forecasts.  When present, adaptive profit is used instead of frozen
-        directions.
+        ``{strategy_name: {date: forecast_price}}``.
 
     Returns
     -------
     dict mapping strategy name to total profit (float).
     """
-
-    if strategy_forecasts is None:
-        strategy_forecasts = {}
+    price_change = real_prices.reindex(market_prices.index) - market_prices
 
     profits: dict[str, float] = {}
-    for name, direction_series in directions.items():
-        forecasts = strategy_forecasts.get(name)
-        price_change = real_prices.reindex(market_prices.index) - market_prices
-
-        if forecasts:
-            # Adaptive: derive direction from forecast vs current market
-            import numpy as np  # noqa: PLC0415
-
-            adaptive_dir = pd.Series(
-                {
-                    t: float(np.sign(float(forecasts[t]) - float(market_prices.loc[t])))
-                    if t in forecasts
-                    else 0.0
-                    for t in market_prices.index
-                },
-                dtype=float,
-            )
-            daily_pnl = adaptive_dir * price_change * 24.0
-        else:
-            d = direction_series.reindex(market_prices.index).astype("Float64")
-            daily_pnl = d.fillna(0.0) * price_change * 24.0
-
+    for name, forecasts in strategy_forecasts.items():
+        direction = pd.Series(
+            {
+                t: float(np.sign(float(forecasts[t]) - float(market_prices.loc[t])))
+                if t in forecasts
+                else 0.0
+                for t in market_prices.index
+            },
+            dtype=float,
+        )
+        daily_pnl = direction * price_change
         profits[name] = float(daily_pnl.sum())
     return profits
 
@@ -150,12 +126,11 @@ def compute_strategy_profits(
 def compute_weights(
     strategy_profits: dict[str, float],
 ) -> dict[str, float]:
-    """Normalise profits into non-negative weights that sum to 1.
+    """Normalise profits into non-negative weights that sum to 1 (spec Step 3).
 
     Only strategies with strictly positive total profit receive weight.
     If all strategies are non-positive, returns uniform zero weights.
     """
-
     raw = {name: max(profit, 0.0) for name, profit in strategy_profits.items()}
     total = sum(raw.values())
     if total == 0.0:
@@ -164,27 +139,17 @@ def compute_weights(
 
 
 def compute_market_prices(
-    directions: dict[str, pd.Series],
     weights: dict[str, float],
+    strategy_forecasts: dict[str, dict],
     current_market_prices: pd.Series,
-    forecast_spread: float,
-    strategy_forecasts: dict[str, dict] | None = None,
 ) -> pd.Series:
-    """Compute new market prices as a weighted average of implied forecasts.
+    """Compute new market prices as weighted average of forecasts (spec Step 4).
 
-    When a strategy provides an explicit forecast for a day via
-    ``strategy_forecasts``, that value is used directly.  Otherwise the
-    implied forecast is synthesised as ``market_price ± spread`` from the
-    direction (the legacy behaviour).
+    P^m_{t}^(k+1) = sum_i w_i^{norm} * forecast_{i,t}
 
-    Skipped days (None/NA) are excluded from that day's aggregation.
     If no strategy has weight for a given day, the price carries forward
     from ``current_market_prices``.
     """
-
-    if strategy_forecasts is None:
-        strategy_forecasts = {}
-
     index = current_market_prices.index
     new_prices = current_market_prices.copy().astype(float)
 
@@ -194,21 +159,10 @@ def compute_market_prices(
         for name, w in weights.items():
             if w <= 0.0:
                 continue
-            d_series = directions[name]
-            if t not in d_series.index:
-                continue
-            d = d_series.loc[t]
-            if pd.isna(d) or d == 0:
-                continue
-
-            # Use actual forecast when available, fall back to synthesis
             forecast = strategy_forecasts.get(name, {}).get(t)
-            if forecast is not None:
-                implied_forecast = float(forecast)
-            else:
-                implied_forecast = float(current_market_prices.loc[t]) + float(d) * forecast_spread
-
-            numerator += w * implied_forecast
+            if forecast is None:
+                continue
+            numerator += w * float(forecast)
             denominator += w
         if denominator > 0.0:
             new_prices.loc[t] = numerator / denominator
@@ -222,27 +176,23 @@ def compute_market_prices(
 
 
 def run_futures_market_iteration(
-    directions: dict[str, pd.Series],
     market_prices: pd.Series,
     real_prices: pd.Series,
-    forecast_spread: float,
     iteration: int,
-    strategy_forecasts: dict[str, dict] | None = None,
+    strategy_forecasts: dict[str, dict],
 ) -> FuturesMarketIteration:
     """Execute one full iteration of the synthetic futures market.
 
-    Steps:
-    1. Compute each strategy's profit against the current market price.
-    2. Select and weight strategies (only profitable ones).
-    3. Compute new market prices from the weighted implied forecasts.
+    Steps (matching ``energy_market_spec.md``):
+    1. Derive trading decisions from forecasts vs current market prices.
+    2. Compute each strategy's profit.
+    3. Select and weight strategies (only profitable ones).
+    4. Compute new market prices from the weighted forecasts.
     """
-
-    profits = compute_strategy_profits(directions, market_prices, real_prices, strategy_forecasts)
+    profits = compute_strategy_profits(market_prices, real_prices, strategy_forecasts)
     weights = compute_weights(profits)
     active = [name for name, w in weights.items() if w > 0.0]
-    new_prices = compute_market_prices(
-        directions, weights, market_prices, forecast_spread, strategy_forecasts
-    )
+    new_prices = compute_market_prices(weights, strategy_forecasts, market_prices)
 
     return FuturesMarketIteration(
         iteration=iteration,
@@ -254,48 +204,28 @@ def run_futures_market_iteration(
 
 
 def run_futures_market(
-    directions: dict[str, pd.Series],
     initial_market_prices: pd.Series,
     real_prices: pd.Series,
+    strategy_forecasts: dict[str, dict],
     max_iterations: int = 20,
     convergence_threshold: float = 0.01,
-    forecast_spread: float | None = None,
-    dampening: float = 0.5,
-    strategy_forecasts: dict[str, dict] | None = None,
 ) -> FuturesMarketEquilibrium:
-    """Run the synthetic futures market until prices converge.
+    """Run the synthetic futures market until prices converge (spec Step 5).
 
     Parameters
     ----------
-    directions:
-        ``{strategy_name: series_of_+1/-1/None}`` per delivery date.
     initial_market_prices:
         Starting market prices, typically ``last_settlement_price``.
     real_prices:
         Ground-truth settlement prices for profit calculation.
+    strategy_forecasts:
+        ``{strategy_name: {date: forecast_price}}``.  Every strategy must
+        provide forecasts for all delivery dates.
     max_iterations:
         Hard cap on iteration count.
     convergence_threshold:
         Maximum absolute EUR/MWh change to declare convergence.
-    forecast_spread:
-        How far implied forecasts deviate from market price.  If *None*,
-        auto-calibrated from the std of ``(real_prices - initial_market_prices)``.
-    dampening:
-        Blend factor in ``[0, 1]`` for the update rule:
-        ``P_new = dampening * P_computed + (1 - dampening) * P_old``.
-        Lower values slow convergence but improve stability.
-    strategy_forecasts:
-        ``{strategy_name: {date: forecast_price}}`` of explicit price
-        forecasts.  When a strategy provides a forecast for a given day it
-        is used directly in the weighted-average update; otherwise the
-        engine falls back to direction ± spread synthesis.
     """
-
-    if forecast_spread is None:
-        price_changes = (real_prices - initial_market_prices).dropna()
-        forecast_spread = float(price_changes.std()) if len(price_changes) > 1 else 1.0
-        forecast_spread = max(forecast_spread, 0.1)  # floor to avoid near-zero
-
     current_prices = initial_market_prices.copy().astype(float)
     iterations: list[FuturesMarketIteration] = []
     converged = False
@@ -303,30 +233,15 @@ def run_futures_market(
 
     for k in range(max_iterations):
         result = run_futures_market_iteration(
-            directions=directions,
             market_prices=current_prices,
             real_prices=real_prices,
-            forecast_spread=forecast_spread,
             iteration=k,
             strategy_forecasts=strategy_forecasts,
         )
 
-        # Dampened update
-        new_prices = dampening * result.market_prices + (1.0 - dampening) * current_prices
-        delta = float((new_prices - current_prices).abs().max())
-
-        # Store the *dampened* prices so dashboard charts show the actual
-        # converging trajectory, not the raw undampened jump.
-        dampened_snapshot = FuturesMarketIteration(
-            iteration=result.iteration,
-            market_prices=new_prices,
-            strategy_profits=result.strategy_profits,
-            strategy_weights=result.strategy_weights,
-            active_strategies=result.active_strategies,
-        )
-        iterations.append(dampened_snapshot)
-
-        current_prices = new_prices
+        delta = float((result.market_prices - current_prices).abs().max())
+        iterations.append(result)
+        current_prices = result.market_prices
 
         if delta < convergence_threshold:
             converged = True

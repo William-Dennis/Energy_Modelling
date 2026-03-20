@@ -1,4 +1,8 @@
-"""Tests for challenge.market_runner -- market-aware evaluation orchestrator."""
+"""Tests for the market-aware evaluation orchestrator.
+
+Tests the ``run_futures_market_evaluation`` pipeline using the spec-compliant
+engine (no dampening, no forecast_spread, all strategies provide forecasts).
+"""
 
 from __future__ import annotations
 
@@ -61,7 +65,7 @@ class _AlwaysShort(BacktestStrategy):
 
 
 class _PerfectForesight(BacktestStrategy):
-    """Uses history to look at target_direction in previous row (cheats via labels)."""
+    """Cheating strategy that returns exact settlement prices."""
 
     _FORECAST_MAP = {
         date(2024, 1, 1): 55.0,
@@ -77,6 +81,8 @@ class _PerfectForesight(BacktestStrategy):
 
 
 class _Skipper(BacktestStrategy):
+    """Forecasts exactly the market price => direction=0, effectively skips."""
+
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
 
@@ -166,14 +172,9 @@ class TestRunMarketEvaluation:
             training_end=date(2023, 12, 31),
             evaluation_start=date(2024, 1, 1),
             evaluation_end=date(2024, 1, 3),
-            forecast_spread=5.0,
         )
-        # Market price should have shifted from initial, so PnL changes
         orig_pnl = result.original_results["perfect"].metrics["total_pnl"]
         market_pnl = result.market_results["perfect"].metrics["total_pnl"]
-        # They should differ because market price != last_settlement_price
-        # (unless the market converged exactly to last_settlement)
-        # At minimum, the structure should be valid
         assert isinstance(market_pnl, float)
         assert isinstance(orig_pnl, float)
 
@@ -185,7 +186,6 @@ class TestRunMarketEvaluation:
             training_end=date(2023, 12, 31),
             evaluation_start=date(2024, 1, 1),
             evaluation_end=date(2024, 1, 3),
-            forecast_spread=5.0,
         )
         eq = result.equilibrium
         assert len(eq.final_market_prices) == 3
@@ -204,9 +204,7 @@ class TestRunMarketEvaluation:
             training_end=date(2023, 12, 31),
             evaluation_start=date(2024, 1, 1),
             evaluation_end=date(2024, 1, 3),
-            forecast_spread=5.0,
         )
-        # Market prices should have shifted from last_settlement
         initial = pd.Series(
             [51.0, 55.0, 48.0],
             index=result.equilibrium.final_market_prices.index,
@@ -223,7 +221,6 @@ class TestRunMarketEvaluation:
             training_end=date(2023, 12, 31),
             evaluation_start=date(2024, 1, 1),
             evaluation_end=date(2024, 1, 3),
-            forecast_spread=5.0,
         )
         long_pnl = result.market_results["long"].metrics["total_pnl"]
         short_pnl = result.market_results["short"].metrics["total_pnl"]

@@ -142,8 +142,6 @@ def run_futures_market_evaluation(
     evaluation_end: date,
     max_iterations: int = 20,
     convergence_threshold: float = 0.01,
-    forecast_spread: float | None = None,
-    dampening: float = 0.5,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
 ) -> FuturesMarketResult:
@@ -151,9 +149,10 @@ def run_futures_market_evaluation(
 
     1. Run each strategy through ``run_backtest`` to obtain
        direction predictions and original PnL.
-    2. Feed all directions into ``run_futures_market`` to find
+    2. Collect forecasts from each strategy.
+    3. Feed all forecasts into ``run_futures_market`` to find
        the equilibrium market price.
-    3. Recompute each strategy's PnL against the market price.
+    4. Recompute each strategy's PnL against the market price.
 
     Parameters
     ----------
@@ -189,10 +188,6 @@ def run_futures_market_evaluation(
         msg = "No strategies were evaluated successfully."
         raise ValueError(msg)
 
-    directions: dict[str, pd.Series] = {
-        name: result.predictions for name, result in original_results.items()
-    }
-
     # Phase 2: Extract ground truth from daily data
     # Normalise the daily data index to date objects
     data = daily_data.copy()
@@ -215,14 +210,11 @@ def run_futures_market_evaluation(
 
     # Phase 3: Run market convergence
     equilibrium = run_futures_market(
-        directions=directions,
         initial_market_prices=initial_market_prices,
         real_prices=settlement_prices,
+        strategy_forecasts=strategy_forecasts,
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
-        forecast_spread=forecast_spread,
-        dampening=dampening,
-        strategy_forecasts=strategy_forecasts,
     )
 
     # Phase 4: Recompute PnL for each strategy under market prices

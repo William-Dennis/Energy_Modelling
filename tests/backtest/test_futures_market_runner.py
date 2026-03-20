@@ -1,7 +1,8 @@
 """Integration tests for the futures market runner with forecast support.
 
-Tests 6–9 exercise the full ``run_futures_market_evaluation`` pipeline,
-including forecast collection, convergence, and PnL recomputation.
+Tests exercise the full ``run_futures_market_evaluation`` pipeline using
+the spec-compliant engine (no dampening, no forecast_spread, all strategies
+provide forecasts).
 """
 
 from __future__ import annotations
@@ -88,7 +89,7 @@ class _ForecastStrategy(BacktestStrategy):
 
 class TestConvergedPriceMovesTowardReal:
     def test_mae_decreases(self) -> None:
-        """MAE(converged, real) < MAE(initial, real) for direction-only."""
+        """MAE(converged, real) < MAE(initial, real) for forecast-based strategies."""
         daily = _make_daily_frame(n_eval=10)
         factories = {"long": _AlwaysLong, "short": _AlwaysShort}
 
@@ -99,7 +100,6 @@ class TestConvergedPriceMovesTowardReal:
             evaluation_start=_EVAL_START,
             evaluation_end=_EVAL_END,
             max_iterations=50,
-            forecast_spread=5.0,
         )
 
         eq = result.equilibrium
@@ -114,9 +114,7 @@ class TestConvergedPriceMovesTowardReal:
         mae_initial = float((real - initial).abs().mean())
         mae_converged = float((real - eq.final_market_prices).abs().mean())
 
-        # This is not guaranteed for all configurations but should hold for
-        # a reasonable one. If it doesn't, the test data/params need tuning.
-        # We use a relaxed assertion: converged should not be dramatically worse
+        # Relaxed: converged should not be dramatically worse
         assert mae_converged <= mae_initial * 1.5
 
 
@@ -136,12 +134,8 @@ class TestProfitableStrategiesGainWeight:
             training_end=_TRAIN_END,
             evaluation_start=_EVAL_START,
             evaluation_end=_EVAL_END,
-            forecast_spread=5.0,
         )
 
-        # final_weights are determined by the engine's internal profit calc
-        # at the last iteration. Check that the engine's own negative-profit
-        # strategies get zero weight.
         last_iter = result.equilibrium.iterations[-1]
         for name, profit in last_iter.strategy_profits.items():
             if profit <= 0:
@@ -167,7 +161,6 @@ class TestPnlAgainstMarketPrice:
             training_end=_TRAIN_END,
             evaluation_start=_EVAL_START,
             evaluation_end=_EVAL_END,
-            forecast_spread=5.0,
         )
 
         eq = result.equilibrium
@@ -177,7 +170,6 @@ class TestPnlAgainstMarketPrice:
         eval_data = eval_data.set_index("delivery_date")
         settlement = eval_data["settlement_price"].astype(float)
 
-        # Manual computation: direction * (settlement - market) * 24
         direction = result.original_results["long"].predictions
         market = eq.final_market_prices
 
@@ -206,7 +198,6 @@ class TestConvergenceCorrectness:
             evaluation_end=_EVAL_END,
             max_iterations=100,
             convergence_threshold=threshold,
-            forecast_spread=5.0,
         )
 
         if result.equilibrium.converged:
@@ -233,15 +224,14 @@ class TestForecastCapableEndToEnd:
             training_end=_TRAIN_END,
             evaluation_start=_EVAL_START,
             evaluation_end=_EVAL_END,
-            forecast_spread=5.0,
         )
 
         assert isinstance(result, FuturesMarketResult)
         assert "forecaster" in result.market_results
         assert "long" in result.market_results
 
-    def test_direction_only_strategies_still_work(self) -> None:
-        """Existing direction-only strategies work without modification."""
+    def test_multiple_strategies_work(self) -> None:
+        """Multiple forecast-based strategies work together."""
         daily = _make_daily_frame()
         factories = {"long": _AlwaysLong, "short": _AlwaysShort}
 

@@ -152,7 +152,6 @@ def run_market_sim(daily: pd.DataFrame) -> tuple[pd.DataFrame, dict, object]:
         evaluation_end=EVAL_END,
         max_iterations=50,
         convergence_threshold=0.01,
-        dampening=0.5,
     )
     elapsed = time.perf_counter() - t0
     print(f"  Market simulation complete ({elapsed:.1f}s)")

@@ -32,30 +32,6 @@ from energy_modelling.dashboard._backtest import (
 # ---------------------------------------------------------------------------
 
 
-def _make_pf_factory(
-    daily: pd.DataFrame,
-    eval_start: date,
-    eval_end: date,
-) -> object:
-    """Build a no-arg PerfectForesightStrategy factory for the given eval window."""
-    from strategies.perfect_foresight import PerfectForesightStrategy  # noqa: PLC0415
-
-    df = daily.copy()
-    if "delivery_date" in df.columns:
-        df["delivery_date"] = pd.to_datetime(df["delivery_date"]).dt.date
-        df = df.set_index("delivery_date")
-    else:
-        df.index = pd.Index(pd.to_datetime(df.index).date, name="delivery_date")
-
-    mask = (df.index >= eval_start) & (df.index <= eval_end)
-    lookup = df.loc[mask, "settlement_price"].astype(float).to_dict()
-
-    def _factory() -> PerfectForesightStrategy:
-        return PerfectForesightStrategy(settlement_lookup=lookup)
-
-    return _factory
-
-
 def _run_market(
     selected: list[str],
     daily: pd.DataFrame,
@@ -64,7 +40,6 @@ def _run_market(
     eval_end: date,
 ) -> FuturesMarketResult | None:
     factories = {n: STRATEGY_FACTORIES[n] for n in selected}
-    factories["Perfect Foresight"] = _make_pf_factory(daily, eval_start, eval_end)
     try:
         return run_futures_market_evaluation(
             strategy_factories=factories,

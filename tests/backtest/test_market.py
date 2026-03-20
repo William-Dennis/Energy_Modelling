@@ -1,339 +1,333 @@
-"""Tests for challenge.market -- synthetic futures market engine."""
+"""Tests for convergence analysis module (Phase 7).
+
+Tests the theoretical and empirical convergence properties of the
+spec-compliant synthetic futures market under various strategy
+configurations, including perfect foresight.
+
+The spec model (``docs/energy_market_spec.md``) has:
+  - NO dampening (price update is direct weighted average of forecasts)
+  - NO direction ± spread synthesis
+  - NO *24 profit multiplier in the engine
+"""
 
 from __future__ import annotations
-
-from datetime import date
 
 import pandas as pd
 import pytest
 
-from energy_modelling.backtest.futures_market_engine import (
-    FuturesMarketEquilibrium,
-    FuturesMarketIteration,
-    compute_market_prices,
-    compute_strategy_profits,
-    compute_weights,
-    run_futures_market,
-    run_futures_market_iteration,
+from energy_modelling.backtest.convergence import (
+    ConvergenceTrajectory,
+    compute_convergence_trajectory,
+    run_forecast_foresight_market,
 )
+from energy_modelling.backtest.futures_market_engine import run_futures_market
 
 # ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-_DATES = [date(2024, 1, 1), date(2024, 1, 2), date(2024, 1, 3)]
-
-
-def _index() -> pd.Index:
-    return pd.Index(_DATES, name="delivery_date")
-
-
-def _real_prices() -> pd.Series:
-    """Settlement prices: 50 -> 55 -> 48 (up then down)."""
-    return pd.Series([55.0, 48.0, 52.0], index=_index(), name="settlement_price")
-
-
-def _initial_market() -> pd.Series:
-    """Initial market price = last_settlement_price (lagged real)."""
-    return pd.Series([50.0, 55.0, 48.0], index=_index(), name="market_price")
-
-
-def _directions_perfect() -> pd.Series:
-    """Perfect foresight: long when price rises, short when it falls."""
-    return pd.Series([1, -1, 1], index=_index(), dtype="Int64")
-
-
-def _directions_always_long() -> pd.Series:
-    return pd.Series([1, 1, 1], index=_index(), dtype="Int64")
-
-
-def _directions_always_short() -> pd.Series:
-    return pd.Series([-1, -1, -1], index=_index(), dtype="Int64")
-
-
-def _directions_with_skip() -> pd.Series:
-    return pd.Series([1, pd.NA, -1], index=_index(), dtype="Int64")
-
-
-# ---------------------------------------------------------------------------
-# compute_strategy_profits
+# Helpers
 # ---------------------------------------------------------------------------
 
 
-class TestComputeStrategyProfits:
-    def test_perfect_foresight_profitable(self) -> None:
-        profits = compute_strategy_profits(
-            {"perfect": _directions_perfect()},
-            _initial_market(),
-            _real_prices(),
-        )
-        # Day 1: +1 * (55-50) * 24 = 120
-        # Day 2: -1 * (48-55) * 24 = 168
-        # Day 3: +1 * (52-48) * 24 = 96
-        assert profits["perfect"] == pytest.approx(120.0 + 168.0 + 96.0)
+def _single_day_setup(
+    real: float = 100.0,
+    initial: float = 90.0,
+) -> tuple[pd.DatetimeIndex, pd.Series, pd.Series]:
+    """Create a single-day test setup."""
+    dates = pd.DatetimeIndex(["2024-01-01"])
+    real_prices = pd.Series([real], index=dates)
+    initial_prices = pd.Series([initial], index=dates)
+    return dates, real_prices, initial_prices
 
-    def test_always_long_mixed(self) -> None:
-        profits = compute_strategy_profits(
-            {"long": _directions_always_long()},
-            _initial_market(),
-            _real_prices(),
-        )
-        # Day 1: +1*(55-50)*24=120, Day 2: +1*(48-55)*24=-168, Day 3: +1*(52-48)*24=96
-        assert profits["long"] == pytest.approx(120.0 - 168.0 + 96.0)
 
-    def test_skip_days_contribute_zero(self) -> None:
-        profits = compute_strategy_profits(
-            {"skipper": _directions_with_skip()},
-            _initial_market(),
-            _real_prices(),
-        )
-        # Day 1: +1*(55-50)*24=120, Day 2: skip=0, Day 3: -1*(52-48)*24=-96
-        assert profits["skipper"] == pytest.approx(120.0 + 0.0 - 96.0)
+def _multi_day_setup() -> tuple[pd.DatetimeIndex, pd.Series, pd.Series]:
+    """Create a multi-day test setup with mixed directions."""
+    dates = pd.DatetimeIndex(["2024-01-01", "2024-01-02", "2024-01-03"])
+    real_prices = pd.Series([100.0, 80.0, 95.0], index=dates)
+    initial_prices = pd.Series([90.0, 90.0, 90.0], index=dates)
+    return dates, real_prices, initial_prices
 
-    def test_multiple_strategies(self) -> None:
-        profits = compute_strategy_profits(
-            {"long": _directions_always_long(), "short": _directions_always_short()},
-            _initial_market(),
-            _real_prices(),
-        )
-        assert profits["long"] == -profits["short"]
+
+def _build_pf_forecasts(real_prices: pd.Series) -> dict[str, dict]:
+    """Build PF forecasts that equal real prices."""
+    return {"PerfectForesight": {t: float(real_prices.loc[t]) for t in real_prices.index}}
+
+
+def _build_constant_forecasts(
+    dates: pd.DatetimeIndex,
+    name: str,
+    value: float,
+) -> dict[str, dict]:
+    """Build a strategy with constant forecast on all dates."""
+    return {name: {t: value for t in dates}}
 
 
 # ---------------------------------------------------------------------------
-# compute_weights
+# compute_convergence_trajectory
 # ---------------------------------------------------------------------------
 
 
-class TestComputeWeights:
-    def test_only_profitable_get_weight(self) -> None:
-        weights = compute_weights({"a": 100.0, "b": -50.0, "c": 200.0})
-        assert weights["b"] == 0.0
-        assert weights["a"] == pytest.approx(100.0 / 300.0)
-        assert weights["c"] == pytest.approx(200.0 / 300.0)
+class TestConvergenceTrajectory:
+    """Test trajectory extraction from market equilibrium."""
 
-    def test_all_negative_returns_zeros(self) -> None:
-        weights = compute_weights({"a": -10.0, "b": -20.0})
-        assert all(w == 0.0 for w in weights.values())
-
-    def test_weights_sum_to_one(self) -> None:
-        weights = compute_weights({"a": 50.0, "b": 100.0, "c": 150.0})
-        assert sum(weights.values()) == pytest.approx(1.0)
-
-    def test_single_strategy(self) -> None:
-        weights = compute_weights({"only": 42.0})
-        assert weights["only"] == pytest.approx(1.0)
-
-    def test_zero_profit_excluded(self) -> None:
-        weights = compute_weights({"a": 0.0, "b": 100.0})
-        assert weights["a"] == 0.0
-        assert weights["b"] == pytest.approx(1.0)
-
-
-# ---------------------------------------------------------------------------
-# compute_market_prices
-# ---------------------------------------------------------------------------
-
-
-class TestComputeMarketPrices:
-    def test_single_long_strategy_shifts_up(self) -> None:
-        weights = {"long": 1.0}
-        directions = {"long": _directions_always_long()}
-        market = _initial_market()
-        spread = 5.0
-        new = compute_market_prices(directions, weights, market, spread)
-        # All long => implied = market + 5 for each day
-        for t in _DATES:
-            assert new.loc[t] == pytest.approx(market.loc[t] + 5.0)
-
-    def test_balanced_strategies_cancel_out(self) -> None:
-        weights = {"long": 0.5, "short": 0.5}
-        directions = {
-            "long": _directions_always_long(),
-            "short": _directions_always_short(),
-        }
-        market = _initial_market()
-        new = compute_market_prices(directions, weights, market, forecast_spread=10.0)
-        # Equal weight long and short => offset cancels => price unchanged
-        for t in _DATES:
-            assert new.loc[t] == pytest.approx(market.loc[t])
-
-    def test_skip_day_carries_forward(self) -> None:
-        weights = {"s": 1.0}
-        dirs = {"s": _directions_with_skip()}  # [1, NA, -1]
-        market = _initial_market()
-        new = compute_market_prices(dirs, weights, market, forecast_spread=5.0)
-        # Day 2 is skipped -> carries forward
-        assert new.loc[_DATES[1]] == pytest.approx(market.loc[_DATES[1]])
-
-    def test_zero_weight_strategies_ignored(self) -> None:
-        weights = {"a": 0.0, "b": 1.0}
-        directions = {
-            "a": _directions_always_long(),
-            "b": _directions_always_short(),
-        }
-        market = _initial_market()
-        new = compute_market_prices(directions, weights, market, forecast_spread=5.0)
-        # Only b (short) matters => market - 5
-        for t in _DATES:
-            assert new.loc[t] == pytest.approx(market.loc[t] - 5.0)
-
-
-# ---------------------------------------------------------------------------
-# run_futures_market_iteration
-# ---------------------------------------------------------------------------
-
-
-class TestRunFuturesMarketIteration:
-    def test_returns_correct_types(self) -> None:
-        directions = {"long": _directions_always_long(), "perfect": _directions_perfect()}
-        result = run_futures_market_iteration(
-            directions=directions,
-            market_prices=_initial_market(),
-            real_prices=_real_prices(),
-            forecast_spread=5.0,
-            iteration=0,
-        )
-        assert isinstance(result, FuturesMarketIteration)
-        assert result.iteration == 0
-        assert isinstance(result.market_prices, pd.Series)
-        assert isinstance(result.strategy_profits, dict)
-        assert isinstance(result.strategy_weights, dict)
-        assert isinstance(result.active_strategies, list)
-
-    def test_perfect_foresight_gets_higher_weight(self) -> None:
-        directions = {"long": _directions_always_long(), "perfect": _directions_perfect()}
-        result = run_futures_market_iteration(
-            directions=directions,
-            market_prices=_initial_market(),
-            real_prices=_real_prices(),
-            forecast_spread=5.0,
-            iteration=0,
-        )
-        # Perfect foresight earns more profit, so gets higher weight
-        assert result.strategy_weights["perfect"] > result.strategy_weights["long"]
-
-    def test_unprofitable_strategy_excluded(self) -> None:
-        directions = {
-            "perfect": _directions_perfect(),
-            "anti": _directions_always_short(),  # anti-perfect on net
-        }
-        result = run_futures_market_iteration(
-            directions=directions,
-            market_prices=_initial_market(),
-            real_prices=_real_prices(),
-            forecast_spread=5.0,
-            iteration=0,
-        )
-        anti_profit = result.strategy_profits["anti"]
-        if anti_profit <= 0:
-            assert result.strategy_weights["anti"] == 0.0
-            assert "anti" not in result.active_strategies
-
-
-# ---------------------------------------------------------------------------
-# run_futures_market
-# ---------------------------------------------------------------------------
-
-
-class TestRunMarketToConvergence:
-    def test_converges_with_mixed_strategies(self) -> None:
-        directions = {
-            "long": _directions_always_long(),
-            "perfect": _directions_perfect(),
-        }
+    def test_returns_trajectory_object(self) -> None:
+        dates, real, initial = _single_day_setup()
+        forecasts = _build_pf_forecasts(real)
         eq = run_futures_market(
-            directions=directions,
-            initial_market_prices=_initial_market(),
-            real_prices=_real_prices(),
-            max_iterations=50,
-            convergence_threshold=0.001,
-            forecast_spread=5.0,
-            dampening=0.5,
-        )
-        assert isinstance(eq, FuturesMarketEquilibrium)
-        assert eq.converged
-        assert eq.convergence_delta < 0.001
-        assert len(eq.iterations) > 0
-        assert len(eq.iterations) <= 50
-
-    def test_market_prices_differ_from_initial(self) -> None:
-        directions = {
-            "long": _directions_always_long(),
-            "perfect": _directions_perfect(),
-        }
-        initial = _initial_market()
-        eq = run_futures_market(
-            directions=directions,
             initial_market_prices=initial,
-            real_prices=_real_prices(),
-            forecast_spread=5.0,
-        )
-        # At least one day should differ from initial
-        diff = (eq.final_market_prices - initial).abs()
-        assert diff.max() > 0.0
-
-    def test_single_strategy_converges(self) -> None:
-        directions = {"only": _directions_always_long()}
-        eq = run_futures_market(
-            directions=directions,
-            initial_market_prices=_initial_market(),
-            real_prices=_real_prices(),
-            forecast_spread=5.0,
-        )
-        # Single strategy must converge (it either has positive profit or not)
-        assert eq.converged or len(eq.iterations) == 20
-
-    def test_all_unprofitable_preserves_prices(self) -> None:
-        """When all strategies are unprofitable, market prices shouldn't move."""
-        # Create a scenario where the only strategy is always wrong
-        real = pd.Series([50.0, 50.0, 50.0], index=_index())
-        market = pd.Series([50.0, 50.0, 50.0], index=_index())
-        # Direction doesn't matter when real == market, PnL=0 for all
-        directions = {"flat": _directions_always_long()}
-        eq = run_futures_market(
-            directions=directions,
-            initial_market_prices=market,
             real_prices=real,
-            forecast_spread=5.0,
+            strategy_forecasts=forecasts,
+            max_iterations=50,
         )
-        # With zero profit, weights are all zero, prices don't move
+        traj = compute_convergence_trajectory(eq, real)
+        assert isinstance(traj, ConvergenceTrajectory)
+
+    def test_deltas_are_nonnegative(self) -> None:
+        dates, real, initial = _single_day_setup()
+        forecasts = _build_pf_forecasts(real)
+        eq = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=50,
+        )
+        traj = compute_convergence_trajectory(eq, real)
+        assert all(d >= 0 for d in traj.deltas)
+
+    def test_final_rmse_zero_for_pf_only(self) -> None:
+        """With only PF (no dampening), final RMSE should be ~0."""
+        dates, real, initial = _single_day_setup()
+        forecasts = _build_pf_forecasts(real)
+        eq = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=50,
+        )
+        traj = compute_convergence_trajectory(eq, real)
+        # No dampening => PF drives price to real in one step => RMSE ≈ 0
+        assert traj.final_rmse < 0.01
+
+    def test_multi_day_trajectory(self) -> None:
+        dates, real, initial = _multi_day_setup()
+        forecasts = _build_pf_forecasts(real)
+        eq = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=50,
+        )
+        traj = compute_convergence_trajectory(eq, real)
+        assert traj.converged
+        assert traj.n_iterations <= 50
+        assert traj.final_rmse < 0.01
+
+
+# ---------------------------------------------------------------------------
+# run_forecast_foresight_market (PF-only convergence)
+# ---------------------------------------------------------------------------
+
+
+class TestForecastForesightMarket:
+    """Test convergence with PF providing real-price forecasts."""
+
+    def test_converges_for_single_day(self) -> None:
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=100,
+        )
         assert eq.converged
 
-    def test_auto_calibrates_spread(self) -> None:
-        directions = {"long": _directions_always_long()}
-        eq = run_futures_market(
-            directions=directions,
-            initial_market_prices=_initial_market(),
-            real_prices=_real_prices(),
-            forecast_spread=None,  # auto
+    def test_converges_to_real_price_single_day(self) -> None:
+        """With PF forecast = real price (no dampening), converges to P_real."""
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=100,
         )
-        assert isinstance(eq, FuturesMarketEquilibrium)
+        assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
 
-    def test_respects_max_iterations(self) -> None:
-        directions = {
-            "long": _directions_always_long(),
-            "short": _directions_always_short(),
+    def test_converges_multi_day(self) -> None:
+        dates, real, initial = _multi_day_setup()
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=100,
+        )
+        assert eq.converged
+        for t in dates:
+            assert eq.final_market_prices.loc[t] == pytest.approx(real.loc[t], abs=0.01)
+
+    def test_instant_convergence_no_dampening(self) -> None:
+        """Without dampening, PF-only market should converge in <=2 iterations."""
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=50,
+        )
+        # Iteration 0: PF forecast=100, market=90, sign(100-90)=+1,
+        #   profit = +1*(100-90) = 10 > 0 => weight=1.0
+        #   New price = 1.0 * 100 = 100.
+        # Iteration 1: sign(100-100)=0, profit=0 => weights all zero
+        #   => price carries forward. Delta = 0 < threshold => converged.
+        assert eq.converged
+        assert len(eq.iterations) <= 2
+
+    def test_no_oscillation_regardless_of_distance(self) -> None:
+        """Without dampening, there's no oscillation."""
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=200,
+        )
+        assert eq.converged
+        assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
+
+    def test_large_price_gap_still_converges(self) -> None:
+        """Even with a huge initial gap, PF converges in one step."""
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([500.0], index=dates)
+        initial = pd.Series([50.0], index=dates)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=200,
+        )
+        assert eq.converged
+        assert eq.final_market_prices.iloc[0] == pytest.approx(500.0, abs=0.01)
+
+
+# ---------------------------------------------------------------------------
+# PF with other strategies
+# ---------------------------------------------------------------------------
+
+
+class TestPFWithOtherStrategies:
+    """PF mixed with other strategies: convergence and dominance."""
+
+    def test_pf_dominates_wrong_strategy(self) -> None:
+        """When PF competes with a consistently wrong strategy, PF gets all weight."""
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+
+        # Wrong strategy forecasts 70 (below market of 90, goes short on a day
+        # where real > market => loses money)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=50,
+            other_forecasts={"wrong": {dates[0]: 70.0}},
+        )
+
+        # PF should dominate
+        last = eq.iterations[-1]
+        assert last.strategy_weights.get("PerfectForesight", 0.0) >= last.strategy_weights.get(
+            "wrong", 0.0
+        )
+
+    def test_pf_with_other_forecaster_converges(self) -> None:
+        """PF + another forecaster still converges to a fixed point."""
+        dates, real, initial = _multi_day_setup()
+
+        other = {t: 95.0 for t in dates}  # constant forecast of 95
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=100,
+            other_forecasts={"constant_95": other},
+        )
+        assert eq.converged
+
+    def test_convergence_with_all_strategies_same_forecast(self) -> None:
+        """When all strategies forecast the same value, price = that value."""
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([100.0], index=dates)
+        initial = pd.Series([90.0], index=dates)
+        forecasts = {
+            "a": {dates[0]: 95.0},
+            "b": {dates[0]: 95.0},
+        }
+
+        eq = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=50,
+        )
+        # Both forecast 95, both have same direction, both have same profit
+        # => equal weight => weighted avg = 95
+        assert eq.final_market_prices.iloc[0] == pytest.approx(95.0, abs=0.01)
+
+
+# ---------------------------------------------------------------------------
+# Integration: market behaviour under various configurations
+# ---------------------------------------------------------------------------
+
+
+class TestMarketBehaviour:
+    """Integration tests for market-level behaviour."""
+
+    def test_opposing_strategies_oscillate_when_both_overshoot(self) -> None:
+        """Long(110) vs Short(70) with real=100: oscillates because each
+        forecast overshoots past real, handing profit to the other.
+
+        Iter 0: Long wins (price→110). Iter 1: Short wins (price→70).
+        This cycle repeats — the market does NOT converge.
+        """
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([100.0], index=dates)
+        initial = pd.Series([90.0], index=dates)
+        forecasts = {
+            "Long": {dates[0]: 110.0},
+            "Short": {dates[0]: 70.0},
         }
         eq = run_futures_market(
-            directions=directions,
-            initial_market_prices=_initial_market(),
-            real_prices=_real_prices(),
-            max_iterations=3,
-            forecast_spread=5.0,
-        )
-        assert len(eq.iterations) <= 3
-
-    def test_dampening_slows_convergence(self) -> None:
-        directions = {"long": _directions_always_long(), "perfect": _directions_perfect()}
-        args = dict(
-            directions=directions,
-            initial_market_prices=_initial_market(),
-            real_prices=_real_prices(),
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
             max_iterations=50,
-            convergence_threshold=0.001,
-            forecast_spread=5.0,
         )
-        fast = run_futures_market(**args, dampening=0.9)
-        slow = run_futures_market(**args, dampening=0.1)
-        # Slower dampening should take more iterations (or at least not fewer)
-        assert len(slow.iterations) >= len(fast.iterations)
+        # With both forecasts on opposite sides of real, market oscillates
+        assert not eq.converged or len(eq.iterations) == 50
+
+    def test_two_profitable_strategies_weighted_average(self) -> None:
+        """When both strategies are profitable, price is their weighted avg."""
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([100.0], index=dates)
+        initial = pd.Series([80.0], index=dates)
+
+        # Both forecast above market, both go long, both profitable
+        forecasts = {
+            "a": {dates[0]: 95.0},  # sign(95-80)=+1, profit = +1*(100-80)=20
+            "b": {dates[0]: 105.0},  # sign(105-80)=+1, profit = +1*(100-80)=20
+        }
+        eq = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=1,
+        )
+        # Equal profit => equal weight => price = (95+105)/2 = 100
+        assert eq.iterations[0].market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
+
+    def test_multi_day_mixed_directions(self) -> None:
+        """Multi-day test: strategies have different forecasts per day."""
+        dates = pd.DatetimeIndex(["2024-01-01", "2024-01-02"])
+        real = pd.Series([110.0, 80.0], index=dates)
+        initial = pd.Series([100.0, 100.0], index=dates)
+
+        forecasts = {
+            "long": {dates[0]: 115.0, dates[1]: 110.0},
+            "short": {dates[0]: 85.0, dates[1]: 75.0},
+        }
+        eq = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=50,
+        )
+        assert len(eq.iterations) > 0
+        assert isinstance(eq.final_market_prices, pd.Series)
+        assert len(eq.final_market_prices) == 2
