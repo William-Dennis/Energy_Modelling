@@ -86,7 +86,16 @@ def _render_period(
         st.warning(f"No overlapping data for {period}.")
         return
 
-    # --- Error statistics ---------------------------------------------------
+    _render_error_statistics(comp, period)
+    _render_price_overlay(comp, period)
+    _render_error_timeseries(comp, period)
+    _render_error_distributions(comp, period)
+    _render_scatter_plots(comp, period)
+    _render_rolling_mae(comp, period)
+
+
+def _render_error_statistics(comp: pd.DataFrame, period: str) -> None:
+    """Render error statistics table and headline metrics."""
     st.subheader(f"Forecast Accuracy Summary - {period}")
     stats = pd.DataFrame(
         [
@@ -96,7 +105,6 @@ def _render_period(
     )
     st.dataframe(stats.set_index("Model"), use_container_width=True)
 
-    # Headline metrics
     mkt_mae = comp["Market Error"].abs().mean()
     yst_mae = comp["Yesterday Error"].abs().mean()
     improvement = (yst_mae - mkt_mae) / yst_mae * 100 if yst_mae > 0 else 0
@@ -110,72 +118,64 @@ def _render_period(
         delta_color="normal" if improvement > 0 else "inverse",
     )
 
-    # --- Price overlay chart ------------------------------------------------
+
+def _render_price_overlay(comp: pd.DataFrame, period: str) -> None:
+    """Render the price comparison chart."""
     st.subheader(f"Price Comparison - {period}")
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=comp["Date"],
-            y=comp["Settlement (Real)"],
-            name="Settlement (Real)",
-            mode="lines",
+            x=comp["Date"], y=comp["Settlement (Real)"],
+            name="Settlement (Real)", mode="lines",
             line={"color": "black", "width": 2},
         )
     )
     fig.add_trace(
         go.Scatter(
-            x=comp["Date"],
-            y=comp["Market Price"],
-            name="Converged Market Price",
-            mode="lines",
+            x=comp["Date"], y=comp["Market Price"],
+            name="Converged Market Price", mode="lines",
             line={"color": "#1E90FF", "width": 1.5},
         )
     )
     fig.add_trace(
         go.Scatter(
-            x=comp["Date"],
-            y=comp["Yesterday Settlement"],
-            name="Yesterday Settlement",
-            mode="lines",
+            x=comp["Date"], y=comp["Yesterday Settlement"],
+            name="Yesterday Settlement", mode="lines",
             line={"color": "#FF6347", "width": 1, "dash": "dot"},
         )
     )
     fig.update_layout(
         title=f"Settlement vs Market vs Yesterday - {period}",
-        yaxis_title="EUR/MWh",
-        height=500,
+        yaxis_title="EUR/MWh", height=500,
         legend={"orientation": "h", "yanchor": "bottom", "y": -0.2},
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # --- Error time series --------------------------------------------------
+
+def _render_error_timeseries(comp: pd.DataFrame, period: str) -> None:
+    """Render the error time series chart."""
     st.subheader(f"Forecast Error Over Time - {period}")
     err_df = pd.DataFrame(
-        {
-            "Date": comp["Date"],
-            "Market Error": comp["Market Error"],
-            "Yesterday Error": comp["Yesterday Error"],
-        }
+        {"Date": comp["Date"], "Market Error": comp["Market Error"],
+         "Yesterday Error": comp["Yesterday Error"]}
     )
     fig = px.line(
         err_df.melt(id_vars="Date", var_name="Model", value_name="Error"),
-        x="Date",
-        y="Error",
-        color="Model",
+        x="Date", y="Error", color="Model",
         title="Daily Forecast Error (predicted - actual)",
     )
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
     fig.update_layout(height=400)
     st.plotly_chart(fig, use_container_width=True)
 
-    # --- Error distributions ------------------------------------------------
+
+def _render_error_distributions(comp: pd.DataFrame, period: str) -> None:
+    """Render the error histogram pair."""
     st.subheader(f"Error Distribution - {period}")
     cl, cr = st.columns(2)
     with cl:
         fig = px.histogram(
-            comp,
-            x="Market Error",
-            nbins=50,
+            comp, x="Market Error", nbins=50,
             title="Market Price Error Distribution",
             labels={"Market Error": "Error (EUR/MWh)"},
         )
@@ -184,9 +184,7 @@ def _render_period(
         st.plotly_chart(fig, use_container_width=True)
     with cr:
         fig = px.histogram(
-            comp,
-            x="Yesterday Error",
-            nbins=50,
+            comp, x="Yesterday Error", nbins=50,
             title="Yesterday-Settlement Error Distribution",
             labels={"Yesterday Error": "Error (EUR/MWh)"},
         )
@@ -194,71 +192,52 @@ def _render_period(
         fig.update_layout(height=350)
         st.plotly_chart(fig, use_container_width=True)
 
-    # --- Scatter: predicted vs actual ---------------------------------------
+
+def _render_scatter_plots(comp: pd.DataFrame, period: str) -> None:
+    """Render predicted vs actual scatter plots."""
     st.subheader(f"Predicted vs Actual - {period}")
     cl2, cr2 = st.columns(2)
     price_min = comp["Settlement (Real)"].min() - 10
     price_max = comp["Settlement (Real)"].max() + 10
+    diag = {"type": "line", "x0": price_min, "y0": price_min,
+            "x1": price_max, "y1": price_max, "line": {"dash": "dash", "color": "gray"}}
     with cl2:
         fig = px.scatter(
-            comp,
-            x="Settlement (Real)",
-            y="Market Price",
+            comp, x="Settlement (Real)", y="Market Price",
             title="Market Price vs Actual Settlement",
-            labels={"Settlement (Real)": "Actual (EUR/MWh)", "Market Price": "Market (EUR/MWh)"},
+            labels={"Settlement (Real)": "Actual (EUR/MWh)",
+                    "Market Price": "Market (EUR/MWh)"},
             opacity=0.5,
         )
-        fig.add_shape(
-            type="line",
-            x0=price_min,
-            y0=price_min,
-            x1=price_max,
-            y1=price_max,
-            line={"dash": "dash", "color": "gray"},
-        )
+        fig.add_shape(**diag)
         fig.update_layout(height=400)
         st.plotly_chart(fig, use_container_width=True)
     with cr2:
         fig = px.scatter(
-            comp,
-            x="Settlement (Real)",
-            y="Yesterday Settlement",
+            comp, x="Settlement (Real)", y="Yesterday Settlement",
             title="Yesterday Settlement vs Actual",
-            labels={
-                "Settlement (Real)": "Actual (EUR/MWh)",
-                "Yesterday Settlement": "Yesterday (EUR/MWh)",
-            },
+            labels={"Settlement (Real)": "Actual (EUR/MWh)",
+                    "Yesterday Settlement": "Yesterday (EUR/MWh)"},
             opacity=0.5,
         )
-        fig.add_shape(
-            type="line",
-            x0=price_min,
-            y0=price_min,
-            x1=price_max,
-            y1=price_max,
-            line={"dash": "dash", "color": "gray"},
-        )
+        fig.add_shape(**diag)
         fig.update_layout(height=400)
         st.plotly_chart(fig, use_container_width=True)
 
-    # --- Rolling MAE --------------------------------------------------------
+
+def _render_rolling_mae(comp: pd.DataFrame, period: str) -> None:
+    """Render the rolling 30-day MAE chart."""
     st.subheader(f"Rolling 30-Day MAE - {period}")
     rolling_mkt = comp["Market Error"].abs().rolling(30).mean()
     rolling_yst = comp["Yesterday Error"].abs().rolling(30).mean()
     roll_df = pd.DataFrame(
-        {
-            "Date": comp["Date"],
-            "Market (30d MAE)": rolling_mkt,
-            "Yesterday (30d MAE)": rolling_yst,
-        }
+        {"Date": comp["Date"], "Market (30d MAE)": rolling_mkt,
+         "Yesterday (30d MAE)": rolling_yst}
     ).dropna()
     if not roll_df.empty:
         fig = px.line(
             roll_df.melt(id_vars="Date", var_name="Model", value_name="MAE"),
-            x="Date",
-            y="MAE",
-            color="Model",
-            title="30-Day Rolling MAE",
+            x="Date", y="MAE", color="Model", title="30-Day Rolling MAE",
         )
         fig.update_layout(height=400, yaxis_title="MAE (EUR/MWh)")
         st.plotly_chart(fig, use_container_width=True)
@@ -269,14 +248,10 @@ def _render_period(
 # ---------------------------------------------------------------------------
 
 
-def render() -> None:
-    """Render the futures-market-simulation-accuracy tab."""
-
+def _load_cached_market() -> tuple:
+    """Try loading cached market results from disk."""
     m24 = st.session_state.get("market_2024")
     m25 = st.session_state.get("market_2025")
-    public_daily = st.session_state.get("backtest_public_daily")
-    hidden_daily = st.session_state.get("backtest_hidden_daily")
-
     if m24 is None and m25 is None:
         from energy_modelling.backtest.io import RESULTS_DIR, load_market_results
 
@@ -286,6 +261,14 @@ def render() -> None:
             st.session_state["market_2024"] = m24
         if m25 is not None:
             st.session_state["market_2025"] = m25
+    return m24, m25
+
+
+def render() -> None:
+    """Render the futures-market-simulation-accuracy tab."""
+    m24, m25 = _load_cached_market()
+    public_daily = st.session_state.get("backtest_public_daily")
+    hidden_daily = st.session_state.get("backtest_hidden_daily")
 
     if m24 is None and m25 is None:
         st.info(
