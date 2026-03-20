@@ -4,23 +4,34 @@ Tests verify that the engine implements ``docs/energy_market_spec.md``:
   1. Trading decision: q = sign(forecast - market)
   2. Profit: r = q * (real - market)  (NO *24 multiplier)
   3. Weighting: w = max(profit, 0) / sum(max(profits, 0))
-  4. Price update: P_new = sum(w_i * forecast_i)  (NO dampening)
+  4. Price update: P_new = alpha * sum(w_i * forecast_i) + (1-alpha) * P_old
   5. Iterate until convergence.
+
+Phase 8 extensions: dampening (alpha), weight cap, log-profit weighting,
+weighted median, bimodal cluster detection, two-phase convergence.
 """
 
 from __future__ import annotations
 
 from datetime import date
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from energy_modelling.backtest.futures_market_engine import (
+    adaptive_alpha,
     compute_market_prices,
+    compute_market_prices_median,
     compute_strategy_profits,
     compute_weights,
+    compute_weights_capped,
+    compute_weights_log,
+    detect_bimodal_clusters,
     run_futures_market,
     run_futures_market_iteration,
+    run_two_phase_market,
+    weighted_median,
 )
 
 # ---------------------------------------------------------------------------
@@ -466,3 +477,314 @@ class TestComputeWeightsFromEngine:
     def test_weights_sum_to_one(self) -> None:
         weights = compute_weights({"a": 50.0, "b": 100.0, "c": 150.0})
         assert sum(weights.values()) == pytest.approx(1.0)
+
+
+# ===========================================================================
+# Phase 8b: Dampening tests
+# ===========================================================================
+
+
+class TestDampeningAlpha:
+    """Phase 8b: compute_market_prices with alpha parameter."""
+
+    def test_alpha_one_recovers_spec(self) -> None:
+        """alpha=1.0 gives the same result as the original undampened engine."""
+        idx = _index()
+        initial = pd.Series([50.0, 50.0, 50.0], index=idx)
+        forecasts = {"A": {d: 70.0 for d in _DATES}}
+
+        dampened = compute_market_prices(
+            weights={"A": 1.0},
+            strategy_forecasts=forecasts,
+            current_market_prices=initial,
+            alpha=1.0,
+        )
+        for t in _DATES:
+            assert dampened.loc[t] == pytest.approx(70.0)
+
+    def test_alpha_half_blends(self) -> None:
+        """alpha=0.5 blends undampened price (70) with current (50) -> 60."""
+        idx = _index()
+        initial = pd.Series([50.0, 50.0, 50.0], index=idx)
+        forecasts = {"A": {d: 70.0 for d in _DATES}}
+
+        dampened = compute_market_prices(
+            weights={"A": 1.0},
+            strategy_forecasts=forecasts,
+            current_market_prices=initial,
+            alpha=0.5,
+        )
+        # 0.5 * 70 + 0.5 * 50 = 60
+        for t in _DATES:
+            assert dampened.loc[t] == pytest.approx(60.0)
+
+    def test_alpha_zero_point_three(self) -> None:
+        """alpha=0.3: 0.3 * 70 + 0.7 * 50 = 56."""
+        idx = _index()
+        initial = pd.Series([50.0, 50.0, 50.0], index=idx)
+        forecasts = {"A": {d: 70.0 for d in _DATES}}
+
+        dampened = compute_market_prices(
+            weights={"A": 1.0},
+            strategy_forecasts=forecasts,
+            current_market_prices=initial,
+            alpha=0.3,
+        )
+        for t in _DATES:
+            assert dampened.loc[t] == pytest.approx(56.0, abs=0.01)
+
+    def test_dampened_run_converges_oscillating_case(self) -> None:
+        """Opposing strategies that oscillate undampened should converge with dampening."""
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([100.0], index=dates)
+        initial = pd.Series([90.0], index=dates)
+        forecasts = {
+            "Long": {dates[0]: 110.0},
+            "Short": {dates[0]: 70.0},
+        }
+        # Undampened: oscillates (known from existing test)
+        eq_undampened = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=50,
+            alpha=1.0,
+        )
+        # Dampened: should converge
+        eq_dampened = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=100,
+            alpha=0.3,
+        )
+        # Dampened should have a lower delta
+        assert eq_dampened.convergence_delta < eq_undampened.convergence_delta
+
+    def test_alpha_passed_through_iteration(self) -> None:
+        """run_futures_market_iteration respects alpha."""
+        idx = _index()
+        market = pd.Series([50.0, 50.0, 50.0], index=idx)
+        real = pd.Series([60.0, 60.0, 60.0], index=idx)
+        forecasts = {"long": {d: 55.0 for d in _DATES}}
+
+        result_undampened = run_futures_market_iteration(
+            market_prices=market, real_prices=real, iteration=0,
+            strategy_forecasts=forecasts, alpha=1.0,
+        )
+        result_dampened = run_futures_market_iteration(
+            market_prices=market, real_prices=real, iteration=0,
+            strategy_forecasts=forecasts, alpha=0.5,
+        )
+        # Undampened: price -> 55.  Dampened: 0.5*55 + 0.5*50 = 52.5
+        for t in _DATES:
+            assert result_undampened.market_prices.loc[t] == pytest.approx(55.0)
+            assert result_dampened.market_prices.loc[t] == pytest.approx(52.5)
+
+
+class TestAdaptiveAlpha:
+    """Phase 8b: adaptive_alpha helper."""
+
+    def test_large_delta_gives_small_alpha(self) -> None:
+        alpha = adaptive_alpha(delta=100.0, target_delta=1.0, alpha_max=0.8, alpha_min=0.1)
+        assert alpha == pytest.approx(0.1)
+
+    def test_small_delta_gives_large_alpha(self) -> None:
+        alpha = adaptive_alpha(delta=0.5, target_delta=1.0, alpha_max=0.8, alpha_min=0.1)
+        assert alpha == pytest.approx(0.8)
+
+    def test_zero_delta_returns_alpha_max(self) -> None:
+        alpha = adaptive_alpha(delta=0.0, alpha_max=0.8)
+        assert alpha == 0.8
+
+    def test_exact_target_gives_alpha_max(self) -> None:
+        alpha = adaptive_alpha(delta=1.0, target_delta=1.0, alpha_max=0.8, alpha_min=0.1)
+        assert alpha == pytest.approx(0.8)
+
+
+class TestTwoPhaseMarket:
+    """Phase 8b: two-phase convergence."""
+
+    def test_two_phase_returns_equilibrium(self) -> None:
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([100.0], index=dates)
+        initial = pd.Series([90.0], index=dates)
+        forecasts = {"PF": {dates[0]: 100.0}}
+
+        eq = run_two_phase_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+        )
+        assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.1)
+
+    def test_two_phase_improves_oscillating_case(self) -> None:
+        """Two-phase should produce lower delta than undampened for oscillating strategies."""
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([100.0], index=dates)
+        initial = pd.Series([90.0], index=dates)
+        forecasts = {
+            "Long": {dates[0]: 110.0},
+            "Short": {dates[0]: 70.0},
+        }
+        eq_undampened = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=50,
+        )
+        eq_two_phase = run_two_phase_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+        )
+        assert eq_two_phase.convergence_delta <= eq_undampened.convergence_delta
+
+
+# ===========================================================================
+# Phase 8c: Weighting reform tests
+# ===========================================================================
+
+
+class TestComputeWeightsCapped:
+    """Phase 8c, Experiment C1: per-strategy weight cap."""
+
+    def test_cap_clips_dominant_strategy(self) -> None:
+        weights = compute_weights_capped({"a": 900.0, "b": 100.0}, w_max=0.5)
+        assert weights["a"] <= 0.5 + 1e-10
+        assert sum(weights.values()) == pytest.approx(1.0)
+
+    def test_cap_at_one_equals_standard_weights(self) -> None:
+        profits = {"a": 100.0, "b": -50.0, "c": 200.0}
+        standard = compute_weights(profits)
+        capped = compute_weights_capped(profits, w_max=1.0)
+        for name in profits:
+            assert capped[name] == pytest.approx(standard[name], abs=1e-10)
+
+    def test_all_negative_returns_zeros(self) -> None:
+        weights = compute_weights_capped({"a": -10.0, "b": -20.0}, w_max=0.5)
+        assert all(w == 0.0 for w in weights.values())
+
+    def test_weights_sum_to_one(self) -> None:
+        weights = compute_weights_capped(
+            {"a": 50.0, "b": 100.0, "c": 150.0, "d": 200.0},
+            w_max=0.30,
+        )
+        assert sum(weights.values()) == pytest.approx(1.0)
+
+    def test_tight_cap_distributes_evenly(self) -> None:
+        """With a very tight cap, all profitable strategies get w_max."""
+        weights = compute_weights_capped(
+            {"a": 100.0, "b": 200.0, "c": 300.0},
+            w_max=0.05,
+        )
+        for name in weights:
+            assert weights[name] <= 0.05 + 1e-10 or weights[name] == pytest.approx(0.0)
+
+
+class TestComputeWeightsLog:
+    """Phase 8c, Experiment C3: log-profit weighting."""
+
+    def test_compresses_profit_ratios(self) -> None:
+        """A 6.6:1 profit ratio should map to a much smaller weight ratio."""
+        standard = compute_weights({"a": 6363.0, "b": 968.0})
+        log_w = compute_weights_log({"a": 6363.0, "b": 968.0})
+        standard_ratio = standard["a"] / standard["b"]
+        log_ratio = log_w["a"] / log_w["b"]
+        assert log_ratio < standard_ratio  # Should be ~1.27 vs 6.6
+
+    def test_only_positive_get_weight(self) -> None:
+        weights = compute_weights_log({"a": 100.0, "b": -50.0})
+        assert weights["b"] == 0.0
+        assert weights["a"] == pytest.approx(1.0)
+
+    def test_all_negative_returns_zeros(self) -> None:
+        weights = compute_weights_log({"a": -10.0, "b": -20.0})
+        assert all(w == 0.0 for w in weights.values())
+
+    def test_weights_sum_to_one(self) -> None:
+        weights = compute_weights_log({"a": 50.0, "b": 100.0, "c": 150.0})
+        assert sum(weights.values()) == pytest.approx(1.0)
+
+
+class TestWeightedMedian:
+    """Phase 8c, Experiment C2: weighted median."""
+
+    def test_equal_weights_returns_median(self) -> None:
+        vals = np.array([10.0, 20.0, 30.0])
+        wts = np.array([1.0, 1.0, 1.0])
+        assert weighted_median(vals, wts) == pytest.approx(20.0)
+
+    def test_skewed_weights(self) -> None:
+        vals = np.array([10.0, 20.0, 30.0])
+        wts = np.array([0.1, 0.1, 0.8])
+        # Cumulative: 0.1, 0.2, 1.0 — half = 0.5, first >= 0.5 is at index 2
+        assert weighted_median(vals, wts) == pytest.approx(30.0)
+
+    def test_two_values(self) -> None:
+        vals = np.array([40.0, 100.0])
+        wts = np.array([0.6, 0.4])
+        # Cumulative: 0.6, 1.0 — half = 0.5, first >= 0.5 is at index 0
+        assert weighted_median(vals, wts) == pytest.approx(40.0)
+
+    def test_single_value(self) -> None:
+        vals = np.array([42.0])
+        wts = np.array([1.0])
+        assert weighted_median(vals, wts) == pytest.approx(42.0)
+
+
+class TestComputeMarketPricesMedian:
+    """Phase 8c, Experiment C2: weighted-median market prices."""
+
+    def test_single_strategy_equals_weighted_mean(self) -> None:
+        idx = _index()
+        initial = pd.Series([50.0, 50.0, 50.0], index=idx)
+        forecasts = {"only": {d: 75.0 for d in _DATES}}
+        new = compute_market_prices_median(
+            weights={"only": 1.0},
+            strategy_forecasts=forecasts,
+            current_market_prices=initial,
+        )
+        for t in _DATES:
+            assert new.loc[t] == pytest.approx(75.0)
+
+    def test_outlier_resistance(self) -> None:
+        """Median should resist one extreme outlier."""
+        idx = _index()
+        initial = pd.Series([50.0, 50.0, 50.0], index=idx)
+        forecasts = {
+            "normal1": {d: 70.0 for d in _DATES},
+            "normal2": {d: 72.0 for d in _DATES},
+            "outlier": {d: 200.0 for d in _DATES},
+        }
+        # Equal weights — median should be 72 (middle value), not pulled to ~114
+        new = compute_market_prices_median(
+            weights={"normal1": 1.0, "normal2": 1.0, "outlier": 1.0},
+            strategy_forecasts=forecasts,
+            current_market_prices=initial,
+        )
+        for t in _DATES:
+            assert new.loc[t] == pytest.approx(72.0)
+
+
+class TestDetectBimodalClusters:
+    """Phase 8c, Experiment C4: bimodal cluster detection."""
+
+    def test_bimodal_detection(self) -> None:
+        forecasts = [40.0, 42.0, 45.0, 100.0, 102.0, 105.0]
+        result = detect_bimodal_clusters(forecasts, gap_threshold=20.0)
+        assert result is not None
+        low, high = result
+        assert max(low) < 50
+        assert min(high) > 90
+
+    def test_unimodal_returns_none(self) -> None:
+        forecasts = [40.0, 42.0, 45.0, 48.0, 50.0]
+        result = detect_bimodal_clusters(forecasts, gap_threshold=20.0)
+        assert result is None
+
+    def test_single_element_returns_none(self) -> None:
+        assert detect_bimodal_clusters([42.0]) is None
+
+    def test_empty_returns_none(self) -> None:
+        assert detect_bimodal_clusters([]) is None

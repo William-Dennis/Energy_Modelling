@@ -2,6 +2,10 @@
 
 Theoretical and empirical tools for analyzing market convergence
 under the forecast-based market model (``docs/energy_market_spec.md``).
+
+Phase 8e adds iteration-level smoothing functions that extract a stable
+consensus price from an oscillating iteration trace without modifying
+the engine's update rule.
 """
 
 from __future__ import annotations
@@ -123,3 +127,105 @@ def run_forecast_foresight_market(
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 8e: Iteration-level smoothing
+# ---------------------------------------------------------------------------
+
+
+def average_last_k_iterations(
+    equilibrium: FuturesMarketEquilibrium,
+    k: int,
+) -> pd.Series:
+    """Average market prices over the last *k* iterations (Phase 8e, E1).
+
+    For a 3-step limit cycle, ``k=3`` averages exactly one full period,
+    cancelling the oscillation on each day and producing a price close
+    to the midpoint of the two forecast poles.
+    """
+    iters = equilibrium.iterations
+    if k > len(iters):
+        k = len(iters)
+    last_k = iters[-k:]
+    prices = pd.DataFrame(
+        {f"iter_{it.iteration}": it.market_prices for it in last_k}
+    )
+    return prices.mean(axis=1)
+
+
+def ema_iteration_prices(
+    equilibrium: FuturesMarketEquilibrium,
+    beta: float = 0.3,
+) -> pd.Series:
+    """Exponential moving average across iterations (Phase 8e, E2).
+
+    EMA_t^(k) = beta * P^m_t^(k) + (1 - beta) * EMA_t^(k-1)
+
+    Lower *beta* values provide heavier smoothing.  The EMA converges
+    to a stable value even when the underlying engine oscillates.
+    """
+    iters = equilibrium.iterations
+    if not iters:
+        return equilibrium.final_market_prices.copy()
+    ema = iters[0].market_prices.copy().astype(float)
+    for it in iters[1:]:
+        ema = beta * it.market_prices + (1.0 - beta) * ema
+    return ema
+
+
+def best_iteration_prices(
+    equilibrium: FuturesMarketEquilibrium,
+) -> tuple[pd.Series, int]:
+    """Select the iteration with the lowest convergence delta (Phase 8e, E3).
+
+    Returns the market prices and iteration index of the most stable
+    iteration — typically the "settle" phase of the limit cycle, which
+    is empirically the most accurate.
+    """
+    iters = equilibrium.iterations
+    if len(iters) <= 1:
+        return iters[0].market_prices.copy(), iters[0].iteration
+
+    best_iter = iters[0]
+    best_delta = float("inf")
+    for i in range(1, len(iters)):
+        delta = float((iters[i].market_prices - iters[i - 1].market_prices).abs().max())
+        if delta < best_delta:
+            best_delta = delta
+            best_iter = iters[i]
+    return best_iter.market_prices.copy(), best_iter.iteration
+
+
+def delta_weighted_average(
+    equilibrium: FuturesMarketEquilibrium,
+) -> pd.Series:
+    """Average iteration prices weighted by inverse delta (Phase 8e, E4).
+
+    Iterations with smaller max price change (more stable) receive
+    higher weight, so the result tilts toward the "settle" phases of
+    the limit cycle.
+
+        weight_k = 1 / (1 + delta_k)
+    """
+    iters = equilibrium.iterations
+    if not iters:
+        return equilibrium.final_market_prices.copy()
+
+    prices_list: list[pd.Series] = []
+    weights_list: list[float] = []
+
+    for i, it in enumerate(iters):
+        if i == 0:
+            w = 1.0
+        else:
+            delta = float(
+                (it.market_prices - iters[i - 1].market_prices).abs().max()
+            )
+            w = 1.0 / (1.0 + delta)
+        prices_list.append(it.market_prices)
+        weights_list.append(w)
+
+    total_w = sum(weights_list)
+    result = sum(w * p for w, p in zip(weights_list, prices_list, strict=True)) / total_w
+    return result

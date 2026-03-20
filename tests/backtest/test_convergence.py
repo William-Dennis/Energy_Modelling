@@ -1,13 +1,14 @@
-"""Tests for convergence analysis module (Phase 7).
+"""Tests for convergence analysis module (Phase 7 + Phase 8e smoothing).
 
 Tests the theoretical and empirical convergence properties of the
 spec-compliant synthetic futures market under various strategy
 configurations, including perfect foresight.
 
-The spec model (``docs/energy_market_spec.md``) has:
-  - NO dampening (price update is direct weighted average of forecasts)
-  - NO direction +/- spread synthesis
-  - NO *24 profit multiplier in the engine
+Phase 8e adds tests for iteration-level smoothing functions:
+  - average_last_k_iterations
+  - ema_iteration_prices
+  - best_iteration_prices
+  - delta_weighted_average
 """
 
 from __future__ import annotations
@@ -17,7 +18,11 @@ import pytest
 
 from energy_modelling.backtest.convergence import (
     ConvergenceTrajectory,
+    average_last_k_iterations,
+    best_iteration_prices,
     compute_convergence_trajectory,
+    delta_weighted_average,
+    ema_iteration_prices,
     run_forecast_foresight_market,
 )
 from energy_modelling.backtest.futures_market_engine import run_futures_market
@@ -317,3 +322,114 @@ class TestMarketBehaviour:
         assert len(eq.iterations) > 0
         assert isinstance(eq.final_market_prices, pd.Series)
         assert len(eq.final_market_prices) == 2
+
+
+# ===========================================================================
+# Phase 8e: Iteration-level smoothing tests
+# ===========================================================================
+
+
+def _oscillating_equilibrium():
+    """Build a multi-iteration equilibrium from an oscillating system."""
+    dates = pd.DatetimeIndex(["2024-01-01"])
+    real = pd.Series([100.0], index=dates)
+    initial = pd.Series([90.0], index=dates)
+    forecasts = {
+        "Long": {dates[0]: 110.0},
+        "Short": {dates[0]: 70.0},
+    }
+    return run_futures_market(
+        initial_market_prices=initial,
+        real_prices=real,
+        strategy_forecasts=forecasts,
+        max_iterations=20,
+    )
+
+
+class TestAverageLastKIterations:
+    """Phase 8e, Experiment E1: running average of last K iterations."""
+
+    def test_returns_series(self) -> None:
+        eq = _oscillating_equilibrium()
+        avg = average_last_k_iterations(eq, k=3)
+        assert isinstance(avg, pd.Series)
+        assert len(avg) == 1
+
+    def test_k_equals_one_is_last_iteration(self) -> None:
+        eq = _oscillating_equilibrium()
+        avg = average_last_k_iterations(eq, k=1)
+        pd.testing.assert_series_equal(
+            avg, eq.iterations[-1].market_prices, check_names=False,
+        )
+
+    def test_k_larger_than_iterations_uses_all(self) -> None:
+        eq = _oscillating_equilibrium()
+        avg = average_last_k_iterations(eq, k=999)
+        assert isinstance(avg, pd.Series)
+
+    def test_averaging_reduces_spread(self) -> None:
+        """Average over a full cycle should be between the extremes."""
+        eq = _oscillating_equilibrium()
+        if len(eq.iterations) >= 3:
+            prices = [it.market_prices.iloc[0] for it in eq.iterations[-3:]]
+            avg = average_last_k_iterations(eq, k=3)
+            assert min(prices) <= avg.iloc[0] <= max(prices)
+
+
+class TestEmaIterationPrices:
+    """Phase 8e, Experiment E2: EMA across iterations."""
+
+    def test_returns_series(self) -> None:
+        eq = _oscillating_equilibrium()
+        ema = ema_iteration_prices(eq, beta=0.3)
+        assert isinstance(ema, pd.Series)
+
+    def test_beta_one_equals_last_iteration(self) -> None:
+        """With beta=1, EMA degenerates to the last iteration's prices."""
+        eq = _oscillating_equilibrium()
+        ema = ema_iteration_prices(eq, beta=1.0)
+        pd.testing.assert_series_equal(
+            ema, eq.iterations[-1].market_prices, check_names=False,
+        )
+
+    def test_lower_beta_smoother(self) -> None:
+        """Lower beta should produce less extreme values."""
+        eq = _oscillating_equilibrium()
+        ema_low = ema_iteration_prices(eq, beta=0.1)
+        ema_high = ema_iteration_prices(eq, beta=0.9)
+        # The low-beta EMA should be closer to the mean of all iterations
+        all_prices = [it.market_prices.iloc[0] for it in eq.iterations]
+        mean_price = sum(all_prices) / len(all_prices)
+        assert abs(ema_low.iloc[0] - mean_price) <= abs(ema_high.iloc[0] - mean_price) + 1.0
+
+
+class TestBestIterationPrices:
+    """Phase 8e, Experiment E3: best-iteration selection."""
+
+    def test_returns_prices_and_index(self) -> None:
+        eq = _oscillating_equilibrium()
+        prices, idx = best_iteration_prices(eq)
+        assert isinstance(prices, pd.Series)
+        assert isinstance(idx, int)
+
+    def test_selected_iteration_exists(self) -> None:
+        eq = _oscillating_equilibrium()
+        _prices, idx = best_iteration_prices(eq)
+        iter_indices = [it.iteration for it in eq.iterations]
+        assert idx in iter_indices
+
+
+class TestDeltaWeightedAverage:
+    """Phase 8e, Experiment E4: delta-weighted average."""
+
+    def test_returns_series(self) -> None:
+        eq = _oscillating_equilibrium()
+        avg = delta_weighted_average(eq)
+        assert isinstance(avg, pd.Series)
+
+    def test_within_iteration_range(self) -> None:
+        """Delta-weighted avg should be within [min, max] of iteration prices."""
+        eq = _oscillating_equilibrium()
+        avg = delta_weighted_average(eq)
+        all_prices = [it.market_prices.iloc[0] for it in eq.iterations]
+        assert min(all_prices) - 0.01 <= avg.iloc[0] <= max(all_prices) + 0.01

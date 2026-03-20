@@ -1,6 +1,6 @@
 # Phase 8: Market Oscillation Research
 
-## Status: PENDING
+## Status: IN PROGRESS
 
 ## Objective
 
@@ -66,16 +66,16 @@ Phase 8: Market Oscillation Research
 - [x] Identify 5 interacting root causes
 
 ### 8b. Dampening Mechanisms
-- [ ] B1: Fixed dampening sweep (alpha = 0.1 to 1.0)
-- [ ] B2: Adaptive dampening (proportional control)
-- [ ] B3: Two-phase convergence (dampened warm-start, then undampened refinement)
-- [ ] Document spec-compatibility justification
+- [x] B1: Fixed dampening sweep (alpha = 0.1 to 1.0)
+- [x] B2: Adaptive dampening (proportional control)
+- [x] B3: Two-phase convergence (dampened warm-start, then undampened refinement)
+- [x] Document spec-compatibility justification
 
 ### 8c. Weighting Reforms
-- [ ] C1: Per-strategy weight cap sweep (w_max = 0.05 to 1.0)
-- [ ] C2: Weighted median market price
-- [ ] C3: Log-profit weighting
-- [ ] C4: Cluster-aware cross-pole averaging
+- [x] C1: Per-strategy weight cap sweep (w_max = 0.05 to 1.0)
+- [x] C2: Weighted median market price
+- [x] C3: Log-profit weighting
+- [x] C4: Cluster-aware cross-pole averaging
 
 ### 8d. Initialisation Strategies
 - [ ] D1: Rolling mean initial price (window = 1 to 20)
@@ -84,10 +84,10 @@ Phase 8: Market Oscillation Research
 - [ ] D4: Percentile initial price (window + percentile)
 
 ### 8e. Iteration-Level Smoothing
-- [ ] E1: Running average of last K iterations
-- [ ] E2: Exponential moving average across iterations
-- [ ] E3: Best-iteration selection (lowest delta)
-- [ ] E4: Delta-weighted iteration average
+- [x] E1: Running average of last K iterations
+- [x] E2: Exponential moving average across iterations
+- [x] E3: Best-iteration selection (lowest delta)
+- [x] E4: Delta-weighted iteration average
 
 ### 8f. Evaluation and Synthesis
 - [ ] Build unified evaluation script
