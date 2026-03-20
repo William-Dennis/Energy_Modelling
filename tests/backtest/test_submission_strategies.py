@@ -66,7 +66,7 @@ def test_discover_finds_always_short() -> None:
 
 def test_discover_returns_all_strategies() -> None:
     factories, _ = _discover_submission_strategies()
-    assert len(factories) == 9
+    assert len(factories) == 18
 
 
 def test_discover_returns_descriptions() -> None:
