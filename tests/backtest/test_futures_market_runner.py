@@ -65,35 +65,17 @@ def _make_daily_frame(n_eval: int = 10) -> pd.DataFrame:
 
 
 class _AlwaysLong(BacktestStrategy):
-    def fit(self, train_data: pd.DataFrame) -> None:
-        pass
-
-    def act(self, state: BacktestState) -> int | None:
-        return 1
-
     def forecast(self, state: BacktestState) -> float:
         return state.last_settlement_price + 1.0
 
 
 class _AlwaysShort(BacktestStrategy):
-    def fit(self, train_data: pd.DataFrame) -> None:
-        pass
-
-    def act(self, state: BacktestState) -> int | None:
-        return -1
-
     def forecast(self, state: BacktestState) -> float:
         return state.last_settlement_price - 1.0
 
 
 class _ForecastStrategy(BacktestStrategy):
     """Strategy that provides explicit forecasts (last_settlement * 1.01)."""
-
-    def fit(self, train_data: pd.DataFrame) -> None:
-        pass
-
-    def act(self, state: BacktestState) -> int | None:
-        return 1  # always long
 
     def forecast(self, state: BacktestState) -> float:
         return state.last_settlement_price * 1.01

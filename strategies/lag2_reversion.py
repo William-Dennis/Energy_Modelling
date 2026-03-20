@@ -27,28 +27,9 @@ class Lag2ReversionStrategy(BacktestStrategy):
     ensuring we only trade when the lag-2 move was meaningful.
     """
 
-    def __init__(self) -> None:
-        self._threshold: float | None = None
-
     def fit(self, train_data: pd.DataFrame) -> None:
         abs_changes = train_data["price_change_eur_mwh"].abs()
-        self._threshold = float(abs_changes.median())
-
-    def act(self, state: BacktestState) -> int | None:
-        if self._threshold is None:
-            msg = "Lag2ReversionStrategy.act() called before fit()"
-            raise RuntimeError(msg)
-
-        history = state.history
-        if history.empty or len(history) < 2:
-            return None
-
-        # The second-to-last row in history is 2 days before delivery_date
-        change_2d_ago = float(history["price_change_eur_mwh"].iloc[-2])
-
-        if abs(change_2d_ago) < self._threshold:
-            return None
-        return -1 if change_2d_ago > 0 else 1
+        self.skip_buffer = float(abs_changes.median())
 
     def forecast(self, state: BacktestState) -> float:
         history = state.history

@@ -19,9 +19,6 @@ class AlwaysLongStrategy(BacktestStrategy):
             if self._mean_abs_change <= 0:
                 self._mean_abs_change = 1.0
 
-    def act(self, state: BacktestState) -> int | None:
-        return 1
-
     def forecast(self, state: BacktestState) -> float:
         return state.last_settlement_price + self._mean_abs_change
 

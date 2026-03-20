@@ -33,15 +33,6 @@ class PerfectForesightStrategy(BacktestStrategy):
     def __init__(self, settlement_lookup: dict[date, float]) -> None:
         self._settlement_lookup = settlement_lookup
 
-    def act(self, state: BacktestState) -> int | None:
-        """Return the correct direction by looking up the real settlement."""
-        real_price = self._settlement_lookup.get(state.delivery_date)
-        if real_price is None:
-            return 1  # Default to long if unknown date
-        if real_price > state.last_settlement_price:
-            return 1
-        return -1
-
     def forecast(self, state: BacktestState) -> float:
         """Return the actual settlement price (perfect foresight)."""
         real_price = self._settlement_lookup.get(state.delivery_date)

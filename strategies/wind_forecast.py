@@ -39,17 +39,12 @@ class WindForecastStrategy(BacktestStrategy):
             if self._mean_abs_change <= 0:
                 self._mean_abs_change = 1.0
 
-    def act(self, state: BacktestState) -> int | None:
+    def forecast(self, state: BacktestState) -> float:
         if self._threshold is None:
-            msg = "WindForecastStrategy.act() called before fit()"
+            msg = "WindForecastStrategy.forecast() called before fit()"
             raise RuntimeError(msg)
         combined = float(state.features[_OFFSHORE_COL]) + float(state.features[_ONSHORE_COL])
-        return -1 if combined >= self._threshold else 1
-
-    def forecast(self, state: BacktestState) -> float:
-        direction = self.act(state)
-        if direction is None:
-            return state.last_settlement_price
+        direction = -1 if combined >= self._threshold else 1
         return state.last_settlement_price + direction * self._mean_abs_change
 
     def reset(self) -> None:

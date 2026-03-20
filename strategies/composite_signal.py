@@ -65,7 +65,7 @@ class CompositeSignalStrategy(BacktestStrategy):
 
     def _composite_score(self, state: BacktestState) -> float | None:
         if self._means is None or self._stds is None:
-            msg = "CompositeSignalStrategy._composite_score() called before fit()"
+            msg = "CompositeSignalStrategy.forecast() called before fit()"
             raise RuntimeError(msg)
         values = np.array(
             [float(state.features[name]) for name in self._feature_names],
@@ -73,16 +73,6 @@ class CompositeSignalStrategy(BacktestStrategy):
         )
         z_scores = (values - self._means) / self._stds
         return float(np.dot(self._weights, z_scores))
-
-    def act(self, state: BacktestState) -> int | None:
-        composite = self._composite_score(state)
-        if composite is None:
-            return None
-        if composite > 0:
-            return 1
-        if composite < 0:
-            return -1
-        return None
 
     def forecast(self, state: BacktestState) -> float:
         composite = self._composite_score(state)

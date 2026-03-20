@@ -36,22 +36,37 @@ class BacktestState:
 class BacktestStrategy(ABC):
     """Minimal interface students implement for the hackathon challenge."""
 
+    #: Minimum distance between forecast and entry price to trigger a trade.
+    #: Subclasses may override this with a value calibrated during ``fit()``.
+    skip_buffer: float = 0.0
+
     def fit(self, train_data: pd.DataFrame) -> None:  # noqa: B027
         """Fit the strategy on public training data."""
-
-    @abstractmethod
-    def act(self, state: BacktestState) -> int | None:
-        """Return ``+1`` for long, ``-1`` for short, or ``None`` to skip."""
 
     @abstractmethod
     def forecast(self, state: BacktestState) -> float:
         """Return an explicit price forecast for the delivery date.
 
-        The futures market engine uses the forecast directly in the
-        weighted-average price update (spec Step 4).  The direction
-        returned by ``act()`` should be consistent with the forecast
-        relative to the current market price.
+        This is the single method subclasses must implement.  The market
+        engine uses the forecast directly in the weighted-average price
+        update (spec Step 4), and ``act()`` derives the trading direction
+        from it automatically.
         """
+
+    def act(self, state: BacktestState) -> int | None:
+        """Derive trading direction from the forecast.
+
+        Returns ``+1`` if forecast > entry + buffer, ``-1`` if
+        forecast < entry - buffer, or ``None`` (skip) if the forecast
+        falls within the dead zone.
+        """
+        price_forecast = self.forecast(state)
+        entry = state.last_settlement_price
+        if price_forecast > entry + self.skip_buffer:
+            return 1
+        if price_forecast < entry - self.skip_buffer:
+            return -1
+        return None
 
     def reset(self) -> None:  # noqa: B027
         """Reset any internal state before a new evaluation run."""
