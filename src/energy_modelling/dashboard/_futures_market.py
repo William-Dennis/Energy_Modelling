@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from datetime import date
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -33,6 +32,30 @@ from energy_modelling.dashboard._backtest import (
 # ---------------------------------------------------------------------------
 
 
+def _make_pf_factory(
+    daily: pd.DataFrame,
+    eval_start: date,
+    eval_end: date,
+) -> object:
+    """Build a no-arg PerfectForesightStrategy factory for the given eval window."""
+    from strategies.perfect_foresight import PerfectForesightStrategy  # noqa: PLC0415
+
+    df = daily.copy()
+    if "delivery_date" in df.columns:
+        df["delivery_date"] = pd.to_datetime(df["delivery_date"]).dt.date
+        df = df.set_index("delivery_date")
+    else:
+        df.index = pd.Index(pd.to_datetime(df.index).date, name="delivery_date")
+
+    mask = (df.index >= eval_start) & (df.index <= eval_end)
+    lookup = df.loc[mask, "settlement_price"].astype(float).to_dict()
+
+    def _factory() -> PerfectForesightStrategy:
+        return PerfectForesightStrategy(settlement_lookup=lookup)
+
+    return _factory
+
+
 def _run_market(
     selected: list[str],
     daily: pd.DataFrame,
@@ -41,6 +64,7 @@ def _run_market(
     eval_end: date,
 ) -> FuturesMarketResult | None:
     factories = {n: STRATEGY_FACTORIES[n] for n in selected}
+    factories["Perfect Foresight"] = _make_pf_factory(daily, eval_start, eval_end)
     try:
         return run_futures_market_evaluation(
             strategy_factories=factories,
@@ -102,17 +126,11 @@ def _fmt_market_lb(frame: pd.DataFrame) -> pd.DataFrame:
 # Market section for one period
 # ---------------------------------------------------------------------------
 
-# Outer band (p10–p90): subtle fill, no border lines
+# Outer band colour (reused for the dashed prev-day line)
 _OUTER_COLOR = "rgba(99,110,250,0.12)"
 _OUTER_BORDER = "rgba(99,110,250,0.35)"
-# Inner band (p25–p75): stronger fill
-_INNER_COLOR = "rgba(99,110,250,0.25)"
-_INNER_BORDER = "rgba(99,110,250,0.55)"
-# Median line
+# Median / primary line
 _MEDIAN_COLOR = "#636EFA"
-# Real-price reference lines
-_REAL_COLOR = "rgba(255,255,255,0.45)"
-_REAL_LABEL_COLOR = "rgba(255,255,255,0.6)"
 
 
 def _render_price_quantile_evolution(
@@ -121,132 +139,65 @@ def _render_price_quantile_evolution(
     eval_start: date,
     eval_end: date,
 ) -> None:
-    """Chart: synthetic price quantile fan across iterations vs real market."""
+    """Chart: MAE of synthetic market price vs real settlement and prev-day settlement."""
     if len(eq_iterations) < 2:
         return
 
-    # Per-iteration quantile arrays
-    iters = [it.iteration for it in eq_iterations]
-    qs = {q: [] for q in [0.10, 0.25, 0.50, 0.75, 0.90]}
-    for it in eq_iterations:
-        vals = it.market_prices.values
-        for q in qs:
-            qs[q].append(float(np.quantile(vals, q)))
-
-    p10, p25, p50, p75, p90 = qs[0.10], qs[0.25], qs[0.50], qs[0.75], qs[0.90]
-
-    # Real settlement quantiles
+    # Prepare reference series aligned to eval window
     data = daily_data.copy()
     data["delivery_date"] = pd.to_datetime(data["delivery_date"]).dt.date
     data = data.set_index("delivery_date")
     mask = (data.index >= eval_start) & (data.index <= eval_end)
-    real_vals = data.loc[mask, "settlement_price"].astype(float).values
-    rq = {q: float(np.quantile(real_vals, q)) for q in [0.10, 0.25, 0.50, 0.75, 0.90]}
+    eval_ref = data.loc[mask]
+    real_prices = eval_ref["settlement_price"].astype(float)
+    prev_day_prices = eval_ref["last_settlement_price"].astype(float)
 
-    st.subheader("Synthetic Price Distribution vs Iterations")
+    # Per-iteration MAE against each reference
+    iters: list[int] = []
+    mae_real: list[float] = []
+    mae_prev: list[float] = []
+    for it in eq_iterations:
+        mp = it.market_prices.reindex(real_prices.index).astype(float)
+        iters.append(it.iteration)
+        mae_real.append(float((mp - real_prices).abs().mean()))
+        mae_prev.append(float((mp - prev_day_prices).abs().mean()))
+
+    st.subheader("Synthetic Price MAE vs Iterations")
 
     fig = go.Figure()
 
-    # --- Outer band: p10–p90 (fill between) ---
     fig.add_trace(
         go.Scatter(
             x=iters,
-            y=p90,
-            mode="lines",
-            line={"width": 0, "color": _OUTER_BORDER},
-            name="p90",
-            showlegend=False,
-            hovertemplate="Iter %{x} — p90: %{y:.1f} EUR/MWh<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=iters,
-            y=p10,
-            mode="lines",
-            line={"width": 0, "color": _OUTER_BORDER},
-            fill="tonexty",
-            fillcolor=_OUTER_COLOR,
-            name="p10–p90 range",
-            showlegend=True,
-            hovertemplate="Iter %{x} — p10: %{y:.1f} EUR/MWh<extra></extra>",
-        )
-    )
-
-    # --- Inner band: p25–p75 ---
-    fig.add_trace(
-        go.Scatter(
-            x=iters,
-            y=p75,
-            mode="lines",
-            line={"width": 0, "color": _INNER_BORDER},
-            name="p75",
-            showlegend=False,
-            hovertemplate="Iter %{x} — p75: %{y:.1f} EUR/MWh<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=iters,
-            y=p25,
-            mode="lines",
-            line={"width": 0, "color": _INNER_BORDER},
-            fill="tonexty",
-            fillcolor=_INNER_COLOR,
-            name="p25–p75 range",
-            showlegend=True,
-            hovertemplate="Iter %{x} — p25: %{y:.1f} EUR/MWh<extra></extra>",
-        )
-    )
-
-    # --- Median line ---
-    fig.add_trace(
-        go.Scatter(
-            x=iters,
-            y=p50,
+            y=mae_real,
             mode="lines+markers",
             line={"color": _MEDIAN_COLOR, "width": 2.5},
             marker={"size": 6, "color": _MEDIAN_COLOR},
-            name="p50 (median)",
-            hovertemplate="Iter %{x} — median: %{y:.1f} EUR/MWh<extra></extra>",
+            name="MAE vs real settlement",
+            hovertemplate="Iter %{x} — MAE vs real: %{y:.2f} EUR/MWh<extra></extra>",
         )
     )
 
-    # --- Real settlement reference lines ---
-    x_min, x_max = iters[0], iters[-1]
-    ref_labels = {0.10: "p10", 0.25: "p25", 0.50: "p50", 0.75: "p75", 0.90: "p90"}
-    for i, (q, label) in enumerate(ref_labels.items()):
-        show = i == 0  # single legend entry for all real lines
-        fig.add_trace(
-            go.Scatter(
-                x=[x_min, x_max],
-                y=[rq[q], rq[q]],
-                mode="lines",
-                line={"color": _REAL_COLOR, "dash": "dot", "width": 1},
-                name="Real settlement" if show else None,
-                showlegend=show,
-                hovertemplate=f"Real {label}: {rq[q]:.1f} EUR/MWh<extra></extra>",
-            )
+    fig.add_trace(
+        go.Scatter(
+            x=iters,
+            y=mae_prev,
+            mode="lines+markers",
+            line={"color": _OUTER_BORDER, "width": 2.5, "dash": "dash"},
+            marker={"size": 6, "color": _OUTER_BORDER},
+            name="MAE vs prev-day settlement",
+            hovertemplate="Iter %{x} — MAE vs prev-day: %{y:.2f} EUR/MWh<extra></extra>",
         )
-        fig.add_annotation(
-            x=x_max,
-            y=rq[q],
-            text=f"<b>{label}</b>",
-            showarrow=False,
-            xanchor="left",
-            xshift=6,
-            font={"size": 10, "color": _REAL_LABEL_COLOR},
-        )
+    )
 
     fig.update_layout(
         xaxis_title="Iteration",
-        yaxis_title="Price (EUR/MWh)",
+        yaxis_title="MAE (EUR/MWh)",
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "left", "x": 0},
         xaxis={"dtick": 1, "gridcolor": "rgba(255,255,255,0.08)"},
         yaxis={"gridcolor": "rgba(255,255,255,0.08)"},
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        margin={"r": 60},
         hovermode="x unified",
     )
     st.plotly_chart(fig, use_container_width=True)

@@ -161,6 +161,39 @@ def _parse_date(s: str | None) -> date | None:
     return date.fromisoformat(s)
 
 
+class _PFFactory:
+    """Picklable factory that produces a PerfectForesightStrategy.
+
+    A plain class (not a closure) so it survives ProcessPoolExecutor pickling.
+    """
+
+    def __init__(self, settlement_lookup: dict) -> None:
+        self._lookup = settlement_lookup
+
+    def __call__(self) -> BacktestStrategy:
+        from strategies.perfect_foresight import PerfectForesightStrategy  # noqa: PLC0415
+
+        return PerfectForesightStrategy(settlement_lookup=self._lookup)
+
+
+def _make_pf_factory(
+    daily_data: pd.DataFrame,
+    evaluation_start: date,
+    evaluation_end: date,
+) -> _PFFactory:
+    """Build a picklable no-arg factory for PerfectForesightStrategy."""
+    df = daily_data.copy()
+    if "delivery_date" in df.columns:
+        df["delivery_date"] = pd.to_datetime(df["delivery_date"]).dt.date
+        df = df.set_index("delivery_date")
+    else:
+        df.index = pd.Index(pd.to_datetime(df.index).date, name="delivery_date")
+
+    mask = (df.index >= evaluation_start) & (df.index <= evaluation_end)
+    lookup = df.loc[mask, "settlement_price"].astype(float).to_dict()
+    return _PFFactory(lookup)
+
+
 def recompute_all(
     strategies: list[str] | None = None,
     benchmarks: list[str] | None = None,
@@ -334,8 +367,10 @@ def recompute_all(
     # ------------------------------------------------------------------
     logger.info("Running futures market simulation (2024)...")
     try:
+        pf_factory_2024 = _make_pf_factory(daily, e_start, e_end)
+        market_factories_2024 = {**strat_factories, "Perfect Foresight": pf_factory_2024}
         m24 = run_futures_market_evaluation(
-            strategy_factories=strat_factories,
+            strategy_factories=market_factories_2024,
             daily_data=daily,
             training_end=t_end,
             evaluation_start=e_start,
@@ -350,8 +385,10 @@ def recompute_all(
     if combined is not None:
         logger.info("Running futures market simulation (2025)...")
         try:
+            pf_factory_2025 = _make_pf_factory(combined, date(2025, 1, 1), date(2025, 12, 31))
+            market_factories_2025 = {**strat_factories, "Perfect Foresight": pf_factory_2025}
             m25 = run_futures_market_evaluation(
-                strategy_factories=strat_factories,
+                strategy_factories=market_factories_2025,
                 daily_data=combined,
                 training_end=date(2024, 12, 31),
                 evaluation_start=date(2025, 1, 1),
