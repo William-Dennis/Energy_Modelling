@@ -5,6 +5,18 @@ automatically discovered by the dashboard's Challenge tab.
 """
 
 from strategies.always_long import AlwaysLongStrategy
+from strategies.boosted_spread_ml import BoostedSpreadMLStrategy
+from strategies.consensus_signal import ConsensusSignalStrategy
+from strategies.diversity_ensemble import DiversityEnsembleStrategy
+from strategies.majority_vote_ml import MajorityVoteMLStrategy
+from strategies.majority_vote_rule import MajorityVoteRuleBasedStrategy
+from strategies.mean_forecast_regression import MeanForecastRegressionStrategy
+from strategies.median_forecast_ensemble import MedianForecastEnsembleStrategy
+from strategies.regime_conditional_ensemble import RegimeConditionalEnsembleStrategy
+from strategies.stacked_ridge_meta import StackedRidgeMetaStrategy
+from strategies.top_k_ensemble import TopKEnsembleStrategy
+from strategies.weekday_weekend_ensemble import WeekdayWeekendEnsembleStrategy
+from strategies.weighted_vote_mixed import WeightedVoteMixedStrategy
 from strategies.always_short import AlwaysShortStrategy
 from strategies.bayesian_ridge import BayesianRidgeStrategy
 from strategies.carbon_trend import CarbonTrendStrategy
@@ -62,6 +74,18 @@ from strategies.zscore_momentum import ZScoreMomentumStrategy
 
 __all__ = [
     "AlwaysLongStrategy",
+    "BoostedSpreadMLStrategy",
+    "ConsensusSignalStrategy",
+    "DiversityEnsembleStrategy",
+    "MajorityVoteMLStrategy",
+    "MajorityVoteRuleBasedStrategy",
+    "MeanForecastRegressionStrategy",
+    "MedianForecastEnsembleStrategy",
+    "RegimeConditionalEnsembleStrategy",
+    "StackedRidgeMetaStrategy",
+    "TopKEnsembleStrategy",
+    "WeekdayWeekendEnsembleStrategy",
+    "WeightedVoteMixedStrategy",
     "AlwaysShortStrategy",
     "BayesianRidgeStrategy",
     "CarbonTrendStrategy",
