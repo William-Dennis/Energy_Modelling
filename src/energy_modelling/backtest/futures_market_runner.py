@@ -48,11 +48,16 @@ class FuturesMarketResult:
     original_results:
         Per-strategy backtest results under the original
         ``last_settlement_price`` entry price (for comparison).
+    strategy_forecasts:
+        Raw forecasts ``{strategy_name: {date: forecast_price}}``.
+        Persisted so that the market engine can be re-run with different
+        configurations without re-fitting strategies.
     """
 
     equilibrium: FuturesMarketEquilibrium
     market_results: dict[str, BacktestResult]
     original_results: dict[str, BacktestResult]
+    strategy_forecasts: dict[str, dict] = None  # type: ignore[assignment]
 
 
 def _recompute_pnl_against_market(
@@ -140,10 +145,11 @@ def run_futures_market_evaluation(
     training_end: date,
     evaluation_start: date,
     evaluation_end: date,
-    max_iterations: int = 20,
+    max_iterations: int = 50,
     convergence_threshold: float = 0.01,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
+    running_avg_k: int | None = 5,
 ) -> FuturesMarketResult:
     """Run all strategies, then evaluate them under the synthetic market.
 
@@ -160,6 +166,11 @@ def run_futures_market_evaluation(
         Number of worker processes for parallelism. ``None`` uses
         :class:`ProcessPoolExecutor` defaults (one per CPU).
         Set to 1 to disable parallelism (serial execution).
+    running_avg_k:
+        Running-average window applied across iterations (Phase 8 E1
+        winner). Default 5 — the configuration that resolves the 3-step
+        limit cycle and converges within 50 iterations. Set to ``None``
+        to disable smoothing (spec-compliant, but does not converge).
     """
 
     # Phase 1 + 2b: Fit strategies and collect forecasts (parallel)
@@ -215,6 +226,7 @@ def run_futures_market_evaluation(
         strategy_forecasts=strategy_forecasts,
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
+        running_avg_k=running_avg_k,
     )
 
     # Phase 4: Recompute PnL for each strategy under market prices
@@ -243,4 +255,5 @@ def run_futures_market_evaluation(
         equilibrium=equilibrium,
         market_results=market_results,
         original_results=original_results,
+        strategy_forecasts=strategy_forecasts,
     )

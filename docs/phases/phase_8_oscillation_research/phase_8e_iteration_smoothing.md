@@ -1,6 +1,23 @@
 # Phase 8e: Iteration-Level Smoothing
 
-## Status: PENDING
+## Status: COMPLETE ✅ — Winner: E1 Running Average K=5
+
+### Actual Results
+
+| ID | 2024 MAE | 2024 iters | 2024 delta | 2025 MAE | 2025 iters | 2025 delta | Converged |
+|----|---------|-----------|-----------|---------|-----------|-----------|-----------|
+| E1_ravg2 | 12.78 | 14 | 0.0017 | 11.21 | 14 | 0.0089 | **Yes** |
+| E1_ravg3 | 11.43 | 15 | 0.0026 | 9.85 | 30 | 0.0074 | **Yes** |
+| **E1_ravg5** | **10.85** | **32** | **0.0034** | **9.29** | **40** | **0.0037** | **Yes** |
+| E2_ema01 | 15.13 | 50 | 81.42 | — | — | — | No |
+| E2_ema03 | 10.70 | 50 | 13.55 | — | — | — | No |
+| E2_ema05 | 10.51 | 50 | 6.04 | — | — | — | No |
+| E2_ema07 | 10.26 | 50 | 5.97 | — | — | — | No |
+| E2_ema09 | 10.39 | 50 | 6.24 | — | — | — | No |
+
+**Winner: E1_ravg5 (running average K=5)** — only method in the entire Phase 8
+experiment suite (32 configs) that converges on both years with MAE below the
+15.10 iter-0 baseline.
 
 ## Objective
 

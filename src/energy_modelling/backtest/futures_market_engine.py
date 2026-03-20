@@ -10,6 +10,18 @@ Implements the prediction-market model from ``docs/energy_market_spec.md``:
 
 Every strategy must provide explicit price forecasts.  The market price
 is the profit-weighted average of forecasts from profitable strategies.
+
+Experiment parameters (Phase 8 research, default values reproduce the spec):
+- ``alpha`` (float, default 1.0): dampening factor.  New price is blended as
+  ``alpha * candidate + (1-alpha) * current``.  1.0 = no dampening (spec).
+- ``weight_mode`` (str, default ``"linear"``): how profits are mapped to weights.
+  - ``"linear"``: raw profit proportional (spec).
+  - ``"log"``: log(1 + profit) proportional, reduces winner-take-all effect.
+  - ``"capped"``: linear but each weight is capped at ``weight_cap``.
+- ``weight_cap`` (float, default 1.0): effective only when ``weight_mode="capped"``.
+- ``price_mode`` (str, default ``"mean"``): aggregation of weighted forecasts.
+  - ``"mean"``: weighted arithmetic mean (spec).
+  - ``"median"``: weighted median, more robust to outlier forecasts.
 """
 
 from __future__ import annotations
@@ -126,47 +138,113 @@ def compute_strategy_profits(
 
 def compute_weights(
     strategy_profits: dict[str, float],
+    weight_mode: str = "linear",
+    weight_cap: float = 1.0,
 ) -> dict[str, float]:
     """Normalise profits into non-negative weights that sum to 1 (spec Step 3).
 
     Only strategies with strictly positive total profit receive weight.
     If all strategies are non-positive, returns uniform zero weights.
+
+    Parameters
+    ----------
+    strategy_profits:
+        Total profit per strategy.
+    weight_mode:
+        ``"linear"`` (spec default): weight proportional to profit.
+        ``"log"``: weight proportional to log(1 + profit), dampens
+        winner-take-all effect.
+        ``"capped"``: linear weights but each capped at ``weight_cap``
+        before renormalisation.
+    weight_cap:
+        Maximum weight for any single strategy when ``weight_mode="capped"``.
+        Values outside (0, 1] are clamped to that range.
     """
-    raw = {name: max(profit, 0.0) for name, profit in strategy_profits.items()}
+    if weight_mode == "log":
+        raw = {name: float(np.log1p(max(profit, 0.0))) for name, profit in strategy_profits.items()}
+    else:
+        raw = {name: max(profit, 0.0) for name, profit in strategy_profits.items()}
+
     total = sum(raw.values())
     if total == 0.0:
         return {name: 0.0 for name in raw}
-    return {name: w / total for name, w in raw.items()}
+
+    normalised = {name: w / total for name, w in raw.items()}
+
+    if weight_mode == "capped":
+        cap = max(min(weight_cap, 1.0), 1e-9)
+        capped = {name: min(w, cap) for name, w in normalised.items()}
+        cap_total = sum(capped.values())
+        if cap_total == 0.0:
+            return {name: 0.0 for name in capped}
+        return {name: w / cap_total for name, w in capped.items()}
+
+    return normalised
 
 
 def compute_market_prices(
     weights: dict[str, float],
     strategy_forecasts: dict[str, dict],
     current_market_prices: pd.Series,
+    price_mode: str = "mean",
 ) -> pd.Series:
-    """Compute new market prices as weighted average of forecasts (spec Step 4).
+    """Compute new market prices as weighted aggregate of forecasts (spec Step 4).
 
-    P^m_{t}^(k+1) = sum_i w_i^{norm} * forecast_{i,t}
+    P^m_{t}^(k+1) = aggregate_i w_i * forecast_{i,t}
 
     If no strategy has weight for a given day, the price carries forward
     from ``current_market_prices``.
+
+    Parameters
+    ----------
+    weights:
+        Normalised strategy weights (from :func:`compute_weights`).
+    strategy_forecasts:
+        ``{strategy_name: {date: forecast_price}}``.
+    current_market_prices:
+        Prices from the previous iteration (fallback).
+    price_mode:
+        ``"mean"`` (spec default): weighted arithmetic mean.
+        ``"median"``: weighted median — more robust to outlier forecasts.
     """
     index = current_market_prices.index
     new_prices = current_market_prices.copy().astype(float)
 
     for t in index:
-        numerator = 0.0
-        denominator = 0.0
+        forecasts_t = []
+        weights_t = []
         for name, w in weights.items():
             if w <= 0.0:
                 continue
             forecast = strategy_forecasts.get(name, {}).get(t)
             if forecast is None:
                 continue
-            numerator += w * float(forecast)
-            denominator += w
-        if denominator > 0.0:
-            new_prices.loc[t] = numerator / denominator
+            forecasts_t.append(float(forecast))
+            weights_t.append(w)
+
+        if not forecasts_t:
+            continue
+
+        if price_mode == "median":
+            # Weighted median: sort by forecast, find cumulative weight >= 0.5
+            total_w = sum(weights_t)
+            if total_w == 0.0:
+                continue
+            pairs = sorted(zip(forecasts_t, weights_t), key=lambda x: x[0])
+            cumulative = 0.0
+            median_val = pairs[0][0]
+            for f_val, w_val in pairs:
+                cumulative += w_val / total_w
+                if cumulative >= 0.5:
+                    median_val = f_val
+                    break
+            new_prices.loc[t] = median_val
+        else:
+            # "mean" — weighted arithmetic mean (spec default)
+            total_w = sum(weights_t)
+            if total_w == 0.0:
+                continue
+            new_prices.loc[t] = sum(f * w for f, w in zip(forecasts_t, weights_t)) / total_w
 
     return new_prices
 
@@ -181,6 +259,9 @@ def run_futures_market_iteration(
     real_prices: pd.Series,
     iteration: int,
     strategy_forecasts: dict[str, dict],
+    weight_mode: str = "linear",
+    weight_cap: float = 1.0,
+    price_mode: str = "mean",
 ) -> FuturesMarketIteration:
     """Execute one full iteration of the synthetic futures market.
 
@@ -191,9 +272,11 @@ def run_futures_market_iteration(
     4. Compute new market prices from the weighted forecasts.
     """
     profits = compute_strategy_profits(market_prices, real_prices, strategy_forecasts)
-    weights = compute_weights(profits)
+    weights = compute_weights(profits, weight_mode=weight_mode, weight_cap=weight_cap)
     active = [name for name, w in weights.items() if w > 0.0]
-    new_prices = compute_market_prices(weights, strategy_forecasts, market_prices)
+    new_prices = compute_market_prices(
+        weights, strategy_forecasts, market_prices, price_mode=price_mode
+    )
 
     return FuturesMarketIteration(
         iteration=iteration,
@@ -210,6 +293,11 @@ def run_futures_market(
     strategy_forecasts: dict[str, dict],
     max_iterations: int = 20,
     convergence_threshold: float = 0.01,
+    alpha: float = 1.0,
+    weight_mode: str = "linear",
+    weight_cap: float = 1.0,
+    price_mode: str = "mean",
+    running_avg_k: int | None = None,
 ) -> FuturesMarketEquilibrium:
     """Run the synthetic futures market until prices converge (spec Step 5).
 
@@ -226,11 +314,30 @@ def run_futures_market(
         Hard cap on iteration count.
     convergence_threshold:
         Maximum absolute EUR/MWh change to declare convergence.
+    alpha:
+        Dampening factor in [0, 1].  The updated price is blended as
+        ``alpha * candidate + (1 - alpha) * current``.  Default 1.0
+        reproduces the original spec (no dampening).
+    weight_mode:
+        Profit-to-weight mapping.  ``"linear"`` (spec), ``"log"``,
+        or ``"capped"``.
+    weight_cap:
+        Per-strategy weight cap when ``weight_mode="capped"``.
+    price_mode:
+        Forecast aggregation method.  ``"mean"`` (spec) or ``"median"``.
+    running_avg_k:
+        If set, the published market price at each iteration is the mean of
+        the last *k* raw iteration candidates.  This running-average
+        smoothing breaks the 3-step limit cycle that otherwise prevents
+        convergence.  ``None`` (default) disables smoothing (spec-compliant).
+        **Recommended production value: 5** (Phase 8 experiment winner —
+        converges within 50 iters, MAE 10.85 on 2024, 9.29 on 2025).
     """
     current_prices = initial_market_prices.copy().astype(float)
     iterations: list[FuturesMarketIteration] = []
     converged = False
     delta = float("inf")
+    price_history: list[pd.Series] = []
 
     for k in tqdm(range(max_iterations), desc="Market simulation", unit="iter"):
         result = run_futures_market_iteration(
@@ -238,11 +345,39 @@ def run_futures_market(
             real_prices=real_prices,
             iteration=k,
             strategy_forecasts=strategy_forecasts,
+            weight_mode=weight_mode,
+            weight_cap=weight_cap,
+            price_mode=price_mode,
         )
 
-        delta = float((result.market_prices - current_prices).abs().max())
+        # Apply within-iteration alpha dampening
+        if alpha < 1.0:
+            candidate = alpha * result.market_prices + (1.0 - alpha) * current_prices
+        else:
+            candidate = result.market_prices
+
+        # Apply cross-iteration running-average smoothing (E1)
+        if running_avg_k is not None and running_avg_k > 1:
+            price_history.append(candidate.copy())
+            if len(price_history) > running_avg_k:
+                price_history = price_history[-running_avg_k:]
+            published = pd.concat(price_history, axis=1).mean(axis=1)
+        else:
+            published = candidate
+
+        # Store the published (smoothed) prices in the iteration snapshot
+        if published is not result.market_prices:
+            result = FuturesMarketIteration(
+                iteration=result.iteration,
+                market_prices=published,
+                strategy_profits=result.strategy_profits,
+                strategy_weights=result.strategy_weights,
+                active_strategies=result.active_strategies,
+            )
+
+        delta = float((published - current_prices).abs().max())
         iterations.append(result)
-        current_prices = result.market_prices
+        current_prices = published
 
         if delta < convergence_threshold:
             converged = True
