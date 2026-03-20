@@ -81,7 +81,8 @@ def test_runner_computes_daily_pnl() -> None:
 
 
 class _BadStrategy(BacktestStrategy):
-    # Overrides act() to return an invalid value (2) for validation testing.
+    # Intentionally overrides act() (bypassing forecast-first design) to return
+    # an invalid value (2) — tests that the runner's validation catches it.
     def act(self, state: BacktestState) -> int | None:
         return 2  # type: ignore[return-value]
 

@@ -117,6 +117,6 @@ class TestLag2ReversionThreshold:
 
 
 class TestLag2ReversionNotFitted:
-    def test_skip_buffer_defaults_to_zero_before_fit(self) -> None:
+    def test_skip_buffer_initialized_to_zero(self) -> None:
         s = Lag2ReversionStrategy()
         assert s.skip_buffer == 0.0

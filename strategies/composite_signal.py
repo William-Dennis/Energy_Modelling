@@ -65,7 +65,7 @@ class CompositeSignalStrategy(BacktestStrategy):
 
     def _composite_score(self, state: BacktestState) -> float | None:
         if self._means is None or self._stds is None:
-            msg = "CompositeSignalStrategy.forecast() called before fit()"
+            msg = "CompositeSignalStrategy called before fit()"
             raise RuntimeError(msg)
         values = np.array(
             [float(state.features[name]) for name in self._feature_names],
