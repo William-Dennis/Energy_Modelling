@@ -6,6 +6,7 @@ automatically discovered by the dashboard's Challenge tab.
 
 from strategies.always_long import AlwaysLongStrategy
 from strategies.always_short import AlwaysShortStrategy
+from strategies.bayesian_ridge import BayesianRidgeStrategy
 from strategies.carbon_trend import CarbonTrendStrategy
 from strategies.commodity_cost import CommodityCostStrategy
 from strategies.composite_signal import CompositeSignalStrategy
@@ -13,24 +14,38 @@ from strategies.cross_border_spread import CrossBorderSpreadStrategy
 from strategies.day_of_week import DayOfWeekStrategy
 from strategies.de_fr_spread import DEFRSpreadStrategy
 from strategies.de_nl_spread import DENLSpreadStrategy
+from strategies.decision_tree_direction import DecisionTreeStrategy
 from strategies.dow_composite import DowCompositeStrategy
+from strategies.elastic_net import ElasticNetStrategy
 from strategies.fossil_dispatch import FossilDispatchStrategy
 from strategies.fr_flow_signal import FRFlowSignalStrategy
 from strategies.fuel_index_trend import FuelIndexTrendStrategy
 from strategies.gas_trend import GasTrendStrategy
+from strategies.gbm_net_demand import GBMNetDemandStrategy
+from strategies.gradient_boosting_direction import GradientBoostingStrategy
+from strategies.knn_direction import KNNDirectionStrategy
 from strategies.lag2_reversion import Lag2ReversionStrategy
+from strategies.lasso_calendar_augmented import LassoCalendarAugmentedStrategy
 from strategies.lasso_regression import LassoRegressionStrategy
+from strategies.lasso_top_features import LassoTopFeaturesStrategy
 from strategies.load_forecast import LoadForecastStrategy
 from strategies.load_surprise import LoadSurpriseStrategy
+from strategies.logistic_direction import LogisticDirectionStrategy
 from strategies.multi_spread import MultiSpreadStrategy
 from strategies.net_demand import NetDemandStrategy
+from strategies.neural_net import NeuralNetStrategy
 from strategies.nl_flow_signal import NLFlowSignalStrategy
 from strategies.nuclear_availability import NuclearAvailabilityStrategy
+from strategies.pls_regression import PLSRegressionStrategy
 from strategies.price_min_reversion import PriceMinReversionStrategy
 from strategies.price_zscore_reversion import PriceZScoreReversionStrategy
+from strategies.random_forest_direction import RandomForestStrategy
 from strategies.renewables_penetration import RenewablesPenetrationStrategy
 from strategies.renewables_surplus import RenewablesSurplusStrategy
+from strategies.ridge_net_demand import RidgeNetDemandStrategy
+from strategies.ridge_regression import RidgeRegressionStrategy
 from strategies.solar_forecast import SolarForecastStrategy
+from strategies.svm_direction import SVMDirectionStrategy
 from strategies.temperature_extreme import TemperatureExtremeStrategy
 from strategies.volatility_regime import VolatilityRegimeStrategy
 from strategies.weekly_cycle import WeeklyCycleStrategy
@@ -40,6 +55,7 @@ from strategies.wind_forecast_error import WindForecastErrorStrategy
 __all__ = [
     "AlwaysLongStrategy",
     "AlwaysShortStrategy",
+    "BayesianRidgeStrategy",
     "CarbonTrendStrategy",
     "CommodityCostStrategy",
     "CompositeSignalStrategy",
@@ -47,24 +63,38 @@ __all__ = [
     "DayOfWeekStrategy",
     "DEFRSpreadStrategy",
     "DENLSpreadStrategy",
+    "DecisionTreeStrategy",
     "DowCompositeStrategy",
+    "ElasticNetStrategy",
     "FossilDispatchStrategy",
     "FRFlowSignalStrategy",
     "FuelIndexTrendStrategy",
     "GasTrendStrategy",
+    "GBMNetDemandStrategy",
+    "GradientBoostingStrategy",
+    "KNNDirectionStrategy",
     "Lag2ReversionStrategy",
+    "LassoCalendarAugmentedStrategy",
     "LassoRegressionStrategy",
+    "LassoTopFeaturesStrategy",
     "LoadForecastStrategy",
     "LoadSurpriseStrategy",
+    "LogisticDirectionStrategy",
     "MultiSpreadStrategy",
     "NetDemandStrategy",
+    "NeuralNetStrategy",
     "NLFlowSignalStrategy",
     "NuclearAvailabilityStrategy",
+    "PLSRegressionStrategy",
     "PriceMinReversionStrategy",
     "PriceZScoreReversionStrategy",
+    "RandomForestStrategy",
     "RenewablesPenetrationStrategy",
     "RenewablesSurplusStrategy",
+    "RidgeNetDemandStrategy",
+    "RidgeRegressionStrategy",
     "SolarForecastStrategy",
+    "SVMDirectionStrategy",
     "TemperatureExtremeStrategy",
     "VolatilityRegimeStrategy",
     "WeeklyCycleStrategy",
