@@ -18,6 +18,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 # ---------------------------------------------------------------------------
 # Types
@@ -231,7 +232,7 @@ def run_futures_market(
     converged = False
     delta = float("inf")
 
-    for k in range(max_iterations):
+    for k in tqdm(range(max_iterations), desc="Market simulation", unit="iter"):
         result = run_futures_market_iteration(
             market_prices=current_prices,
             real_prices=real_prices,
