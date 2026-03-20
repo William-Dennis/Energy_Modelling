@@ -1,16 +1,7 @@
-"""Convergence analysis for the synthetic futures market (Phase 7).
+"""Convergence analysis for the synthetic futures market.
 
-Provides theoretical and empirical tools for analyzing whether and how
-the iterative market weighting scheme converges under various strategy
-configurations, with a focus on perfect foresight.
-
-Key results:
-- **Fixed PF**: Directions fixed at sign(P_real - P_initial). Converges
-  but with overshoot bias bounded by alpha * spread.
-- **Adaptive PF**: Directions re-computed each iteration as sign(P_real - P_market).
-  Guarantees convergence to P_real (contraction mapping).
-- **Opposing strategies**: Always Long + Always Short cause oscillation
-  when their aggregate net profit changes sign across iterations.
+Theoretical and empirical tools for analyzing market convergence
+under various strategy configurations (fixed/adaptive perfect foresight).
 """
 
 from __future__ import annotations
@@ -27,11 +18,6 @@ from energy_modelling.backtest.futures_market_engine import (
     compute_strategy_profits,
     compute_weights,
 )
-
-
-# ---------------------------------------------------------------------------
-# Types
-# ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -57,11 +43,6 @@ class ConvergenceTrajectory:
     rmse_per_iteration: list[float]
     final_rmse: float
     converged: bool
-
-
-# ---------------------------------------------------------------------------
-# Perfect foresight direction helpers
-# ---------------------------------------------------------------------------
 
 
 def fixed_perfect_foresight_directions(
@@ -97,11 +78,6 @@ def adaptive_perfect_foresight_directions(
     directions = np.sign(diff)
     directions = directions.replace(0, 1)
     return directions.astype(int)
-
-
-# ---------------------------------------------------------------------------
-# Theoretical formulas (single-day, single-strategy)
-# ---------------------------------------------------------------------------
 
 
 def compute_theoretical_steps_to_arrival(
@@ -159,9 +135,26 @@ def compute_overshoot_bias(
     return steps * step - distance
 
 
-# ---------------------------------------------------------------------------
-# Trajectory extraction
-# ---------------------------------------------------------------------------
+def _compute_iteration_metrics(
+    equilibrium: FuturesMarketEquilibrium,
+    real_prices: pd.Series,
+) -> tuple[list[float], list[float]]:
+    """Compute per-iteration deltas and RMSE values."""
+    deltas: list[float] = []
+    rmses: list[float] = []
+
+    for i, it in enumerate(equilibrium.iterations):
+        aligned_real = real_prices.reindex(it.market_prices.index)
+        residuals = it.market_prices - aligned_real
+        rmses.append(float(np.sqrt((residuals**2).mean())))
+
+        if i == 0:
+            deltas.append(float("inf"))
+        else:
+            prev_prices = equilibrium.iterations[i - 1].market_prices
+            deltas.append(float((it.market_prices - prev_prices).abs().max()))
+
+    return deltas, rmses
 
 
 def compute_convergence_trajectory(
@@ -177,31 +170,7 @@ def compute_convergence_trajectory(
     real_prices:
         Ground-truth settlement prices.
     """
-    deltas: list[float] = []
-    rmses: list[float] = []
-
-    for it in equilibrium.iterations:
-        # Compute RMSE for this iteration's market prices
-        aligned_real = real_prices.reindex(it.market_prices.index)
-        residuals = it.market_prices - aligned_real
-        rmse = float(np.sqrt((residuals**2).mean()))
-        rmses.append(rmse)
-
-    # Compute deltas from iteration-to-iteration price changes
-    for i, it in enumerate(equilibrium.iterations):
-        if i == 0:
-            # Delta from initial to first iteration is stored in the equilibrium
-            # We approximate using the first iteration's market prices
-            deltas.append(float("inf"))  # First delta not meaningful
-        else:
-            prev_prices = equilibrium.iterations[i - 1].market_prices
-            delta = float((it.market_prices - prev_prices).abs().max())
-            deltas.append(delta)
-
-    # Override: use the equilibrium's own delta tracking
-    # Actually the dampened deltas are what matter, but we don't have per-iteration
-    # dampened prices stored. Use the RMSE trajectory instead.
-
+    deltas, rmses = _compute_iteration_metrics(equilibrium, real_prices)
     final_rmse = rmses[-1] if rmses else float("inf")
 
     return ConvergenceTrajectory(
@@ -213,9 +182,51 @@ def compute_convergence_trajectory(
     )
 
 
-# ---------------------------------------------------------------------------
-# Adaptive perfect foresight market runner
-# ---------------------------------------------------------------------------
+def _init_adaptive_market(
+    real_prices: pd.Series,
+    initial_market_prices: pd.Series,
+    forecast_spread: float | None,
+) -> tuple[pd.Series, float]:
+    """Initialize prices and spread for the adaptive market run."""
+    if forecast_spread is None:
+        price_changes = (real_prices - initial_market_prices).dropna()
+        forecast_spread = float(price_changes.std()) if len(price_changes) > 1 else 1.0
+        forecast_spread = max(forecast_spread, 0.1)
+    return initial_market_prices.copy().astype(float), forecast_spread
+
+
+def _run_adaptive_iteration(
+    k: int,
+    real_prices: pd.Series,
+    current_prices: pd.Series,
+    forecast_spread: float,
+    dampening: float,
+    other_directions: dict[str, pd.Series] | None,
+) -> tuple["FuturesMarketIteration", pd.Series, float]:
+    """Execute one iteration of the adaptive foresight market."""
+    from energy_modelling.backtest.futures_market_engine import FuturesMarketIteration
+
+    pf_directions = adaptive_perfect_foresight_directions(real_prices, current_prices)
+    all_directions: dict[str, pd.Series] = {"PerfectForesight": pf_directions}
+    if other_directions:
+        all_directions.update(other_directions)
+
+    profits = compute_strategy_profits(all_directions, current_prices, real_prices)
+    weights = compute_weights(profits)
+    active = [name for name, w in weights.items() if w > 0.0]
+    new_raw_prices = compute_market_prices(
+        all_directions, weights, current_prices, forecast_spread,
+    )
+
+    iteration = FuturesMarketIteration(
+        iteration=k, market_prices=new_raw_prices,
+        strategy_profits=profits, strategy_weights=weights,
+        active_strategies=active,
+    )
+
+    new_prices = dampening * new_raw_prices + (1.0 - dampening) * current_prices
+    delta = float((new_prices - current_prices).abs().max())
+    return iteration, new_prices, delta
 
 
 def run_adaptive_foresight_market(
@@ -227,80 +238,23 @@ def run_adaptive_foresight_market(
     dampening: float = 0.5,
     other_directions: dict[str, pd.Series] | None = None,
 ) -> FuturesMarketEquilibrium:
-    """Run the market with an adaptive perfect foresight strategy.
+    """Run the market with adaptive PF directions recomputed each iteration.
 
-    Unlike the standard market engine where directions are fixed, this
-    implementation recomputes PF directions each iteration based on the
-    current market price. This creates a contraction mapping that
-    guarantees convergence to P_real.
-
-    Parameters
-    ----------
-    real_prices:
-        Ground-truth settlement prices.
-    initial_market_prices:
-        Starting market prices (typically last_settlement_price).
-    max_iterations:
-        Hard cap on iterations.
-    convergence_threshold:
-        Max absolute price change to declare convergence.
-    forecast_spread:
-        Implied forecast spread. Auto-calibrated if None.
-    dampening:
-        Blend factor for price updates.
-    other_directions:
-        Optional fixed-direction strategies to include alongside adaptive PF.
-
-    Returns
-    -------
-    FuturesMarketEquilibrium with the convergence result.
+    Creates a contraction mapping that guarantees convergence to P_real.
     """
-    from energy_modelling.backtest.futures_market_engine import FuturesMarketIteration
-
-    if forecast_spread is None:
-        price_changes = (real_prices - initial_market_prices).dropna()
-        forecast_spread = float(price_changes.std()) if len(price_changes) > 1 else 1.0
-        forecast_spread = max(forecast_spread, 0.1)
-
-    current_prices = initial_market_prices.copy().astype(float)
-    iterations: list[FuturesMarketIteration] = []
+    current_prices, forecast_spread = _init_adaptive_market(
+        real_prices, initial_market_prices, forecast_spread,
+    )
+    iterations = []
     converged = False
     delta = float("inf")
 
     for k in range(max_iterations):
-        # Adaptive PF: recompute directions each iteration
-        pf_directions = adaptive_perfect_foresight_directions(real_prices, current_prices)
-
-        # Combine with other strategies
-        all_directions: dict[str, pd.Series] = {"PerfectForesight": pf_directions}
-        if other_directions:
-            all_directions.update(other_directions)
-
-        # Compute profits, weights, new prices
-        profits = compute_strategy_profits(all_directions, current_prices, real_prices)
-        weights = compute_weights(profits)
-        active = [name for name, w in weights.items() if w > 0.0]
-        new_raw_prices = compute_market_prices(
-            all_directions,
-            weights,
-            current_prices,
-            forecast_spread,
-        )
-
-        iteration = FuturesMarketIteration(
-            iteration=k,
-            market_prices=new_raw_prices,
-            strategy_profits=profits,
-            strategy_weights=weights,
-            active_strategies=active,
+        iteration, current_prices, delta = _run_adaptive_iteration(
+            k, real_prices, current_prices, forecast_spread,
+            dampening, other_directions,
         )
         iterations.append(iteration)
-
-        # Dampened update
-        new_prices = dampening * new_raw_prices + (1.0 - dampening) * current_prices
-        delta = float((new_prices - current_prices).abs().max())
-        current_prices = new_prices
-
         if delta < convergence_threshold:
             converged = True
             break

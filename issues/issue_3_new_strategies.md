@@ -173,6 +173,10 @@ Follow TDD:
 - [ ] All 276+ existing tests still pass
 - [ ] At least 2 of the new strategies outperform the existing best (CompositeSignal, 100K PnL) in the standard backtest -- or provide clear analysis if they don't
 
+## Status: ⏳ NOT STARTED
+
+This issue is standalone and can be worked on independently. All prerequisite infrastructure (benchmarks, saved results, CLI) is now in place from Issues 1, 2, 4, and 6.
+
 ## Labels
 
 `enhancement`, `strategies`, `priority-high`

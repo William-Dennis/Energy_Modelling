@@ -43,6 +43,7 @@ build-backend = "uv_build"
 [project.scripts]
 collect-data = "energy_modelling.data_collection.cli:main"
 build-backtest-data = "energy_modelling.backtest.cli:main"
+recompute-all = "energy_modelling.backtest.recompute:main"
 
 [tool.ruff]
 line-length = 100

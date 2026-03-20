@@ -51,12 +51,25 @@ streamlit run src/energy_modelling/dashboard/app.py
 pytest
 ```
 
+### Regenerating Results
+
+Re-run all backtests and benchmarks with a single command:
+
+```bash
+recompute-all            # all strategies × all benchmarks
+recompute-all --benchmarks baseline oracle   # subset of benchmarks
+recompute-all --strategies "Always Long" --verbose
+```
+
+Results are saved to `data/results/` and picked up automatically by the dashboard.
+
 ## CLI Entry Points
 
 | Command | Description |
 |---------|-------------|
 | `collect-data` | Download ENTSOE + weather data to local parquet files |
 | `build-backtest-data` | Build backtest datasets for student distribution |
+| `recompute-all` | Regenerate all backtest and benchmark results |
 
 ## Key Features
 

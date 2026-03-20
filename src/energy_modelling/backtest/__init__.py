@@ -19,6 +19,23 @@ from energy_modelling.backtest.futures_market_runner import (
     FuturesMarketResult,
     run_futures_market_evaluation,
 )
+from energy_modelling.backtest.io import (
+    RESULTS_DIR,
+    load_backtest_results,
+    load_market_results,
+    results_exist,
+    save_backtest_results,
+    save_market_results,
+)
+from energy_modelling.backtest.benchmarks import (
+    ALL_BENCHMARKS,
+    biased_settlement,
+    get_benchmark,
+    noisy_settlement,
+    perfect_foresight_price,
+    yesterday_settlement,
+)
+from energy_modelling.backtest.recompute import recompute_all
 from energy_modelling.backtest.runner import BacktestResult, run_backtest
 from energy_modelling.backtest.scoring import (
     compute_backtest_metrics,
@@ -31,6 +48,8 @@ from energy_modelling.backtest.scoring import (
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 __all__ = [
+    "ALL_BENCHMARKS",
+    "RESULTS_DIR",
     "BacktestResult",
     "BacktestState",
     "BacktestStrategy",
@@ -40,18 +59,29 @@ __all__ = [
     "FuturesMarketIteration",
     "PUBLIC_TRAIN_YEARS",
     "PUBLIC_VALIDATION_YEARS",
+    "biased_settlement",
     "build_daily_backtest_frame",
     "build_feature_glossary",
     "build_public_daily_dataset",
+    "load_backtest_results",
+    "load_market_results",
     "compute_backtest_metrics",
     "compute_market_adjusted_metrics",
+    "get_benchmark",
     "leaderboard_score",
     "market_leaderboard_score",
     "monthly_pnl",
+    "noisy_settlement",
+    "perfect_foresight_price",
+    "results_exist",
     "rolling_sharpe",
+    "recompute_all",
+    "save_backtest_results",
+    "save_market_results",
     "run_backtest",
     "run_futures_market_evaluation",
     "run_futures_market",
     "strip_hidden_labels",
     "write_backtest_data",
+    "yesterday_settlement",
 ]
