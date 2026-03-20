@@ -46,8 +46,8 @@ class DayOfWeekStrategy(BacktestStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         if "price_change_eur_mwh" in train_data.columns and "delivery_date" in train_data.columns:
             df = train_data.copy()
-            df["_dow"] = pd.to_datetime(df["delivery_date"]).dt.weekday + 1  # Mon=1..Sun=7
-            self._mean_change_by_day = df.groupby("_dow")["price_change_eur_mwh"].mean().to_dict()
+            df["dow"] = pd.to_datetime(df["delivery_date"]).dt.weekday + 1  # Mon=1..Sun=7
+            self._mean_change_by_day = df.groupby("dow")["price_change_eur_mwh"].mean().to_dict()
 
     def act(self, state: BacktestState) -> int | None:
         return _DAY_SIGNAL[state.delivery_date.isoweekday()]
