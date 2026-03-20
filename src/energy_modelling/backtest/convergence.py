@@ -240,7 +240,7 @@ def run_adaptive_foresight_market(
 ) -> FuturesMarketEquilibrium:
     """Run the market with adaptive PF directions recomputed each iteration.
 
-    Creates a contraction mapping that guarantees convergence to P_real.
+    Uses the legacy direction ± spread synthesis for implied forecasts.
     """
     current_prices, forecast_spread = _init_adaptive_market(
         real_prices, initial_market_prices, forecast_spread,
@@ -253,6 +253,109 @@ def run_adaptive_foresight_market(
         iteration, current_prices, delta = _run_adaptive_iteration(
             k, real_prices, current_prices, forecast_spread,
             dampening, other_directions,
+        )
+        iterations.append(iteration)
+        if delta < convergence_threshold:
+            converged = True
+            break
+
+    return FuturesMarketEquilibrium(
+        iterations=iterations,
+        final_market_prices=current_prices,
+        final_weights=iterations[-1].strategy_weights if iterations else {},
+        converged=converged,
+        convergence_delta=delta,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Forecast-aware convergence analysis
+# ---------------------------------------------------------------------------
+
+
+def _build_pf_forecasts(real_prices: pd.Series) -> dict:
+    """Build a PF forecast dict {date: real_price} for all dates."""
+    return {t: float(real_prices.loc[t]) for t in real_prices.index}
+
+
+def _run_forecast_iteration(
+    k: int,
+    real_prices: pd.Series,
+    current_prices: pd.Series,
+    dampening: float,
+    other_directions: dict[str, pd.Series] | None,
+    other_forecasts: dict[str, dict] | None,
+) -> tuple["FuturesMarketIteration", pd.Series, float]:
+    """Execute one iteration using real-valued forecasts (not direction ± spread).
+
+    PF provides its actual forecast (= real price).  Other strategies may
+    provide their own forecasts or fall back to direction ± spread.
+    """
+    from energy_modelling.backtest.futures_market_engine import FuturesMarketIteration
+
+    pf_directions = adaptive_perfect_foresight_directions(real_prices, current_prices)
+    all_directions: dict[str, pd.Series] = {"PerfectForesight": pf_directions}
+    if other_directions:
+        all_directions.update(other_directions)
+
+    # Build combined forecast dict — PF always provides real prices
+    all_forecasts: dict[str, dict] = {"PerfectForesight": _build_pf_forecasts(real_prices)}
+    if other_forecasts:
+        all_forecasts.update(other_forecasts)
+
+    profits = compute_strategy_profits(all_directions, current_prices, real_prices)
+    weights = compute_weights(profits)
+    active = [name for name, w in weights.items() if w > 0.0]
+
+    # forecast_spread=0.0 because all strategies should supply forecasts;
+    # the spread is only used as a fallback for strategies without forecasts.
+    new_raw_prices = compute_market_prices(
+        all_directions, weights, current_prices,
+        forecast_spread=0.0,
+        strategy_forecasts=all_forecasts,
+    )
+
+    iteration = FuturesMarketIteration(
+        iteration=k, market_prices=new_raw_prices,
+        strategy_profits=profits, strategy_weights=weights,
+        active_strategies=active,
+    )
+
+    new_prices = dampening * new_raw_prices + (1.0 - dampening) * current_prices
+    delta = float((new_prices - current_prices).abs().max())
+    return iteration, new_prices, delta
+
+
+def run_forecast_foresight_market(
+    real_prices: pd.Series,
+    initial_market_prices: pd.Series,
+    max_iterations: int = 100,
+    convergence_threshold: float = 0.01,
+    dampening: float = 0.5,
+    other_directions: dict[str, pd.Series] | None = None,
+    other_forecasts: dict[str, dict] | None = None,
+) -> FuturesMarketEquilibrium:
+    """Run the market with PF providing real-price forecasts each iteration.
+
+    Unlike ``run_adaptive_foresight_market`` which uses direction ± spread,
+    this function passes the PF strategy's actual forecast (= real settlement
+    price) through ``strategy_forecasts``.  With PF as the sole strategy and
+    dampening α, the update rule becomes:
+
+        P_{k+1} = α * P_real + (1 - α) * P_k
+
+    This is a contraction mapping with rate ``(1 - α)`` and guarantees
+    geometric convergence to P_real regardless of the initial price gap.
+    """
+    current_prices = initial_market_prices.copy().astype(float)
+    iterations: list = []
+    converged = False
+    delta = float("inf")
+
+    for k in range(max_iterations):
+        iteration, current_prices, delta = _run_forecast_iteration(
+            k, real_prices, current_prices, dampening,
+            other_directions, other_forecasts,
         )
         iterations.append(iteration)
         if delta < convergence_threshold:
