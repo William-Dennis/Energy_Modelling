@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from energy_modelling.backtest.types import BacktestState
 from strategies.ensemble_base import _EnsembleBase
-from strategies.wind_forecast import WindForecastStrategy
 from strategies.gas_trend import GasTrendStrategy
+from strategies.wind_forecast import WindForecastStrategy
 from strategies.zscore_momentum import ZScoreMomentumStrategy
 
 

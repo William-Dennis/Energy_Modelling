@@ -11,12 +11,12 @@ import pandas as pd
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 from strategies.ensemble_base import _EnsembleBase
-from strategies.logistic_direction import LogisticDirectionStrategy
-from strategies.random_forest_direction import RandomForestStrategy
+from strategies.gas_trend import GasTrendStrategy
 from strategies.gradient_boosting_direction import GradientBoostingStrategy
 from strategies.lasso_regression import LassoRegressionStrategy
+from strategies.logistic_direction import LogisticDirectionStrategy
+from strategies.random_forest_direction import RandomForestStrategy
 from strategies.ridge_regression import RidgeRegressionStrategy
-from strategies.gas_trend import GasTrendStrategy
 
 _TOP_K = 3
 

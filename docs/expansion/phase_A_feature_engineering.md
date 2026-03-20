@@ -119,7 +119,7 @@ All derived features must be look-ahead-safe:
 
 ## Tests
 
-Minimum 12 tests covering:
+34 tests covering:
 - Correct computation of each group
 - Look-ahead safety (rolling stats do not use future data)
 - Edge cases: zero division in penetration pct, empty rolling windows

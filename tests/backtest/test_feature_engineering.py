@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from energy_modelling.backtest.feature_engineering import (
     add_aggregated_generation,
@@ -23,7 +22,6 @@ from energy_modelling.backtest.feature_engineering import (
     add_rolling_volatility,
     add_surprise_signals,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

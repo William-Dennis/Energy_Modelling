@@ -18,20 +18,19 @@ import pandas as pd
 import pytest
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
-from strategies.ensemble_base import _EnsembleBase
-from strategies.majority_vote_rule import MajorityVoteRuleBasedStrategy
-from strategies.majority_vote_ml import MajorityVoteMLStrategy
-from strategies.mean_forecast_regression import MeanForecastRegressionStrategy
-from strategies.weighted_vote_mixed import WeightedVoteMixedStrategy
-from strategies.stacked_ridge_meta import StackedRidgeMetaStrategy
-from strategies.consensus_signal import ConsensusSignalStrategy
-from strategies.regime_conditional_ensemble import RegimeConditionalEnsembleStrategy
-from strategies.top_k_ensemble import TopKEnsembleStrategy
-from strategies.diversity_ensemble import DiversityEnsembleStrategy
-from strategies.median_forecast_ensemble import MedianForecastEnsembleStrategy
-from strategies.weekday_weekend_ensemble import WeekdayWeekendEnsembleStrategy
 from strategies.boosted_spread_ml import BoostedSpreadMLStrategy
-
+from strategies.consensus_signal import ConsensusSignalStrategy
+from strategies.diversity_ensemble import DiversityEnsembleStrategy
+from strategies.ensemble_base import _EnsembleBase
+from strategies.majority_vote_ml import MajorityVoteMLStrategy
+from strategies.majority_vote_rule import MajorityVoteRuleBasedStrategy
+from strategies.mean_forecast_regression import MeanForecastRegressionStrategy
+from strategies.median_forecast_ensemble import MedianForecastEnsembleStrategy
+from strategies.regime_conditional_ensemble import RegimeConditionalEnsembleStrategy
+from strategies.stacked_ridge_meta import StackedRidgeMetaStrategy
+from strategies.top_k_ensemble import TopKEnsembleStrategy
+from strategies.weekday_weekend_ensemble import WeekdayWeekendEnsembleStrategy
+from strategies.weighted_vote_mixed import WeightedVoteMixedStrategy
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -584,8 +583,8 @@ class TestDiversityEnsembleStrategy:
     def test_members_are_diverse_types(self) -> None:
         """The three members come from distinct strategy families."""
         from strategies.composite_signal import CompositeSignalStrategy
-        from strategies.ridge_regression import RidgeRegressionStrategy
         from strategies.random_forest_direction import RandomForestStrategy
+        from strategies.ridge_regression import RidgeRegressionStrategy
 
         classes = DiversityEnsembleStrategy._MEMBERS
         assert CompositeSignalStrategy in classes

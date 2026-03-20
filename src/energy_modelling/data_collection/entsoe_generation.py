@@ -14,6 +14,8 @@ from loguru import logger
 from energy_modelling.data_collection.config import DataCollectionConfig
 from energy_modelling.data_collection.utils import (
     normalise_name as _normalise_name,
+)
+from energy_modelling.data_collection.utils import (
     year_range as _year_range,
 )
 

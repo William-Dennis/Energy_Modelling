@@ -6,12 +6,12 @@ Combines 5 ML direction classifiers.  Votes by majority.
 from __future__ import annotations
 
 from energy_modelling.backtest.types import BacktestState
+from strategies.decision_tree_direction import DecisionTreeStrategy
 from strategies.ensemble_base import _EnsembleBase
-from strategies.logistic_direction import LogisticDirectionStrategy
-from strategies.random_forest_direction import RandomForestStrategy
 from strategies.gradient_boosting_direction import GradientBoostingStrategy
 from strategies.knn_direction import KNNDirectionStrategy
-from strategies.decision_tree_direction import DecisionTreeStrategy
+from strategies.logistic_direction import LogisticDirectionStrategy
+from strategies.random_forest_direction import RandomForestStrategy
 
 
 class MajorityVoteMLStrategy(_EnsembleBase):

@@ -9,7 +9,6 @@ import argparse
 import logging
 import time
 from datetime import date
-from pathlib import Path
 
 from energy_modelling.backtest.benchmarks import ALL_BENCHMARKS, get_benchmark
 from energy_modelling.backtest.io import (

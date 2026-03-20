@@ -19,7 +19,6 @@ Signal:
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy

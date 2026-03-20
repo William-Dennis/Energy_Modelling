@@ -8,11 +8,11 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from energy_modelling.dashboard._eda_constants import (
+    _AGG_FREQ,
+    _DISPLAY_ORDER,
     GEN_COLORS,
     GEN_COLS_DISPLAY,
     PRICE_COL,
-    _AGG_FREQ,
-    _DISPLAY_ORDER,
 )
 
 

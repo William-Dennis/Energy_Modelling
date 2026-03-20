@@ -13,8 +13,8 @@ from energy_modelling.backtest.futures_market_engine import (
     compute_market_prices,
     compute_strategy_profits,
     compute_weights,
-    run_futures_market_iteration,
     run_futures_market,
+    run_futures_market_iteration,
 )
 
 # ---------------------------------------------------------------------------

@@ -7,10 +7,10 @@ represent three orthogonal signal sources.  Uses simple majority vote.
 from __future__ import annotations
 
 from energy_modelling.backtest.types import BacktestState
-from strategies.ensemble_base import _EnsembleBase
 from strategies.composite_signal import CompositeSignalStrategy
-from strategies.ridge_regression import RidgeRegressionStrategy
+from strategies.ensemble_base import _EnsembleBase
 from strategies.random_forest_direction import RandomForestStrategy
+from strategies.ridge_regression import RidgeRegressionStrategy
 
 
 class DiversityEnsembleStrategy(_EnsembleBase):

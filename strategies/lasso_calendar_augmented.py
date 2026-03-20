@@ -15,7 +15,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from energy_modelling.backtest.types import BacktestState
-from strategies.ml_base import _EXCLUDE_COLUMNS, _MLStrategyBase
+from strategies.ml_base import _MLStrategyBase
 
 _ALPHA_GRID = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
 _N_SPLITS = 5

@@ -8,13 +8,13 @@ determines direction.
 from __future__ import annotations
 
 from energy_modelling.backtest.types import BacktestState
-from strategies.ensemble_base import _EnsembleBase
-from strategies.wind_forecast import WindForecastStrategy
-from strategies.gas_trend import GasTrendStrategy
 from strategies.de_fr_spread import DEFRSpreadStrategy
+from strategies.ensemble_base import _EnsembleBase
+from strategies.gas_trend import GasTrendStrategy
+from strategies.gradient_boosting_direction import GradientBoostingStrategy
 from strategies.logistic_direction import LogisticDirectionStrategy
 from strategies.random_forest_direction import RandomForestStrategy
-from strategies.gradient_boosting_direction import GradientBoostingStrategy
+from strategies.wind_forecast import WindForecastStrategy
 
 _WEIGHTS = [1.0, 1.0, 1.0, 2.0, 2.0, 2.0]
 

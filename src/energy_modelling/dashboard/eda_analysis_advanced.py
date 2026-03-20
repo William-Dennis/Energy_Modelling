@@ -7,9 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import numpy as np
 import pandas as pd
-
 
 # ---------------------------------------------------------------------------
 # Grouping helper
@@ -161,8 +159,8 @@ def quarterly_direction_rates(
     df = pd.DataFrame(
         {
             "change": price_changes.values,
-            "year": dates.dt.year,
-            "quarter": dates.dt.quarter,
+            "year": pd.DatetimeIndex(dates).year,
+            "quarter": pd.DatetimeIndex(dates).quarter,
         }
     )
     df["is_up"] = df["change"] > 0

@@ -1,6 +1,6 @@
 # Phase B: Issue 3 Strategies
 
-## Status: ⏳ In Progress
+## Status: ✅ Complete
 
 ## Objective
 
@@ -13,13 +13,13 @@ These exploit features that are unused by the 11 baseline strategies.
 
 | # | Class | File | Feature(s) | Signal | Status |
 |---|-------|------|-----------|--------|--------|
-| 1 | `SolarForecastStrategy` | `solar_forecast.py` | `forecast_solar_mw_mean` | Merit-order: high solar → short | ⏳ |
-| 2 | `CommodityCostStrategy` | `commodity_cost.py` | `gas_price_usd_mean`, `carbon_price_usd_mean` | Fuel index above median → long | ⏳ |
-| 3 | `TemperatureExtremeStrategy` | `temperature_extreme.py` | `weather_temperature_2m_degc_mean` | P10 cold or P90 hot → long; moderate → short | ⏳ |
-| 4 | `CrossBorderSpreadStrategy` | `cross_border_spread.py` | `price_fr_eur_mwh_mean`, `price_nl_eur_mwh_mean` | DE cheaper than neighbours → long | ⏳ |
-| 5 | `VolatilityRegimeStrategy` | `volatility_regime.py` | `price_std`, `price_change_eur_mwh` (history) | High vol + up → short; low vol → momentum | ⏳ |
-| 6 | `NuclearAvailabilityStrategy` | `nuclear_availability.py` | `gen_nuclear_mw_mean` (history) | 1σ below rolling mean → long | ⏳ |
-| 7 | `RenewablesSurplusStrategy` | `renewables_surplus.py` | `forecast_wind_offshore_mw_mean`, `forecast_wind_onshore_mw_mean`, `forecast_solar_mw_mean` | P80 surplus → short; P20 drought → long | ⏳ |
+| 1 | `SolarForecastStrategy` | `solar_forecast.py` | `forecast_solar_mw_mean` | Merit-order: high solar → short | ✅ |
+| 2 | `CommodityCostStrategy` | `commodity_cost.py` | `gas_price_usd_mean`, `carbon_price_usd_mean` | Fuel index above median → long | ✅ |
+| 3 | `TemperatureExtremeStrategy` | `temperature_extreme.py` | `weather_temperature_2m_degc_mean` | P10 cold or P90 hot → long; moderate → short | ✅ |
+| 4 | `CrossBorderSpreadStrategy` | `cross_border_spread.py` | `price_fr_eur_mwh_mean`, `price_nl_eur_mwh_mean` | DE cheaper than neighbours → long | ✅ |
+| 5 | `VolatilityRegimeStrategy` | `volatility_regime.py` | `price_std`, `price_change_eur_mwh` (history) | High vol + up → short; low vol → momentum | ✅ |
+| 6 | `NuclearAvailabilityStrategy` | `nuclear_availability.py` | `gen_nuclear_mw_mean` (history) | 1σ below rolling mean → long | ✅ |
+| 7 | `RenewablesSurplusStrategy` | `renewables_surplus.py` | `forecast_wind_offshore_mw_mean`, `forecast_wind_onshore_mw_mean`, `forecast_solar_mw_mean` | P80 surplus → short; P20 drought → long | ✅ |
 
 ---
 
@@ -53,8 +53,8 @@ Each strategy: 10+ tests.
 
 ## Completion Criteria
 
-- [ ] 7 strategy files created under `strategies/`
-- [ ] 7 test files created under `tests/backtest/`
-- [ ] All 7 classes registered in `strategies/__init__.py`
-- [ ] All existing 295+ tests still pass
-- [ ] Each strategy has docstring with economic rationale
+- [x] 7 strategy files created under `strategies/`
+- [x] 7 test files created under `tests/backtest/`
+- [x] All 7 classes registered in `strategies/__init__.py`
+- [x] All existing 295+ tests still pass
+- [x] Each strategy has docstring with economic rationale

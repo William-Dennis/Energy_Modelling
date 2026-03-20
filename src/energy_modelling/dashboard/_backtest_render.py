@@ -11,7 +11,6 @@ import plotly.express as px
 import streamlit as st
 
 from energy_modelling.backtest.runner import BacktestResult
-from energy_modelling.backtest.scoring import leaderboard_score
 from energy_modelling.dashboard import monthly_pnl_heatmap
 
 

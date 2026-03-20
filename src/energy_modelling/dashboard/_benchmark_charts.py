@@ -14,8 +14,8 @@ from energy_modelling.backtest.io import RESULTS_DIR, load_backtest_results, sav
 from energy_modelling.backtest.runner import BacktestResult, run_backtest
 from energy_modelling.dashboard._backtest import (
     STRATEGY_FACTORIES,
-    load_daily,
     _resolve_path,
+    load_daily,
 )
 
 _DATASET_DEFAULT = Path("data/backtest/daily_public.csv")

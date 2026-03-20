@@ -9,7 +9,6 @@ from energy_modelling.dashboard._eda_constants import (
     BACKTEST_DATA_PATH,
     DATA_PATH,
     FOSSIL_COLS,
-    PRICE_COL,
     RENEWABLE_COLS,
 )
 from energy_modelling.dashboard._eda_sections_basic import (
@@ -18,13 +17,6 @@ from energy_modelling.dashboard._eda_sections_basic import (
     _section_neighbours,
     _section_overview,
     _section_price_ts,
-)
-from energy_modelling.dashboard._eda_sections_market import (
-    _section_commodities,
-    _section_correlations,
-    _section_heatmap,
-    _section_scatter,
-    _section_weather,
 )
 from energy_modelling.dashboard._eda_sections_distributions import (
     _section_distributions,
@@ -39,6 +31,13 @@ from energy_modelling.dashboard._eda_sections_feedback import (
 from energy_modelling.dashboard._eda_sections_forecasts import (
     _section_feature_importance,
     _section_forecast_errors,
+)
+from energy_modelling.dashboard._eda_sections_market import (
+    _section_commodities,
+    _section_correlations,
+    _section_heatmap,
+    _section_scatter,
+    _section_weather,
 )
 from energy_modelling.dashboard._eda_sections_signals import (
     _section_strategy_correlation_insights,

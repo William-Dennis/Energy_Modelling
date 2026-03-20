@@ -17,7 +17,6 @@ import pandas as pd
 # imports (dashboard, tests) continue to work unchanged.
 from energy_modelling.futures_market.data import clean_hourly_data  # noqa: F401
 
-
 # ---------------------------------------------------------------------------
 # P1: Price Change Distribution
 # ---------------------------------------------------------------------------
@@ -286,12 +285,4 @@ def compute_residual_load(load: pd.Series, renewable_generation: pd.Series) -> p
 # Re-exports from eda_analysis_advanced (backward compatibility)
 # ---------------------------------------------------------------------------
 
-from energy_modelling.dashboard.eda_analysis_advanced import (  # noqa: E402
-    day_of_week_edge_by_year,
-    direction_by_group,
-    feature_drift,
-    quarterly_direction_rates,
-    volatility_regime_performance,
-    wind_quintile_analysis,
-)
 

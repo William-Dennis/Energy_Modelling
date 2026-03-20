@@ -1,6 +1,6 @@
 # Phase E: Calendar, Temporal & Regime Strategies
 
-## Status: ⏳ Pending
+## Status: ✅ Complete
 
 ## Objective
 
@@ -13,54 +13,59 @@ and volatility regime detection.
 
 | # | Class | File | Signal | Status |
 |---|-------|------|--------|--------|
-| 1 | `MonthOfYearStrategy` | `month_of_year.py` | Monthly mean change from training | ⏳ |
-| 2 | `DayOfWeekFilteredWindStrategy` | `dow_filtered_wind.py` | DOW on Mon/Tue/Sat/Sun, wind signal Wed/Thu/Fri | ⏳ |
-| 3 | `WeekendOnlyStrategy` | `weekend_only.py` | Short Sat/Sun only; skip all weekdays | ⏳ |
-| 4 | `Lag1ReversionStrategy` | `lag1_reversion.py` | Opposite of lag-1 price change (weak signal, diversifier) | ⏳ |
-| 5 | `Lag3CycleStrategy` | `lag3_cycle.py` | Lag-3 price change correlation | ⏳ |
-| 6 | `RollingMomentum5dStrategy` | `rolling_momentum_5d.py` | 5-day rolling mean of price_change > 0 → long | ⏳ |
-| 7 | `RollingMomentum10dStrategy` | `rolling_momentum_10d.py` | 10-day rolling momentum | ⏳ |
-| 8 | `HighVolMeanReversionStrategy` | `high_vol_mean_reversion.py` | High vol + yesterday's change → mean-revert | ⏳ |
+| 1 | `MonthSeasonalStrategy` | `month_seasonal.py` | Monthly seasonal mean | ✅ |
+| 2 | `MondayEffectStrategy` | `monday_effect.py` | Monday/Friday effect | ✅ |
+| 3 | `QuarterSeasonalStrategy` | `quarter_seasonal.py` | Quarterly seasonal mean | ✅ |
+| 4 | `ZScoreMomentumStrategy` | `zscore_momentum.py` | Z-score momentum follow | ✅ |
+| 5 | `NetDemandMomentumStrategy` | `net_demand_momentum.py` | Net demand momentum | ✅ |
+| 6 | `RenewableRegimeStrategy` | `renewable_regime.py` | Renewable penetration regime | ✅ |
+| 7 | `VolatilityRegimeMLStrategy` | `volatility_regime_ml.py` | Volatility regime learned | ✅ |
+| 8 | `GasCarbonJointTrendStrategy` | `gas_carbon_joint_trend.py` | Gas-carbon joint trend | ✅ |
 
 ---
 
 ## Strategy Details
 
-### MonthOfYearStrategy
+### MonthSeasonalStrategy
 Compute mean `price_change_eur_mwh` per calendar month from training data.
 At forecast time, add the month's historical mean change to last settlement.
 Hypothesis: seasonal demand patterns create systematic monthly biases.
 Note: weaker signal than DOW, but orthogonal.
 
-### DayOfWeekFilteredWindStrategy
-Key insight from Phase 6 EDA (`docs/phases/phase_6_feedback_loop.md:75`):
-wind offshore correlation with direction is **−0.303 on Wed/Thu**, stronger
-than the all-day average of −0.218. This strategy:
-- Mon: DOW (long, 90.4% up rate)
-- Tue: DOW (long, 61.3% up rate)
-- Wed/Thu: Wind forecast signal (−0.30 correlation)
-- Fri: DOW (short, 38.7% up rate)
-- Sat: DOW (short, 13.0% up rate)
-- Sun: DOW (short, 26.8% up rate)
+### MondayEffectStrategy
+Exploits the strong Monday up-rate (90.4%) and Friday down-rate (38.7%).
+Long on Mondays, short on Fridays, skip all other days.
+High win rate on traded days, low coverage.
 
-### WeekendOnlyStrategy
-Only trade Saturday and Sunday (the two most reliable DOW days).
-Short both. Skip all weekdays. High win rate, low trade count.
-Maximises hit rate at the cost of coverage.
+### QuarterSeasonalStrategy
+Similar to MonthSeasonalStrategy but uses quarterly aggregation.
+Fewer parameters, more stable estimates per quarter.
 
-### HighVolMeanReversionStrategy
-Uses `rolling_vol_14d` (from Phase A) to detect high-vol regime.
-High vol = vol > P75 of training vol.
-In high-vol: if yesterday's price went up → short; if down → long.
-Logic: large price moves tend to partially reverse.
-In low-vol: skip (momentum works, but this strategy doesn't capture it —
-`LowVolMomentumStrategy` in Phase F handles that).
+### ZScoreMomentumStrategy
+Uses `price_zscore_20d` to detect momentum continuation.
+Moderate z-score (0.5-2.0) in either direction -> follow the trend.
+
+### NetDemandMomentumStrategy
+Tracks the 3-day change in `net_demand_mw`. Rising net demand -> long.
+Combines supply-demand fundamentals with momentum signal.
+
+### RenewableRegimeStrategy
+Uses `renewable_penetration_pct` to define high/low renewable regimes.
+High renewables regime -> short (price-suppressing); low -> long.
+
+### VolatilityRegimeMLStrategy
+Uses `rolling_vol_14d` (from Phase A) as input to a trained classifier.
+Learns the best action per volatility regime from historical data.
+
+### GasCarbonJointTrendStrategy
+Combines `gas_trend_3d` and `carbon_trend_3d` into a joint signal.
+Both rising -> strong long; both falling -> strong short; mixed -> skip.
 
 ---
 
 ## Completion Criteria
 
-- [ ] 8 strategy files created
-- [ ] 8 test files created (5+ tests each)
-- [ ] All registered in `strategies/__init__.py`
-- [ ] All tests pass
+- [x] 8 strategy files created
+- [x] 8 test files created (5+ tests each)
+- [x] All registered in `strategies/__init__.py`
+- [x] All tests pass

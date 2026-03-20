@@ -7,7 +7,6 @@ weights.  No CV to keep inference fast.
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline

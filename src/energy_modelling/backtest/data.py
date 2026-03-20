@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -106,7 +105,7 @@ def build_feature_glossary(daily_data: pd.DataFrame) -> pd.DataFrame:
     lagged_realised = {f"{column}_mean" for column in _REALISED_FEATURE_COLS}
     same_day_forecast = {f"{column}_mean" for column in _FORECAST_FEATURE_COLS}
     lagged_realised.update({"price_mean", "price_max", "price_min", "price_std"})
-    reference = {"delivery_date", "split", "last_settlement_price"}
+    _reference = {"delivery_date", "split", "last_settlement_price"}
     labels = set(LABEL_COLUMNS)
 
     rows = []

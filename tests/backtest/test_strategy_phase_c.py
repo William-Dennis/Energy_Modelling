@@ -25,21 +25,20 @@ import pandas as pd
 import pytest
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
-
-from strategies.net_demand import NetDemandStrategy
-from strategies.price_zscore_reversion import PriceZScoreReversionStrategy
-from strategies.gas_trend import GasTrendStrategy
 from strategies.carbon_trend import CarbonTrendStrategy
-from strategies.fuel_index_trend import FuelIndexTrendStrategy
 from strategies.de_fr_spread import DEFRSpreadStrategy
 from strategies.de_nl_spread import DENLSpreadStrategy
-from strategies.multi_spread import MultiSpreadStrategy
-from strategies.nl_flow_signal import NLFlowSignalStrategy
 from strategies.fr_flow_signal import FRFlowSignalStrategy
-from strategies.price_min_reversion import PriceMinReversionStrategy
-from strategies.wind_forecast_error import WindForecastErrorStrategy
+from strategies.fuel_index_trend import FuelIndexTrendStrategy
+from strategies.gas_trend import GasTrendStrategy
 from strategies.load_surprise import LoadSurpriseStrategy
+from strategies.multi_spread import MultiSpreadStrategy
+from strategies.net_demand import NetDemandStrategy
+from strategies.nl_flow_signal import NLFlowSignalStrategy
+from strategies.price_min_reversion import PriceMinReversionStrategy
+from strategies.price_zscore_reversion import PriceZScoreReversionStrategy
 from strategies.renewables_penetration import RenewablesPenetrationStrategy
+from strategies.wind_forecast_error import WindForecastErrorStrategy
 
 
 def _state(feature_name: str, value: float, last_price: float = 50.0) -> BacktestState:

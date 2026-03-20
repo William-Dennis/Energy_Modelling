@@ -7,8 +7,7 @@ from datetime import date
 
 import pytest
 
-from energy_modelling.futures_market.types import DayState, Signal, Trade
-
+from energy_modelling.futures_market.types import Signal, Trade
 
 _DATE = date(2024, 3, 15)
 

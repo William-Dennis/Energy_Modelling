@@ -31,7 +31,6 @@ from energy_modelling.backtest.futures_market_runner import run_futures_market_e
 from energy_modelling.backtest.io import RESULTS_DIR, save_backtest_results, save_market_results
 from energy_modelling.backtest.runner import run_backtest
 from energy_modelling.backtest.scoring import leaderboard_score
-
 from strategies import (  # noqa: E402
     AlwaysLongStrategy,
     AlwaysShortStrategy,

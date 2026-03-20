@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
 
 from energy_modelling.backtest.types import BacktestState
 from strategies.ml_base import _MLStrategyBase

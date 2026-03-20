@@ -1,6 +1,6 @@
 # Phase F: Ensemble / Meta Strategies
 
-## Status: ⏳ Pending
+## Status: ✅ Complete
 
 ## Objective
 
@@ -14,18 +14,18 @@ provides the blending infrastructure.
 
 | # | Class | File | Components | Blend Method | Status |
 |---|-------|------|-----------|--------------|--------|
-| 1 | `DOWWindCompositeStrategy` | `dow_wind_composite.py` | DOW + Wind | Equal delta blend | ⏳ |
-| 2 | `DOWNetDemandStrategy` | `dow_net_demand.py` | DOW + NetDemand | Equal delta blend | ⏳ |
-| 3 | `TripleSignalStrategy` | `triple_signal.py` | DOW + Wind + Load | Equal 3-way blend | ⏳ |
-| 4 | `TopThreeEnsembleStrategy` | `top_three_ensemble.py` | Top-3 by training Sharpe | Majority vote | ⏳ |
-| 5 | `ThresholdMajorityVoteStrategy` | `threshold_majority_vote.py` | All simple threshold strategies | Majority vote | ⏳ |
-| 6 | `WeightedVoteStrategy` | `weighted_vote.py` | All strategies | Vote weighted by training Sharpe | ⏳ |
-| 7 | `StackedEnsembleStrategy` | `stacked_ensemble.py` | All strategies | Logistic regression on predictions | ⏳ |
-| 8 | `DOWLassoStrategy` | `dow_lasso.py` | DOW on Mon/Sat/Sun, Lasso otherwise | Conditional | ⏳ |
-| 9 | `SignalCountStrategy` | `signal_count.py` | Selected high-corr strategies | Count ≥ threshold → trade | ⏳ |
-| 10 | `LowVolMomentumStrategy` | `low_vol_momentum.py` | RollingMomentum5d in low-vol regime | Regime-conditional | ⏳ |
-| 11 | `ContraDOWStrategy` | `contra_dow.py` | DOW + NetDemand | Fade DOW when NetDemand disagrees | ⏳ |
-| 12 | `AdaptiveWeightEnsembleStrategy` | `adaptive_weight_ensemble.py` | DOW + Composite + NetDemand | 30-day rolling performance weights | ⏳ |
+| 1 | `ConsensusSignalStrategy` | `consensus_signal.py` | Unanimous 3-member consensus | All-agree filter | ✅ |
+| 2 | `MajorityVoteRuleBasedStrategy` | `majority_vote_rule.py` | Rule-based majority vote | Majority direction | ✅ |
+| 3 | `MajorityVoteMLStrategy` | `majority_vote_ml.py` | ML classifier majority vote | Majority direction | ✅ |
+| 4 | `MeanForecastRegressionStrategy` | `mean_forecast_regression.py` | Mean regression forecast | Mean blend | ✅ |
+| 5 | `MedianForecastEnsembleStrategy` | `median_forecast_ensemble.py` | Median regression forecast | Median blend | ✅ |
+| 6 | `TopKEnsembleStrategy` | `top_k_ensemble.py` | Top-K by validation Sharpe | Majority vote | ✅ |
+| 7 | `WeightedVoteMixedStrategy` | `weighted_vote_mixed.py` | Weighted rule+ML vote | Performance-weighted | ✅ |
+| 8 | `DiversityEnsembleStrategy` | `diversity_ensemble.py` | Diverse 3-source ensemble | Majority direction | ✅ |
+| 9 | `RegimeConditionalEnsembleStrategy` | `regime_conditional_ensemble.py` | Vol-regime conditional ensemble | Regime-switch | ✅ |
+| 10 | `StackedRidgeMetaStrategy` | `stacked_ridge_meta.py` | Stacked Ridge meta-learner | Ridge on predictions | ✅ |
+| 11 | `WeekdayWeekendEnsembleStrategy` | `weekday_weekend_ensemble.py` | Weekday/weekend dual ensemble | Calendar-conditional | ✅ |
+| 12 | `BoostedSpreadMLStrategy` | `boosted_spread_ml.py` | Spread+GBM agreement filter | Agreement gate | ✅ |
 
 ---
 
@@ -79,9 +79,9 @@ currently-working signals.
 
 ## Completion Criteria
 
-- [ ] `strategies/ensemble_base.py` created
-- [ ] 12 strategy files created
-- [ ] 5+ tests per strategy (12 test files)
-- [ ] All registered in `strategies/__init__.py`
-- [ ] All tests pass
-- [ ] `StackedEnsembleStrategy` has look-ahead bias test
+- [x] `strategies/ensemble_base.py` created
+- [x] 12 strategy files created
+- [x] 5+ tests per strategy (12 test files)
+- [x] All registered in `strategies/__init__.py`
+- [x] All tests pass
+- [x] `StackedRidgeMetaStrategy` has look-ahead bias test

@@ -18,28 +18,26 @@ import pandas as pd
 import pytest
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
+from strategies.bayesian_ridge import BayesianRidgeStrategy
+from strategies.decision_tree_direction import DecisionTreeStrategy
+from strategies.elastic_net import ElasticNetStrategy
+from strategies.gbm_net_demand import GBMNetDemandStrategy
+from strategies.gradient_boosting_direction import GradientBoostingStrategy
+from strategies.knn_direction import KNNDirectionStrategy
+from strategies.lasso_calendar_augmented import LassoCalendarAugmentedStrategy
+from strategies.lasso_top_features import LassoTopFeaturesStrategy
+from strategies.logistic_direction import LogisticDirectionStrategy
 from strategies.ml_base import (
+    _EXCLUDE_COLUMNS,
     DERIVED_FEATURE_COLS,
     TOP10_FEATURE_COLS,
-    _MLStrategyBase,
-    _EXCLUDE_COLUMNS,
 )
-from strategies.ridge_regression import RidgeRegressionStrategy
-from strategies.elastic_net import ElasticNetStrategy
-from strategies.logistic_direction import LogisticDirectionStrategy
-from strategies.random_forest_direction import RandomForestStrategy
-from strategies.gradient_boosting_direction import GradientBoostingStrategy
-from strategies.lasso_top_features import LassoTopFeaturesStrategy
-from strategies.ridge_net_demand import RidgeNetDemandStrategy
-from strategies.knn_direction import KNNDirectionStrategy
-from strategies.svm_direction import SVMDirectionStrategy
-from strategies.decision_tree_direction import DecisionTreeStrategy
-from strategies.lasso_calendar_augmented import LassoCalendarAugmentedStrategy
-from strategies.gbm_net_demand import GBMNetDemandStrategy
-from strategies.bayesian_ridge import BayesianRidgeStrategy
-from strategies.pls_regression import PLSRegressionStrategy
 from strategies.neural_net import NeuralNetStrategy
-
+from strategies.pls_regression import PLSRegressionStrategy
+from strategies.random_forest_direction import RandomForestStrategy
+from strategies.ridge_net_demand import RidgeNetDemandStrategy
+from strategies.ridge_regression import RidgeRegressionStrategy
+from strategies.svm_direction import SVMDirectionStrategy
 
 # ---------------------------------------------------------------------------
 # Helpers

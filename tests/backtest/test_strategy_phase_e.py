@@ -18,15 +18,14 @@ import pandas as pd
 import pytest
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
-from strategies.month_seasonal import MonthSeasonalStrategy
-from strategies.quarter_seasonal import QuarterSeasonalStrategy
+from strategies.gas_carbon_joint_trend import GasCarbonJointTrendStrategy
 from strategies.monday_effect import MondayEffectStrategy
+from strategies.month_seasonal import MonthSeasonalStrategy
+from strategies.net_demand_momentum import NetDemandMomentumStrategy
+from strategies.quarter_seasonal import QuarterSeasonalStrategy
+from strategies.renewable_regime import RenewableRegimeStrategy
 from strategies.volatility_regime_ml import VolatilityRegimeMLStrategy
 from strategies.zscore_momentum import ZScoreMomentumStrategy
-from strategies.gas_carbon_joint_trend import GasCarbonJointTrendStrategy
-from strategies.renewable_regime import RenewableRegimeStrategy
-from strategies.net_demand_momentum import NetDemandMomentumStrategy
-
 
 # ---------------------------------------------------------------------------
 # Helpers

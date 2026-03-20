@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
-from strategies.logistic_direction import LogisticDirectionStrategy
-from strategies.random_forest_direction import RandomForestStrategy
 from strategies.gradient_boosting_direction import GradientBoostingStrategy
+from strategies.logistic_direction import LogisticDirectionStrategy
+from strategies.monday_effect import MondayEffectStrategy
 from strategies.month_seasonal import MonthSeasonalStrategy
 from strategies.quarter_seasonal import QuarterSeasonalStrategy
-from strategies.monday_effect import MondayEffectStrategy
+from strategies.random_forest_direction import RandomForestStrategy
 
 
 class WeekdayWeekendEnsembleStrategy(BacktestStrategy):

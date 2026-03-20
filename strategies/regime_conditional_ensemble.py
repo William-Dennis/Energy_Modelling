@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
+from strategies.gas_trend import GasTrendStrategy
+from strategies.gradient_boosting_direction import GradientBoostingStrategy
+from strategies.load_forecast import LoadForecastStrategy
 from strategies.logistic_direction import LogisticDirectionStrategy
 from strategies.random_forest_direction import RandomForestStrategy
-from strategies.gradient_boosting_direction import GradientBoostingStrategy
 from strategies.wind_forecast import WindForecastStrategy
-from strategies.gas_trend import GasTrendStrategy
-from strategies.load_forecast import LoadForecastStrategy
 
 _DEFAULT_VOL = 5.0
 

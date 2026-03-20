@@ -1,8 +1,8 @@
 # Strategy Registry (Live)
 
-## Current Count: 11 → target 68+
+## Current Count: 67
 
-Last updated: Phase A in progress.
+Last updated: Phase F complete. All 67 strategies implemented and tested.
 
 ---
 
@@ -19,97 +19,96 @@ Last updated: Phase A in progress.
 | 7 | `LoadForecastStrategy` | `load_forecast.py` | Load demand | ✅ |
 | 8 | `FossilDispatchStrategy` | `fossil_dispatch.py` | Fossil dispatch | ✅ |
 | 9 | `CompositeSignalStrategy` | `composite_signal.py` | Weighted z-score composite | ✅ |
-| 10 | `LassoRegressionStrategy` | `lasso_regression.py` | Lasso on all features | — |
-| 11 | `DowCompositeStrategy` | `dow_composite.py` | DOW + CompositeSignal blend | — |
+| 10 | `LassoRegressionStrategy` | `lasso_regression.py` | Lasso on all features | ✅ |
+| 11 | `DowCompositeStrategy` | `dow_composite.py` | DOW + CompositeSignal blend | ✅ |
 
 ---
 
-## Phase B: Issue 3 Strategies (target +7, total 18)
+## Phase B: Issue 3 Strategies (+7, total 18)
 
-| # | Class | File | Status |
-|---|-------|------|--------|
-| 12 | `SolarForecastStrategy` | `solar_forecast.py` | ⏳ |
-| 13 | `CommodityCostStrategy` | `commodity_cost.py` | ⏳ |
-| 14 | `TemperatureExtremeStrategy` | `temperature_extreme.py` | ⏳ |
-| 15 | `CrossBorderSpreadStrategy` | `cross_border_spread.py` | ⏳ |
-| 16 | `VolatilityRegimeStrategy` | `volatility_regime.py` | ⏳ |
-| 17 | `NuclearAvailabilityStrategy` | `nuclear_availability.py` | ⏳ |
-| 18 | `RenewablesSurplusStrategy` | `renewables_surplus.py` | ⏳ |
-
----
-
-## Phase C: Derived-Feature Threshold Strategies (target +15, total 33)
-
-| # | Class | File | Status |
-|---|-------|------|--------|
-| 19 | `NetDemandStrategy` | `net_demand.py` | ⏳ |
-| 20 | `NetDemandWithSolarStrategy` | `net_demand_solar.py` | ⏳ |
-| 21 | `PriceZScoreReversionStrategy` | `price_zscore_reversion.py` | ⏳ |
-| 22 | `GasTrendStrategy` | `gas_trend.py` | ⏳ |
-| 23 | `CarbonTrendStrategy` | `carbon_trend.py` | ⏳ |
-| 24 | `FuelIndexTrendStrategy` | `fuel_index_trend.py` | ⏳ |
-| 25 | `DEFRSpreadStrategy` | `de_fr_spread.py` | ⏳ |
-| 26 | `DENLSpreadStrategy` | `de_nl_spread.py` | ⏳ |
-| 27 | `MultiSpreadStrategy` | `multi_spread.py` | ⏳ |
-| 28 | `NLFlowSignalStrategy` | `nl_flow_signal.py` | ⏳ |
-| 29 | `FRFlowSignalStrategy` | `fr_flow_signal.py` | ⏳ |
-| 30 | `PriceMinReversionStrategy` | `price_min_reversion.py` | ⏳ |
-| 31 | `WindForecastErrorStrategy` | `wind_forecast_error.py` | ⏳ |
-| 32 | `LoadSurpriseStrategy` | `load_surprise.py` | ⏳ |
-| 33 | `RenewablesPenetrationStrategy` | `renewables_penetration.py` | ⏳ |
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 12 | `SolarForecastStrategy` | `solar_forecast.py` | Solar merit-order | ✅ |
+| 13 | `CommodityCostStrategy` | `commodity_cost.py` | Gas/carbon fuel index | ✅ |
+| 14 | `TemperatureExtremeStrategy` | `temperature_extreme.py` | Temperature non-linear demand | ✅ |
+| 15 | `CrossBorderSpreadStrategy` | `cross_border_spread.py` | FR/NL cross-border spread | ✅ |
+| 16 | `VolatilityRegimeStrategy` | `volatility_regime.py` | Vol regime switching | ✅ |
+| 17 | `NuclearAvailabilityStrategy` | `nuclear_availability.py` | Nuclear outage event | ✅ |
+| 18 | `RenewablesSurplusStrategy` | `renewables_surplus.py` | Extreme renewables regime | ✅ |
 
 ---
 
-## Phase D: ML Strategies (target +15, total 48)
+## Phase C: Derived-Feature Threshold Strategies (+14, total 32)
+
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 19 | `NetDemandStrategy` | `net_demand.py` | Net demand threshold | ✅ |
+| 20 | `PriceZScoreReversionStrategy` | `price_zscore_reversion.py` | Price z-score reversion | ✅ |
+| 21 | `GasTrendStrategy` | `gas_trend.py` | Gas 3-day momentum | ✅ |
+| 22 | `CarbonTrendStrategy` | `carbon_trend.py` | Carbon 3-day momentum | ✅ |
+| 23 | `FuelIndexTrendStrategy` | `fuel_index_trend.py` | Combined fuel momentum | ✅ |
+| 24 | `DEFRSpreadStrategy` | `de_fr_spread.py` | DE-FR spread convergence | ✅ |
+| 25 | `DENLSpreadStrategy` | `de_nl_spread.py` | DE-NL spread convergence | ✅ |
+| 26 | `MultiSpreadStrategy` | `multi_spread.py` | Multi-market avg spread | ✅ |
+| 27 | `NLFlowSignalStrategy` | `nl_flow_signal.py` | NL net import flow | ✅ |
+| 28 | `FRFlowSignalStrategy` | `fr_flow_signal.py` | FR net import flow | ✅ |
+| 29 | `PriceMinReversionStrategy` | `price_min_reversion.py` | Price-min mean reversion | ✅ |
+| 30 | `WindForecastErrorStrategy` | `wind_forecast_error.py` | Wind forecast error | ✅ |
+| 31 | `LoadSurpriseStrategy` | `load_surprise.py` | Load demand surprise | ✅ |
+| 32 | `RenewablesPenetrationStrategy` | `renewables_penetration.py` | Renewable share threshold | ✅ |
+
+---
+
+## Phase D: ML Strategies (+15, total 47)
 
 | # | Class | File | Model | Status |
 |---|-------|------|-------|--------|
-| 34 | `RidgeRegressionStrategy` | `ridge_regression.py` | Ridge | ⏳ |
-| 35 | `ElasticNetStrategy` | `elastic_net.py` | ElasticNet | ⏳ |
-| 36 | `LogisticDirectionStrategy` | `logistic_direction.py` | Logistic | ⏳ |
-| 37 | `RandomForestStrategy` | `random_forest.py` | RandomForest | ⏳ |
-| 38 | `GradientBoostingStrategy` | `gradient_boosting.py` | GBM | ⏳ |
-| 39 | `LassoTopFeaturesStrategy` | `lasso_top_features.py` | Lasso (top 10) | ⏳ |
-| 40 | `RidgeNetDemandStrategy` | `ridge_net_demand.py` | Ridge (derived) | ⏳ |
-| 41 | `KNNDirectionStrategy` | `knn_direction.py` | KNN | ⏳ |
-| 42 | `SVMDirectionStrategy` | `svm_direction.py` | LinearSVC | ⏳ |
-| 43 | `DecisionTreeStrategy` | `decision_tree.py` | Decision Tree | ⏳ |
-| 44 | `LassoCalendarAugmentedStrategy` | `lasso_calendar.py` | Lasso + calendar | ⏳ |
-| 45 | `GBMNetDemandStrategy` | `gbm_net_demand.py` | GBM (derived) | ⏳ |
-| 46 | `BayesianRidgeStrategy` | `bayesian_ridge.py` | BayesianRidge | ⏳ |
-| 47 | `PLSRegressionStrategy` | `pls_regression.py` | PLS | ⏳ |
-| 48 | `NeuralNetStrategy` | `neural_net.py` | MLP | ⏳ |
+| 33 | `RidgeRegressionStrategy` | `ridge_regression.py` | Ridge (L2) | ✅ |
+| 34 | `ElasticNetStrategy` | `elastic_net.py` | ElasticNet | ✅ |
+| 35 | `LogisticDirectionStrategy` | `logistic_direction.py` | Logistic Regression | ✅ |
+| 36 | `RandomForestStrategy` | `random_forest_direction.py` | RandomForest | ✅ |
+| 37 | `GradientBoostingStrategy` | `gradient_boosting_direction.py` | GBM | ✅ |
+| 38 | `LassoTopFeaturesStrategy` | `lasso_top_features.py` | Lasso (top 10) | ✅ |
+| 39 | `RidgeNetDemandStrategy` | `ridge_net_demand.py` | Ridge (derived) | ✅ |
+| 40 | `KNNDirectionStrategy` | `knn_direction.py` | KNN | ✅ |
+| 41 | `SVMDirectionStrategy` | `svm_direction.py` | LinearSVC | ✅ |
+| 42 | `DecisionTreeStrategy` | `decision_tree_direction.py` | Decision Tree | ✅ |
+| 43 | `LassoCalendarAugmentedStrategy` | `lasso_calendar_augmented.py` | Lasso + calendar | ✅ |
+| 44 | `GBMNetDemandStrategy` | `gbm_net_demand.py` | GBM (derived) | ✅ |
+| 45 | `BayesianRidgeStrategy` | `bayesian_ridge.py` | BayesianRidge | ✅ |
+| 46 | `PLSRegressionStrategy` | `pls_regression.py` | PLS | ✅ |
+| 47 | `NeuralNetStrategy` | `neural_net.py` | MLP | ✅ |
 
 ---
 
-## Phase E: Calendar/Temporal/Regime Strategies (target +8, total 56)
+## Phase E: Calendar/Temporal/Regime Strategies (+8, total 55)
 
-| # | Class | File | Status |
-|---|-------|------|--------|
-| 49 | `MonthOfYearStrategy` | `month_of_year.py` | ⏳ |
-| 50 | `DayOfWeekFilteredWindStrategy` | `dow_filtered_wind.py` | ⏳ |
-| 51 | `WeekendOnlyStrategy` | `weekend_only.py` | ⏳ |
-| 52 | `Lag1ReversionStrategy` | `lag1_reversion.py` | ⏳ |
-| 53 | `Lag3CycleStrategy` | `lag3_cycle.py` | ⏳ |
-| 54 | `RollingMomentum5dStrategy` | `rolling_momentum_5d.py` | ⏳ |
-| 55 | `RollingMomentum10dStrategy` | `rolling_momentum_10d.py` | ⏳ |
-| 56 | `HighVolMeanReversionStrategy` | `high_vol_mean_reversion.py` | ⏳ |
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 48 | `MonthSeasonalStrategy` | `month_seasonal.py` | Monthly seasonal mean | ✅ |
+| 49 | `MondayEffectStrategy` | `monday_effect.py` | Monday/Friday effect | ✅ |
+| 50 | `QuarterSeasonalStrategy` | `quarter_seasonal.py` | Quarterly seasonal mean | ✅ |
+| 51 | `ZScoreMomentumStrategy` | `zscore_momentum.py` | Z-score momentum follow | ✅ |
+| 52 | `NetDemandMomentumStrategy` | `net_demand_momentum.py` | Net demand momentum | ✅ |
+| 53 | `RenewableRegimeStrategy` | `renewable_regime.py` | Renewable penetration regime | ✅ |
+| 54 | `VolatilityRegimeMLStrategy` | `volatility_regime_ml.py` | Volatility regime learned | ✅ |
+| 55 | `GasCarbonJointTrendStrategy` | `gas_carbon_joint_trend.py` | Gas-carbon joint trend | ✅ |
 
 ---
 
-## Phase F: Ensemble/Meta Strategies (target +12, total 68)
+## Phase F: Ensemble/Meta Strategies (+12, total 67)
 
 | # | Class | File | Components | Status |
 |---|-------|------|-----------|--------|
-| 57 | `DOWWindCompositeStrategy` | `dow_wind_composite.py` | DOW + Wind | ⏳ |
-| 58 | `DOWNetDemandStrategy` | `dow_net_demand.py` | DOW + NetDemand | ⏳ |
-| 59 | `TripleSignalStrategy` | `triple_signal.py` | DOW + Wind + Load | ⏳ |
-| 60 | `TopThreeEnsembleStrategy` | `top_three_ensemble.py` | Top-3 Sharpe | ⏳ |
-| 61 | `ThresholdMajorityVoteStrategy` | `threshold_majority_vote.py` | All threshold vote | ⏳ |
-| 62 | `WeightedVoteStrategy` | `weighted_vote.py` | All weighted | ⏳ |
-| 63 | `StackedEnsembleStrategy` | `stacked_ensemble.py` | All (stacked LR) | ⏳ |
-| 64 | `DOWLassoStrategy` | `dow_lasso.py` | DOW + Lasso | ⏳ |
-| 65 | `SignalCountStrategy` | `signal_count.py` | Threshold count | ⏳ |
-| 66 | `LowVolMomentumStrategy` | `low_vol_momentum.py` | Momentum in low-vol | ⏳ |
-| 67 | `ContraDOWStrategy` | `contra_dow.py` | DOW × NetDemand | ⏳ |
-| 68 | `AdaptiveWeightEnsembleStrategy` | `adaptive_weight_ensemble.py` | Rolling weights | ⏳ |
+| 56 | `ConsensusSignalStrategy` | `consensus_signal.py` | Unanimous 3-member consensus | ✅ |
+| 57 | `MajorityVoteRuleBasedStrategy` | `majority_vote_rule.py` | Rule-based majority vote | ✅ |
+| 58 | `MajorityVoteMLStrategy` | `majority_vote_ml.py` | ML classifier majority vote | ✅ |
+| 59 | `MeanForecastRegressionStrategy` | `mean_forecast_regression.py` | Mean regression forecast | ✅ |
+| 60 | `MedianForecastEnsembleStrategy` | `median_forecast_ensemble.py` | Median regression forecast | ✅ |
+| 61 | `TopKEnsembleStrategy` | `top_k_ensemble.py` | Top-K validation ensemble | ✅ |
+| 62 | `WeightedVoteMixedStrategy` | `weighted_vote_mixed.py` | Weighted rule+ML vote | ✅ |
+| 63 | `DiversityEnsembleStrategy` | `diversity_ensemble.py` | Diverse 3-source ensemble | ✅ |
+| 64 | `RegimeConditionalEnsembleStrategy` | `regime_conditional_ensemble.py` | Vol-regime conditional ensemble | ✅ |
+| 65 | `StackedRidgeMetaStrategy` | `stacked_ridge_meta.py` | Stacked Ridge meta-learner | ✅ |
+| 66 | `WeekdayWeekendEnsembleStrategy` | `weekday_weekend_ensemble.py` | Weekday/weekend dual ensemble | ✅ |
+| 67 | `BoostedSpreadMLStrategy` | `boosted_spread_ml.py` | Spread+GBM agreement filter | ✅ |

@@ -13,7 +13,6 @@ from energy_modelling.backtest.futures_market_engine import (
 )
 from energy_modelling.backtest.futures_market_runner import FuturesMarketResult
 from energy_modelling.backtest.io import (
-    RESULTS_DIR,
     load_backtest_results,
     load_market_results,
     results_exist,

@@ -22,13 +22,11 @@ from energy_modelling.backtest.futures_market_runner import (
     FuturesMarketResult,
     run_futures_market_evaluation,
 )
-from energy_modelling.backtest.runner import BacktestResult
 from energy_modelling.backtest.scoring import market_leaderboard_score
 from energy_modelling.dashboard._backtest import (
     STRATEGY_FACTORIES,
     combine_public_hidden,
 )
-
 
 # ---------------------------------------------------------------------------
 # Market helpers

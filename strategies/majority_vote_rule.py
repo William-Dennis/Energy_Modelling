@@ -7,12 +7,12 @@ Combines 5 diverse rule-based strategies.  Trades long if majority vote
 from __future__ import annotations
 
 from energy_modelling.backtest.types import BacktestState
-from strategies.ensemble_base import _EnsembleBase
-from strategies.wind_forecast import WindForecastStrategy
-from strategies.load_forecast import LoadForecastStrategy
-from strategies.gas_trend import GasTrendStrategy
 from strategies.carbon_trend import CarbonTrendStrategy
 from strategies.day_of_week import DayOfWeekStrategy
+from strategies.ensemble_base import _EnsembleBase
+from strategies.gas_trend import GasTrendStrategy
+from strategies.load_forecast import LoadForecastStrategy
+from strategies.wind_forecast import WindForecastStrategy
 
 
 class MajorityVoteRuleBasedStrategy(_EnsembleBase):

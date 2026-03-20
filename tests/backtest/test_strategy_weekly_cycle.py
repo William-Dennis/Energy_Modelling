@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 import pandas as pd
-import pytest
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 from strategies.weekly_cycle import WeeklyCycleStrategy

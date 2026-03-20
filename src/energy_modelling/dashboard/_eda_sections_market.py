@@ -7,10 +7,10 @@ import plotly.express as px
 import streamlit as st
 
 from energy_modelling.dashboard._eda_constants import (
+    _AGG_FREQ,
     GEN_COLS_DISPLAY,
     PRICE_COL,
     WEATHER_COLS_DISPLAY,
-    _AGG_FREQ,
 )
 
 

@@ -7,7 +7,6 @@ including perfect foresight.
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -22,7 +21,6 @@ from energy_modelling.backtest.convergence import (
     run_forecast_foresight_market,
 )
 from energy_modelling.backtest.futures_market_engine import run_futures_market
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -403,7 +401,7 @@ class TestFixedPFOscillation:
             "Long": pd.Series([1], index=dates),
             "Short": pd.Series([-1], index=dates),
         }
-        eq = run_futures_market(
+        _eq = run_futures_market(
             directions=directions,
             initial_market_prices=initial,
             real_prices=real,

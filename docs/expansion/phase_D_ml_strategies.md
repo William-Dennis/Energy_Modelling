@@ -1,6 +1,6 @@
 # Phase D: ML Model Strategies
 
-## Status: ⏳ Pending
+## Status: ✅ Complete
 
 ## Objective
 
@@ -15,21 +15,21 @@ pipeline logic (feature selection, scaling, CV, predict).
 
 | # | Class | Model | Feature Set | CV | Status |
 |---|-------|-------|------------|-----|--------|
-| 1 | `RidgeRegressionStrategy` | Ridge (L2) | All 47 features | 5-fold TSCV alpha | ⏳ |
-| 2 | `ElasticNetStrategy` | ElasticNet | All features | 5-fold TSCV (alpha, l1_ratio) | ⏳ |
-| 3 | `LogisticDirectionStrategy` | Logistic Regression | All features | 5-fold TSCV C | ⏳ |
-| 4 | `RandomForestStrategy` | RandomForestClassifier | All features | 5-fold TSCV max_depth | ⏳ |
-| 5 | `GradientBoostingStrategy` | GradientBoostingClassifier | All features | 5-fold TSCV n_estimators | ⏳ |
-| 6 | `LassoTopFeaturesStrategy` | Lasso | Top 10 by corr | 5-fold TSCV alpha | ⏳ |
-| 7 | `RidgeNetDemandStrategy` | Ridge | Derived features only | 5-fold TSCV alpha | ⏳ |
-| 8 | `KNNDirectionStrategy` | KNeighborsClassifier | Z-scored features | 5-fold TSCV n_neighbors | ⏳ |
-| 9 | `SVMDirectionStrategy` | LinearSVC | Z-scored features | 5-fold TSCV C | ⏳ |
-| 10 | `DecisionTreeStrategy` | DecisionTreeClassifier | All features | 5-fold TSCV max_depth | ⏳ |
-| 11 | `LassoCalendarAugmentedStrategy` | Lasso | All + DOW/month dummies | 5-fold TSCV alpha | ⏳ |
-| 12 | `GBMNetDemandStrategy` | GradientBoosting | Derived features | Fixed params | ⏳ |
-| 13 | `BayesianRidgeStrategy` | BayesianRidge | All features | None (auto-regularised) | ⏳ |
-| 14 | `PLSRegressionStrategy` | PLSRegression | All features | 5-fold TSCV n_components | ⏳ |
-| 15 | `NeuralNetStrategy` | MLPClassifier | All features | 5-fold TSCV hidden_layer_sizes | ⏳ |
+| 1 | `RidgeRegressionStrategy` | Ridge (L2) | All 47 features | 5-fold TSCV alpha | ✅ |
+| 2 | `ElasticNetStrategy` | ElasticNet | All features | 5-fold TSCV (alpha, l1_ratio) | ✅ |
+| 3 | `LogisticDirectionStrategy` | Logistic Regression | All features | 5-fold TSCV C | ✅ |
+| 4 | `RandomForestStrategy` | RandomForestClassifier | All features | 5-fold TSCV max_depth | ✅ |
+| 5 | `GradientBoostingStrategy` | GradientBoostingClassifier | All features | 5-fold TSCV n_estimators | ✅ |
+| 6 | `LassoTopFeaturesStrategy` | Lasso | Top 10 by corr | 5-fold TSCV alpha | ✅ |
+| 7 | `RidgeNetDemandStrategy` | Ridge | Derived features only | 5-fold TSCV alpha | ✅ |
+| 8 | `KNNDirectionStrategy` | KNeighborsClassifier | Z-scored features | 5-fold TSCV n_neighbors | ✅ |
+| 9 | `SVMDirectionStrategy` | LinearSVC | Z-scored features | 5-fold TSCV C | ✅ |
+| 10 | `DecisionTreeStrategy` | DecisionTreeClassifier | All features | 5-fold TSCV max_depth | ✅ |
+| 11 | `LassoCalendarAugmentedStrategy` | Lasso | All + DOW/month dummies | 5-fold TSCV alpha | ✅ |
+| 12 | `GBMNetDemandStrategy` | GradientBoosting | Derived features | Fixed params | ✅ |
+| 13 | `BayesianRidgeStrategy` | BayesianRidge | All features | None (auto-regularised) | ✅ |
+| 14 | `PLSRegressionStrategy` | PLSRegression | All features | 5-fold TSCV n_components | ✅ |
+| 15 | `NeuralNetStrategy` | MLPClassifier | All features | 5-fold TSCV hidden_layer_sizes | ✅ |
 
 ---
 
@@ -96,9 +96,9 @@ once per `recompute-all` CLI run.
 
 ## Completion Criteria
 
-- [ ] `strategies/ml_base.py` created with shared base class
-- [ ] 15 ML strategy files created
-- [ ] 5+ tests per strategy
-- [ ] All registered in `strategies/__init__.py`
-- [ ] All tests pass
-- [ ] `recompute-all` completes without timeout
+- [x] `strategies/ml_base.py` created with shared base class
+- [x] 15 ML strategy files created
+- [x] 5+ tests per strategy
+- [x] All registered in `strategies/__init__.py`
+- [x] All tests pass
+- [x] `recompute-all` completes without timeout

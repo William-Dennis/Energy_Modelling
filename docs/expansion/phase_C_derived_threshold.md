@@ -1,6 +1,6 @@
 # Phase C: Derived-Feature Threshold Strategies
 
-## Status: ⏳ Pending
+## Status: ✅ Complete
 
 ## Objective
 
@@ -14,21 +14,20 @@ value is in diversity and providing strong signal to ensemble strategies.
 
 | # | Class | File | Feature(s) | Logic | EDA Corr | Status |
 |---|-------|------|-----------|-------|----------|--------|
-| 1 | `NetDemandStrategy` | `net_demand.py` | `net_demand_mw` | Above median → long | ~+0.30 | ⏳ |
-| 2 | `NetDemandWithSolarStrategy` | `net_demand_solar.py` | `net_demand_mw` (incl solar) | Same as above, full formula | ~+0.30 | ⏳ |
-| 3 | `PriceZScoreReversionStrategy` | `price_zscore_reversion.py` | `price_zscore_20d` | z>1 → short; z<-1 → long; else skip | −0.173 | ⏳ |
-| 4 | `GasTrendStrategy` | `gas_trend.py` | `gas_trend_3d` | Rising gas → long | ~+0.07 | ⏳ |
-| 5 | `CarbonTrendStrategy` | `carbon_trend.py` | `carbon_trend_3d` | Rising carbon → long | ~+0.05 | ⏳ |
-| 6 | `FuelIndexTrendStrategy` | `fuel_index_trend.py` | `gas_trend_3d`, `carbon_trend_3d` | Combined fuel cost momentum | ~+0.08 | ⏳ |
-| 7 | `DEFRSpreadStrategy` | `de_fr_spread.py` | `de_fr_spread` | DE cheap vs FR → long | −0.132 | ⏳ |
-| 8 | `DENLSpreadStrategy` | `de_nl_spread.py` | `de_nl_spread` | DE cheap vs NL → long | ~−0.10 | ⏳ |
-| 9 | `MultiSpreadStrategy` | `multi_spread.py` | `de_avg_neighbour_spread` | DE cheap vs avg neighbours → long | ~−0.12 | ⏳ |
-| 10 | `NLFlowSignalStrategy` | `nl_flow_signal.py` | `flow_nl_net_import_mw_mean` | Heavy export to NL → long | −0.192 | ⏳ |
-| 11 | `FRFlowSignalStrategy` | `fr_flow_signal.py` | `flow_fr_net_import_mw_mean` | Heavy export to FR → long | −0.099 | ⏳ |
-| 12 | `PriceMinReversionStrategy` | `price_min_reversion.py` | `price_min` | Low yesterday minimum → long | −0.143 | ⏳ |
-| 13 | `WindForecastErrorStrategy` | `wind_forecast_error.py` | `wind_forecast_error` | Positive error (forecast > actual) → short | TBD | ⏳ |
-| 14 | `LoadSurpriseStrategy` | `load_surprise.py` | `load_surprise` | Positive surprise (forecast > actual) → long | TBD | ⏳ |
-| 15 | `RenewablesPenetrationStrategy` | `renewables_penetration.py` | `renewable_penetration_pct` | High penetration → short | ~−0.25 | ⏳ |
+| 1 | `NetDemandStrategy` | `net_demand.py` | `net_demand_mw` | Above median → long | ~+0.30 | ✅ |
+| 2 | `PriceZScoreReversionStrategy` | `price_zscore_reversion.py` | `price_zscore_20d` | z>1 → short; z<-1 → long; else skip | −0.173 | ✅ |
+| 3 | `GasTrendStrategy` | `gas_trend.py` | `gas_trend_3d` | Rising gas → long | ~+0.07 | ✅ |
+| 4 | `CarbonTrendStrategy` | `carbon_trend.py` | `carbon_trend_3d` | Rising carbon → long | ~+0.05 | ✅ |
+| 5 | `FuelIndexTrendStrategy` | `fuel_index_trend.py` | `gas_trend_3d`, `carbon_trend_3d` | Combined fuel cost momentum | ~+0.08 | ✅ |
+| 6 | `DEFRSpreadStrategy` | `de_fr_spread.py` | `de_fr_spread` | DE cheap vs FR → long | −0.132 | ✅ |
+| 7 | `DENLSpreadStrategy` | `de_nl_spread.py` | `de_nl_spread` | DE cheap vs NL → long | ~−0.10 | ✅ |
+| 8 | `MultiSpreadStrategy` | `multi_spread.py` | `de_avg_neighbour_spread` | DE cheap vs avg neighbours → long | ~−0.12 | ✅ |
+| 9 | `NLFlowSignalStrategy` | `nl_flow_signal.py` | `flow_nl_net_import_mw_mean` | Heavy export to NL → long | −0.192 | ✅ |
+| 10 | `FRFlowSignalStrategy` | `fr_flow_signal.py` | `flow_fr_net_import_mw_mean` | Heavy export to FR → long | −0.099 | ✅ |
+| 11 | `PriceMinReversionStrategy` | `price_min_reversion.py` | `price_min` | Low yesterday minimum → long | −0.143 | ✅ |
+| 12 | `WindForecastErrorStrategy` | `wind_forecast_error.py` | `wind_forecast_error` | Positive error (forecast > actual) → short | TBD | ✅ |
+| 13 | `LoadSurpriseStrategy` | `load_surprise.py` | `load_surprise` | Positive surprise (forecast > actual) → long | TBD | ✅ |
+| 14 | `RenewablesPenetrationStrategy` | `renewables_penetration.py` | `renewable_penetration_pct` | High penetration → short | ~−0.25 | ✅ |
 
 ---
 
@@ -58,7 +57,7 @@ value is in diversity and providing strong signal to ensemble strategies.
 
 ## Completion Criteria
 
-- [ ] 15 strategy files created
-- [ ] 15 test files created
-- [ ] All registered in `strategies/__init__.py`
-- [ ] All tests pass
+- [x] 14 strategy files created
+- [x] 14 test files created
+- [x] All registered in `strategies/__init__.py`
+- [x] All tests pass

@@ -9,11 +9,11 @@ from __future__ import annotations
 import numpy as np
 
 from energy_modelling.backtest.types import BacktestState
+from strategies.bayesian_ridge import BayesianRidgeStrategy
+from strategies.elastic_net import ElasticNetStrategy
 from strategies.ensemble_base import _EnsembleBase
 from strategies.lasso_regression import LassoRegressionStrategy
 from strategies.ridge_regression import RidgeRegressionStrategy
-from strategies.elastic_net import ElasticNetStrategy
-from strategies.bayesian_ridge import BayesianRidgeStrategy
 
 
 class MeanForecastRegressionStrategy(_EnsembleBase):
