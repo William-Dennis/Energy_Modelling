@@ -48,11 +48,16 @@ class FuturesMarketResult:
     original_results:
         Per-strategy backtest results under the original
         ``last_settlement_price`` entry price (for comparison).
+    strategy_forecasts:
+        Raw forecasts ``{strategy_name: {date: forecast_price}}``.
+        Persisted so that the market engine can be re-run with different
+        configurations without re-fitting strategies.
     """
 
     equilibrium: FuturesMarketEquilibrium
     market_results: dict[str, BacktestResult]
     original_results: dict[str, BacktestResult]
+    strategy_forecasts: dict[str, dict] = None  # type: ignore[assignment]
 
 
 def _recompute_pnl_against_market(
@@ -243,4 +248,5 @@ def run_futures_market_evaluation(
         equilibrium=equilibrium,
         market_results=market_results,
         original_results=original_results,
+        strategy_forecasts=strategy_forecasts,
     )
