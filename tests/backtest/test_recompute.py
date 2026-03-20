@@ -15,6 +15,13 @@ def test_parse_date_valid():
     assert _parse_date("2024-06-15") == date(2024, 6, 15)
 
 
+def test_parse_date_invalid():
+    import pytest
+
+    with pytest.raises(ValueError):
+        _parse_date("not-a-date")
+
+
 def test_main_is_callable():
     assert callable(main)
 
