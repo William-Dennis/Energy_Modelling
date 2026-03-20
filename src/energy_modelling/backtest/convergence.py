@@ -14,6 +14,7 @@ import pandas as pd
 
 from energy_modelling.backtest.futures_market_engine import (
     FuturesMarketEquilibrium,
+    FuturesMarketIteration,
     compute_market_prices,
     compute_strategy_profits,
     compute_weights,
@@ -202,10 +203,8 @@ def _run_adaptive_iteration(
     forecast_spread: float,
     dampening: float,
     other_directions: dict[str, pd.Series] | None,
-) -> tuple["FuturesMarketIteration", pd.Series, float]:
+) -> tuple[FuturesMarketIteration, pd.Series, float]:
     """Execute one iteration of the adaptive foresight market."""
-    from energy_modelling.backtest.futures_market_engine import FuturesMarketIteration
-
     pf_directions = adaptive_perfect_foresight_directions(real_prices, current_prices)
     all_directions: dict[str, pd.Series] = {"PerfectForesight": pf_directions}
     if other_directions:
@@ -285,14 +284,12 @@ def _run_forecast_iteration(
     dampening: float,
     other_directions: dict[str, pd.Series] | None,
     other_forecasts: dict[str, dict] | None,
-) -> tuple["FuturesMarketIteration", pd.Series, float]:
+) -> tuple[FuturesMarketIteration, pd.Series, float]:
     """Execute one iteration using real-valued forecasts (not direction ± spread).
 
     PF provides its actual forecast (= real price).  Other strategies may
     provide their own forecasts or fall back to direction ± spread.
     """
-    from energy_modelling.backtest.futures_market_engine import FuturesMarketIteration
-
     pf_directions = adaptive_perfect_foresight_directions(real_prices, current_prices)
     all_directions: dict[str, pd.Series] = {"PerfectForesight": pf_directions}
     if other_directions:

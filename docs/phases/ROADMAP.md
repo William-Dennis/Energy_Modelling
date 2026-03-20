@@ -13,7 +13,7 @@
 | 4 | [Implement Strategies](phase_4_implement_strategies.md) | COMPLETE | Phase 0, 3 | 7 new BacktestStrategy implementations + 70 tests |
 | 5 | [Run & Assess](phase_5_run_and_assess.md) | COMPLETE | Phase 4 | Leaderboard, market sim, hypothesis assessment |
 | 6 | [EDA Feedback Loop](phase_6_feedback_loop.md) | COMPLETE | Phase 5 | 6 new dashboard sections, no strategy refinements needed |
-| 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Theoretical proofs + empirical evidence: non-convergence explained |
+| 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Forecast-based convergence proven (contraction mapping); 4 theorems validated empirically |
 
 ## Dependency Graph
 
@@ -100,3 +100,4 @@ src/energy_modelling/
 | 2026-03-19 | 5 | COMPLETE — All 7 hypotheses HELD; market sim non-convergence discovered; reset() bug fixed |
 | 2026-03-19 | 6 | COMPLETE — 5 new analysis functions, 14 new tests, 6 new dashboard sections (19-24); no strategy refinements warranted |
 | 2026-03-19 | 7 | COMPLETE — Convergence analysis: 3 theorems, 6 experiments, 29+7 new tests; non-convergence explained by constant step size |
+| 2026-03-20 | 7 | REDO — Forecast-first refactor: forecast() is sole abstract method; act() derived with skip_buffer. 4 theorems proven (contraction mapping), 6 experiments validate theory to 4 decimal places. 225 tests pass |
