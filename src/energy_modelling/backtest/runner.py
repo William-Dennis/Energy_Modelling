@@ -7,6 +7,7 @@ from datetime import date
 
 import pandas as pd
 
+from energy_modelling.backtest.feature_engineering import add_derived_features
 from energy_modelling.backtest.scoring import compute_backtest_metrics
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
@@ -70,6 +71,10 @@ def run_backtest(
     """Fit a strategy, then evaluate it one day at a time."""
 
     data = _normalise_daily_data(daily_data)
+    # Ensure derived features are always present regardless of how the
+    # DataFrame was loaded.  add_derived_features() is idempotent — if the
+    # columns already exist they are simply recomputed to identical values.
+    data = add_derived_features(data)
     train_mask = data.index <= training_end
     eval_mask = (data.index >= evaluation_start) & (data.index <= evaluation_end)
 

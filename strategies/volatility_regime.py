@@ -45,7 +45,12 @@ class VolatilityRegimeStrategy(BacktestStrategy):
         if self._vol_threshold is None:
             raise RuntimeError("VolatilityRegimeStrategy.forecast() called before fit()")
         vol = float(state.features[_STD_COL])
-        change = float(state.features[_CHANGE_COL])
+        # Use yesterday's price change from history (price_change_eur_mwh is
+        # excluded from state.features to prevent look-ahead bias).
+        history = state.history
+        if history.empty:
+            return state.last_settlement_price
+        change = float(history[_CHANGE_COL].iloc[-1])
         high_vol = vol > self._vol_threshold
         price_up = change >= 0.0
         # high-vol: mean-revert; low-vol: momentum

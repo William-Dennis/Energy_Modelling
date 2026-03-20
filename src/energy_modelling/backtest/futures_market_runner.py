@@ -13,6 +13,7 @@ from datetime import date
 
 import pandas as pd
 
+from energy_modelling.backtest.feature_engineering import add_derived_features
 from energy_modelling.backtest.futures_market_engine import (
     FuturesMarketEquilibrium,
     run_futures_market,
@@ -143,6 +144,10 @@ def run_futures_market_evaluation(
         data = data.set_index("delivery_date", drop=False)
     else:
         data.index = pd.Index(pd.to_datetime(data.index).date, name="delivery_date")
+
+    # Ensure derived features are present for _collect_forecasts().
+    # add_derived_features() is idempotent.
+    data = add_derived_features(data)
 
     eval_mask = (data.index >= evaluation_start) & (data.index <= evaluation_end)
     eval_data = data.loc[eval_mask]

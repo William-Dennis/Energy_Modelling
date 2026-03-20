@@ -29,11 +29,17 @@ def _make_state(
     price_change: float,
     last_price: float = 50.0,
 ) -> BacktestState:
+    # price_change_eur_mwh is an excluded column in the real backtest runner,
+    # so it appears in history (yesterday's row), not in features.
+    history = pd.DataFrame(
+        {_CHANGE_COL: [price_change]},
+        index=pd.Index([date(2024, 2, 19)], name="delivery_date"),
+    )
     return BacktestState(
         delivery_date=date(2024, 2, 20),
         last_settlement_price=last_price,
-        features=pd.Series({_STD_COL: price_std, _CHANGE_COL: price_change}),
-        history=pd.DataFrame(),
+        features=pd.Series({_STD_COL: price_std}),
+        history=history,
     )
 
 

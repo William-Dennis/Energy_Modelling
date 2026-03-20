@@ -46,7 +46,7 @@ from strategies.svm_direction import SVMDirectionStrategy
 _RNG = np.random.default_rng(0)
 
 
-def _make_train_data(n: int = 120, include_derived: bool = True) -> pd.DataFrame:
+def _make_train_data(n: int = 100, include_derived: bool = True) -> pd.DataFrame:
     """Build a minimal but realistic training DataFrame."""
     dates = pd.date_range("2022-01-01", periods=n, freq="D")
     prices = 50.0 + _RNG.normal(0, 10, n).cumsum()
@@ -277,33 +277,32 @@ class TestRidgeRegressionStrategy:
 
 
 class TestElasticNetStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train_data()
-        self.strategy = ElasticNetStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train_data()
+        cls.strategy = ElasticNetStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
 
     def test_forecast_before_fit_returns_finite(self) -> None:
-        assert np.isfinite(self.strategy.forecast(_make_state()))
+        fresh = ElasticNetStrategy()
+        assert np.isfinite(fresh.forecast(_make_state()))
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state(df=self.df)))
 
     def test_fit_sets_feature_cols(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._feature_cols) > 0
 
     def test_fit_sets_skip_buffer(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
         self.strategy.reset()
 
     def test_pipeline_is_fitted(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy._pipeline is not None
 
 
@@ -342,61 +341,60 @@ class TestLogisticDirectionStrategy:
 
 
 class TestRandomForestStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train_data()
-        self.strategy = RandomForestStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train_data()
+        cls.strategy = RandomForestStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
 
     def test_forecast_before_fit_returns_finite(self) -> None:
-        assert np.isfinite(self.strategy.forecast(_make_state()))
+        fresh = RandomForestStrategy()
+        assert np.isfinite(fresh.forecast(_make_state()))
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state(df=self.df)))
 
     def test_forecast_encodes_direction(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=100.0, df=self.df)
         result = self.strategy.forecast(state)
         assert result in {99.0, 101.0}
 
     def test_fit_sets_skip_buffer_zero(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer == 0.0
 
     def test_reset_is_callable(self) -> None:
         self.strategy.reset()
 
     def test_pipeline_fitted(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy._pipeline is not None
 
 
 class TestGradientBoostingStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train_data()
-        self.strategy = GradientBoostingStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train_data()
+        cls.strategy = GradientBoostingStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
 
     def test_forecast_before_fit_returns_finite(self) -> None:
-        assert np.isfinite(self.strategy.forecast(_make_state()))
+        fresh = GradientBoostingStrategy()
+        assert np.isfinite(fresh.forecast(_make_state()))
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state(df=self.df)))
 
     def test_forecast_encodes_direction(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=80.0, df=self.df)
         result = self.strategy.forecast(state)
         assert result in {79.0, 81.0}
 
     def test_skip_buffer_zero(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer == 0.0
 
     def test_reset_is_callable(self) -> None:
@@ -480,28 +478,28 @@ class TestRidgeNetDemandStrategy:
 
 
 class TestKNNDirectionStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train_data()
-        self.strategy = KNNDirectionStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train_data()
+        cls.strategy = KNNDirectionStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
 
     def test_forecast_before_fit_returns_finite(self) -> None:
-        assert np.isfinite(self.strategy.forecast(_make_state()))
+        fresh = KNNDirectionStrategy()
+        assert np.isfinite(fresh.forecast(_make_state()))
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state(df=self.df)))
 
     def test_forecast_encodes_direction(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=60.0, df=self.df)
         result = self.strategy.forecast(state)
         assert result in {59.0, 61.0}
 
     def test_skip_buffer_zero(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer == 0.0
 
     def test_reset_is_callable(self) -> None:
@@ -509,28 +507,28 @@ class TestKNNDirectionStrategy:
 
 
 class TestSVMDirectionStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train_data()
-        self.strategy = SVMDirectionStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train_data()
+        cls.strategy = SVMDirectionStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
 
     def test_forecast_before_fit_returns_finite(self) -> None:
-        assert np.isfinite(self.strategy.forecast(_make_state()))
+        fresh = SVMDirectionStrategy()
+        assert np.isfinite(fresh.forecast(_make_state()))
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state(df=self.df)))
 
     def test_forecast_encodes_direction(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=70.0, df=self.df)
         result = self.strategy.forecast(state)
         assert result in {69.0, 71.0}
 
     def test_skip_buffer_zero(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer == 0.0
 
     def test_reset_is_callable(self) -> None:

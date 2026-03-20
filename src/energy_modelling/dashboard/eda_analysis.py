@@ -123,8 +123,9 @@ def autocorrelation(price_changes: pd.Series, max_lag: int = 20) -> pd.Series:
     Series indexed by lag (1..max_lag) with autocorrelation values.
     """
     acf_values = []
-    for lag in range(1, max_lag + 1):
-        acf_values.append(price_changes.autocorr(lag=lag))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        for lag in range(1, max_lag + 1):
+            acf_values.append(price_changes.autocorr(lag=lag))
     return pd.Series(acf_values, index=range(1, max_lag + 1), name="autocorrelation")
 
 

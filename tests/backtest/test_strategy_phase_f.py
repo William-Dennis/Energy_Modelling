@@ -39,7 +39,7 @@ from strategies.weighted_vote_mixed import WeightedVoteMixedStrategy
 _RNG = np.random.default_rng(42)
 
 
-def _make_train(n: int = 150) -> pd.DataFrame:
+def _make_train(n: int = 100) -> pd.DataFrame:
     dates = pd.date_range("2021-01-01", periods=n, freq="D")
     prices = 50.0 + _RNG.normal(0, 8, n).cumsum()
     changes = np.diff(prices, prepend=prices[0])
@@ -190,9 +190,11 @@ class TestEnsembleBase:
 
 
 class TestMajorityVoteRuleBasedStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = MajorityVoteRuleBasedStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = MajorityVoteRuleBasedStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -201,30 +203,24 @@ class TestMajorityVoteRuleBasedStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_forecast_returns_last_price_offset(self) -> None:
         """Result must be last_price ± 1 or last_price (skip)."""
-        self.strategy.fit(self.df)
         state = _make_state(last_price=50.0)
         result = self.strategy.forecast(state)
         assert result in {49.0, 50.0, 51.0}
 
     def test_five_members_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 5
 
     def test_skip_buffer_set_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_consistent_result_same_state(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state()
         assert self.strategy.forecast(state) == self.strategy.forecast(state)
 
@@ -235,9 +231,11 @@ class TestMajorityVoteRuleBasedStrategy:
 
 
 class TestMajorityVoteMLStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = MajorityVoteMLStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = MajorityVoteMLStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -246,31 +244,28 @@ class TestMajorityVoteMLStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_forecast_returns_last_price_offset(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=50.0)
         result = self.strategy.forecast(state)
         assert result in {49.0, 50.0, 51.0}
 
     def test_five_ml_members_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 5
 
     def test_skip_buffer_set_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_two_separate_fits_give_finite_result(self) -> None:
-        self.strategy.fit(self.df)
-        self.strategy.fit(self.df)  # re-fit must not break
-        assert np.isfinite(self.strategy.forecast(_make_state()))
+        """Re-fit on the same data must not break the strategy."""
+        strategy = MajorityVoteMLStrategy()
+        strategy.fit(self.df)
+        strategy.fit(self.df)
+        assert np.isfinite(strategy.forecast(_make_state()))
 
 
 # ===========================================================================
@@ -279,9 +274,11 @@ class TestMajorityVoteMLStrategy:
 
 
 class TestMeanForecastRegressionStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = MeanForecastRegressionStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = MeanForecastRegressionStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -290,28 +287,23 @@ class TestMeanForecastRegressionStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         result = self.strategy.forecast(_make_state())
         assert np.isfinite(result)
 
     def test_forecast_is_mean_of_members(self) -> None:
         """forecast() == mean of individual member forecasts."""
-        self.strategy.fit(self.df)
         state = _make_state()
         individual = [float(m.forecast(state)) for m in self.strategy._fitted_members]
         expected = float(np.mean(individual))
         assert self.strategy.forecast(state) == pytest.approx(expected)
 
     def test_four_members_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 4
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
 
@@ -321,9 +313,11 @@ class TestMeanForecastRegressionStrategy:
 
 
 class TestWeightedVoteMixedStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = WeightedVoteMixedStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = WeightedVoteMixedStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -332,29 +326,23 @@ class TestWeightedVoteMixedStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_forecast_returns_last_price_offset(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=60.0)
         result = self.strategy.forecast(state)
         assert result in {59.0, 60.0, 61.0}
 
     def test_six_members_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 6
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_consistent_forecast_on_same_state(self) -> None:
-        self.strategy.fit(self.df)
         s = _make_state()
         assert self.strategy.forecast(s) == self.strategy.forecast(s)
 
@@ -365,9 +353,11 @@ class TestWeightedVoteMixedStrategy:
 
 
 class TestStackedRidgeMetaStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = StackedRidgeMetaStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = StackedRidgeMetaStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -376,31 +366,27 @@ class TestStackedRidgeMetaStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_meta_ridge_fitted_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy._meta_ridge is not None
         assert self.strategy._meta_scaler is not None
 
     def test_four_base_members(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 4
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_fallback_on_tiny_data(self) -> None:
         """With only 10 rows, meta_train < 3 triggers fallback path gracefully."""
+        strategy = StackedRidgeMetaStrategy()
         tiny = self.df.head(10).copy()
-        self.strategy.fit(tiny)
-        assert np.isfinite(self.strategy.forecast(_make_state()))
+        strategy.fit(tiny)
+        assert np.isfinite(strategy.forecast(_make_state()))
 
 
 # ===========================================================================
@@ -409,9 +395,11 @@ class TestStackedRidgeMetaStrategy:
 
 
 class TestConsensusSignalStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = ConsensusSignalStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = ConsensusSignalStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -420,34 +408,30 @@ class TestConsensusSignalStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_forecast_returns_last_price_offset(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=50.0)
         result = self.strategy.forecast(state)
         assert result in {49.0, 50.0, 51.0}
 
     def test_three_members_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 3
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_no_consensus_gives_skip(self) -> None:
-        """Manually patch member directions to be mixed → must skip (return last_price)."""
-        self.strategy.fit(self.df)
+        """Manually patch member directions to be mixed -> must skip (return last_price)."""
+        # Use a fresh instance so patching doesn't affect the class-level strategy
+        strategy = ConsensusSignalStrategy()
+        strategy.fit(self.df)
         state = _make_state(last_price=50.0)
-        # Patch _get_member_directions to return mixed signals
-        self.strategy._get_member_directions = lambda s: [1.0, -1.0, 1.0]  # type: ignore[method-assign]
-        result = self.strategy.forecast(state)
+        strategy._get_member_directions = lambda s: [1.0, -1.0, 1.0]  # type: ignore[method-assign]
+        result = strategy.forecast(state)
         assert result == pytest.approx(50.0)
 
 
@@ -457,44 +441,39 @@ class TestConsensusSignalStrategy:
 
 
 class TestRegimeConditionalEnsembleStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = RegimeConditionalEnsembleStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = RegimeConditionalEnsembleStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_vol_threshold_is_median_of_training(self) -> None:
-        self.strategy.fit(self.df)
         expected = float(np.median(self.df["rolling_vol_7d"]))
         assert self.strategy._vol_threshold == pytest.approx(expected)
 
     def test_three_ml_and_three_rule_members(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._ml_members) == 3
         assert len(self.strategy._rule_members) == 3
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_high_vol_and_low_vol_both_return_finite(self) -> None:
-        self.strategy.fit(self.df)
         high_vol = _make_state(features={"rolling_vol_7d": 100.0})
         low_vol = _make_state(features={"rolling_vol_7d": 0.1})
         assert np.isfinite(self.strategy.forecast(high_vol))
         assert np.isfinite(self.strategy.forecast(low_vol))
 
     def test_forecast_returns_last_price_offset(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=45.0)
         result = self.strategy.forecast(state)
         assert result in {44.0, 45.0, 46.0}
@@ -506,9 +485,11 @@ class TestRegimeConditionalEnsembleStrategy:
 
 
 class TestTopKEnsembleStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = TopKEnsembleStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = TopKEnsembleStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -517,25 +498,20 @@ class TestTopKEnsembleStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_top_3_members_selected(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 3
 
     def test_forecast_returns_last_price_offset(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=50.0)
         result = self.strategy.forecast(state)
         assert result in {49.0, 50.0, 51.0}
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_six_candidate_members_defined(self) -> None:
@@ -548,9 +524,11 @@ class TestTopKEnsembleStrategy:
 
 
 class TestDiversityEnsembleStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = DiversityEnsembleStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = DiversityEnsembleStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -559,25 +537,20 @@ class TestDiversityEnsembleStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_forecast_returns_last_price_offset(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=50.0)
         result = self.strategy.forecast(state)
         assert result in {49.0, 50.0, 51.0}
 
     def test_three_members_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 3
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_members_are_diverse_types(self) -> None:
@@ -598,9 +571,11 @@ class TestDiversityEnsembleStrategy:
 
 
 class TestMedianForecastEnsembleStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = MedianForecastEnsembleStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = MedianForecastEnsembleStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
@@ -609,31 +584,25 @@ class TestMedianForecastEnsembleStrategy:
         assert isinstance(self.strategy, _EnsembleBase)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_forecast_is_median_of_members(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state()
         individual = [float(m.forecast(state)) for m in self.strategy._fitted_members]
         expected = float(np.median(individual))
         assert self.strategy.forecast(state) == pytest.approx(expected)
 
     def test_five_members_after_fit(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._fitted_members) == 5
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_median_differs_from_mean_with_outlier(self) -> None:
         """Patch one member to return an extreme forecast; median stays robust."""
-        self.strategy.fit(self.df)
         state = _make_state(last_price=50.0)
         original = self.strategy.forecast(state)
         # The median should be finite regardless
@@ -646,42 +615,37 @@ class TestMedianForecastEnsembleStrategy:
 
 
 class TestWeekdayWeekendEnsembleStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = WeekdayWeekendEnsembleStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = WeekdayWeekendEnsembleStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_three_weekday_and_three_weekend_members(self) -> None:
-        self.strategy.fit(self.df)
         assert len(self.strategy._weekday_members) == 3
         assert len(self.strategy._weekend_members) == 3
 
     def test_weekday_forecast_finite(self) -> None:
-        self.strategy.fit(self.df)
         monday = _make_state(delivery=date(2024, 6, 3), features={"dow_int": 0, "is_weekend": 0})
         assert np.isfinite(self.strategy.forecast(monday))
 
     def test_weekend_forecast_finite(self) -> None:
-        self.strategy.fit(self.df)
         saturday = _make_state(delivery=date(2024, 6, 8), features={"dow_int": 5, "is_weekend": 1})
         assert np.isfinite(self.strategy.forecast(saturday))
 
     def test_skip_buffer_set(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy.skip_buffer >= 0.0
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_forecast_returns_last_price_offset(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=50.0)
         result = self.strategy.forecast(state)
         assert result in {49.0, 50.0, 51.0}
@@ -693,43 +657,42 @@ class TestWeekdayWeekendEnsembleStrategy:
 
 
 class TestBoostedSpreadMLStrategy:
-    def setup_method(self) -> None:
-        self.df = _make_train()
-        self.strategy = BoostedSpreadMLStrategy()
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.df = _make_train()
+        cls.strategy = BoostedSpreadMLStrategy()
+        cls.strategy.fit(cls.df)
 
     def test_is_backtest_strategy(self) -> None:
         assert isinstance(self.strategy, BacktestStrategy)
 
     def test_forecast_after_fit_returns_finite(self) -> None:
-        self.strategy.fit(self.df)
         assert np.isfinite(self.strategy.forecast(_make_state()))
 
     def test_forecast_returns_last_price_offset(self) -> None:
-        self.strategy.fit(self.df)
         state = _make_state(last_price=50.0)
         result = self.strategy.forecast(state)
         assert result in {49.0, 50.0, 51.0}
 
     def test_skip_buffer_is_average_of_two_members(self) -> None:
-        self.strategy.fit(self.df)
         expected = float(
             np.mean([self.strategy._spread.skip_buffer, self.strategy._gbm.skip_buffer])
         )
         assert self.strategy.skip_buffer == pytest.approx(expected)
 
     def test_disagreement_gives_skip(self) -> None:
-        """Patch directions to disagree → forecast == last_price."""
-        self.strategy.fit(self.df)
+        """Patch directions to disagree -> forecast == last_price."""
+        # Use a fresh instance so patching doesn't affect the class-level strategy
+        strategy = BoostedSpreadMLStrategy()
+        strategy.fit(self.df)
         state = _make_state(last_price=50.0)
-        self.strategy._direction = lambda strat, s: 1.0 if strat is self.strategy._spread else -1.0  # type: ignore[method-assign]
-        result = self.strategy.forecast(state)
+        strategy._direction = lambda strat, s: 1.0 if strat is strategy._spread else -1.0  # type: ignore[method-assign]
+        result = strategy.forecast(state)
         assert result == pytest.approx(50.0)
 
     def test_reset_is_callable(self) -> None:
-        self.strategy.fit(self.df)
         self.strategy.reset()
 
     def test_both_members_fitted(self) -> None:
-        self.strategy.fit(self.df)
         assert self.strategy._spread is not None
         assert self.strategy._gbm is not None

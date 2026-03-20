@@ -209,3 +209,6 @@ __marimo__/
 # Project data (downloaded datasets — large files, not for git)
 data/raw/
 data/processed/
+
+# random artifacts
+nul

@@ -574,6 +574,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "statsmodels" },
     { name = "streamlit" },
+    { name = "tqdm" },
     { name = "yfinance" },
 ]
 
@@ -605,6 +606,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.8.0" },
     { name = "statsmodels", specifier = ">=0.14.6" },
     { name = "streamlit", specifier = ">=1.38" },
+    { name = "tqdm", specifier = ">=4.67.3" },
     { name = "yfinance", specifier = ">=0.2.36" },
 ]
 
