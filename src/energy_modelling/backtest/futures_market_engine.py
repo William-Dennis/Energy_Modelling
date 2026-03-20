@@ -172,7 +172,9 @@ def compute_weights_capped(
 
     weights = {name: w / total for name, w in raw.items()}
 
-    # Iterative clipping until no weight exceeds cap
+    # Iterative clipping: each pass may push previously-uncapped weights
+    # above w_max after redistribution.  100 iterations is a safe upper
+    # bound — in practice convergence happens in < N_strategies passes.
     for _ in range(100):
         excess = sum(max(w - w_max, 0) for w in weights.values())
         if excess < 1e-10:

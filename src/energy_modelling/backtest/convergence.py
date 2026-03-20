@@ -227,5 +227,8 @@ def delta_weighted_average(
         weights_list.append(w)
 
     total_w = sum(weights_list)
-    result = sum(w * p for w, p in zip(weights_list, prices_list, strict=True)) / total_w
+    # weighted sum of pd.Series objects → pd.Series
+    result: pd.Series = sum(
+        w * p for w, p in zip(weights_list, prices_list, strict=True)
+    ) / total_w
     return result

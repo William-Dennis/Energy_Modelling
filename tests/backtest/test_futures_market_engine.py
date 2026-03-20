@@ -558,8 +558,11 @@ class TestDampeningAlpha:
             max_iterations=100,
             alpha=0.3,
         )
-        # Dampened should have a lower delta
+        # Dampened should have a lower delta and significantly reduced oscillation
         assert eq_dampened.convergence_delta < eq_undampened.convergence_delta
+        # For a 2-strategy system with no fixed point, dampening reduces
+        # but cannot eliminate the cycle.  Verify substantial reduction.
+        assert eq_dampened.convergence_delta < 0.5 * eq_undampened.convergence_delta
 
     def test_alpha_passed_through_iteration(self) -> None:
         """run_futures_market_iteration respects alpha."""
@@ -639,6 +642,8 @@ class TestTwoPhaseMarket:
             strategy_forecasts=forecasts,
         )
         assert eq_two_phase.convergence_delta <= eq_undampened.convergence_delta
+        # Two-phase should significantly reduce the oscillation amplitude
+        assert eq_two_phase.convergence_delta < 0.5 * eq_undampened.convergence_delta
 
 
 # ===========================================================================
