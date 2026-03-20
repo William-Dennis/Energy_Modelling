@@ -145,12 +145,25 @@ Results are saved to `data/results/` and loaded by the dashboard on startup.
 
 ## Acceptance Criteria
 
-- [ ] Dashboard opens and displays pre-computed results without any button press
-- [ ] "Recompute" button triggers live recalculation and saves to disk
-- [ ] `scripts/run_full_backtest.py` produces all result files in `data/results/`
-- [ ] Round-trip serialization tests pass (save -> load == original)
-- [ ] README documents how to regenerate results
-- [ ] All 276+ existing tests still pass
+- [x] Dashboard opens and displays pre-computed results without any button press — **auto-loads from `data/results/` on startup**
+- [x] "Recompute" button triggers live recalculation and saves to disk — **"Run Comparison" saves after computation**
+- [x] `scripts/run_full_backtest.py` produces all result files in `data/results/`
+- [x] Round-trip serialization tests pass (save -> load == original) — **6 tests in `test_io.py`**
+- [x] README documents how to regenerate results — **"Regenerating Results" section added**
+- [x] All 276+ existing tests still pass — **295 tests now passing**
+
+## Status: ✅ COMPLETE
+
+### Files Created
+- `src/energy_modelling/backtest/io.py` — pickle-based save/load for `BacktestResult` and `FuturesMarketResult`
+- `tests/backtest/test_io.py` — 6 round-trip and existence tests
+
+### Files Modified
+- `src/energy_modelling/dashboard/_backtest.py` — auto-loads cached results on startup, saves after live computation
+- `src/energy_modelling/dashboard/_futures_market.py` — loads/saves market results from disk
+- `src/energy_modelling/dashboard/_accuracy.py` — falls back to disk-loaded market results
+- `scripts/run_full_backtest.py` — saves results to `data/results/` after running
+- `src/energy_modelling/backtest/__init__.py` — exports IO functions
 
 ## Labels
 
