@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: ALL 7 PHASES COMPLETE
+## Overall Status: PHASES 0-7 COMPLETE, PHASE 8 IN PROGRESS
 
 ## Phase Overview
 
@@ -14,6 +14,7 @@
 | 5 | [Run & Assess](phase_5_run_and_assess.md) | COMPLETE | Phase 4 | Leaderboard, market sim, hypothesis assessment |
 | 6 | [EDA Feedback Loop](phase_6_feedback_loop.md) | COMPLETE | Phase 5 | 6 new dashboard sections, no strategy refinements needed |
 | 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Forecast-based convergence proven (contraction mapping); 4 theorems validated empirically |
+| 8 | [Oscillation Research](phase_8_oscillation_research.md) | IN PROGRESS | Phase 7 | Resolve market non-convergence via dampening, weighting reforms, initialisation, and smoothing |
 
 ## Dependency Graph
 
@@ -33,6 +34,8 @@ Phase 0 (Consolidation)
           |       +---> Phase 6 (Feedback Loop)
           |       |
           +---> Phase 7 (Convergence Analysis)
+          |
+          +---> Phase 8 (Oscillation Research) <--- Phase 7
 ```
 
 ## Principles
@@ -101,3 +104,4 @@ src/energy_modelling/
 | 2026-03-19 | 6 | COMPLETE — 5 new analysis functions, 14 new tests, 6 new dashboard sections (19-24); no strategy refinements warranted |
 | 2026-03-19 | 7 | COMPLETE — Convergence analysis: 3 theorems, 6 experiments, 29+7 new tests; non-convergence explained by constant step size |
 | 2026-03-20 | 7 | REDO — Forecast-first refactor: forecast() is sole abstract method; act() derived with skip_buffer. 4 theorems proven (contraction mapping), 6 experiments validate theory to 4 decimal places. 225 tests pass |
+| 2026-03-20 | 8 | STARTED — Oscillation research: 6 sub-phase documents (8a-8f), 15 experiments + 5 combinations planned across 4 research tracks |
