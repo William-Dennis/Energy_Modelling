@@ -1,6 +1,6 @@
 # Phase 7: Perfect Foresight Convergence Analysis
 
-## Status: COMPLETE
+## Status: IN PROGRESS
 
 ## Objective
 
@@ -8,282 +8,270 @@ Formally analyze whether a perfect-foresight strategy asymptotically dominates a
 other strategies under the iterative market weighting scheme, driving the market
 price P_t^m to converge to the real settlement price P_t.
 
+This is a redo of the Phase 7 analysis following the forecast-first strategy
+refactor. All strategies now produce real-valued price forecasts (not binary
+directions), and the market engine uses these forecasts directly in the
+weighted-average price update. The analysis is rebuilt from scratch: theory
+first, then empirical validation.
+
 ## Prerequisites
 
 - Phase 4 complete (strategies implemented) ✅
 - Phase 5 complete (market simulation results available) ✅
+- Forecast-first strategy refactor complete ✅
 
 ## Checklist
 
 ### 7a. Theoretical analysis
 - [x] Formal statement of the convergence claim
-- [x] Define the iterative update rule mathematically
+- [x] Define the iterative update rule mathematically (both forecast and legacy modes)
 - [x] Prove or disprove: does adding a perfect foresight strategy guarantee convergence?
 - [x] Characterize the fixed point(s) of the iteration
-- [x] Analyze the dampening parameter's effect on convergence
+- [x] Analyze the dampening parameter's effect on convergence rate
 
-### 7b. Empirical analysis
-- [x] Run market with perfect foresight + all other strategies (Experiments 3-4)
-- [x] Run market with perfect foresight only (Experiments 1-2, 6)
-- [x] Record convergence metrics for each configuration
-- [x] Verify theoretical predictions against real 2024 data
+### 7b. Empirical validation of theory
+- [ ] Experiment 1: Validate Theorem 1 (geometric convergence rate)
+- [ ] Experiment 2: Validate Theorem 2 (legacy oscillation, unchanged)
+- [ ] Experiment 3: Validate Theorem 3 (iteration count formula)
+- [ ] Experiment 4: Validate Theorem 4 (mixed-strategy equilibrium)
+- [ ] Experiment 5: Validate convergence trajectory matches theory exactly
 
-### 7c. Edge cases and counterexamples
-- [x] Non-divisible step size creates stable 2-cycles
-- [x] Spread parameter sensitivity fully characterized
-- [x] Dampening effect: changes oscillation amplitude but cannot break cycles
-- [x] Fixed vs adaptive PF: fundamentally different convergence properties
+### 7c. Edge cases
+- [ ] Legacy mode still oscillates (unchanged behaviour confirmed)
+- [ ] PF weight dynamics in mixed markets
+- [ ] Dampening α → 0 and α → 1 boundary behaviour
 
 ### 7d. Document findings
-- [x] Theoretical result written up
-- [x] Empirical evidence compiled
-- [x] Design implications stated
+- [ ] Theoretical result written up
+- [ ] Empirical evidence compiled
+- [ ] Design implications stated
 
 ---
 
-## Market Model Reference
+## Strategy Interface (Post-Refactor)
 
-### Iterative update rule
+Strategies implement a single abstract method:
 
-1. Start: `P_0 = last_settlement_price`
-2. Each iteration k:
-   - Profit: `π_i = d_i * (P_real - P_k) * 24` (summed over all days)
-   - Weight: `w_i = max(0, π_i) / Σ max(0, π_j)`
-   - Implied forecast: `f_i = P_k + d_i * S` (spread S)
-   - Raw update: `P_raw = Σ(w_i * f_i) / Σ(w_i)` (weighted average over active strategies)
-   - Dampened: `P_{k+1} = α * P_raw + (1-α) * P_k` (dampening α, default 0.5)
-3. Converge when `max|P_{k+1} - P_k| < 0.01`
+```python
+@abstractmethod
+def forecast(self, state: BacktestState) -> float:
+    """Return an explicit price forecast for the delivery date."""
+```
 
-### Two types of perfect foresight
+The trading direction is derived automatically in the base class:
 
-**Fixed PF**: `d_PF = sign(P_real - P_0)`, computed once, does not change across iterations.
+```python
+def act(self, state: BacktestState) -> int | None:
+    price_forecast = self.forecast(state)
+    entry = state.last_settlement_price
+    if price_forecast > entry + self.skip_buffer:
+        return 1   # long
+    if price_forecast < entry - self.skip_buffer:
+        return -1  # short
+    return None     # skip (dead zone)
+```
 
-**Adaptive PF**: `d_PF,k = sign(P_real - P_k)`, recomputed each iteration based on current market price.
+Perfect foresight provides `forecast() = P_real` (the actual settlement price).
 
 ---
 
 ## Theoretical Analysis
 
-### Core Mechanism (Single Day, Single Strategy)
+### Market Model
 
-For a single day with distance `D = |P_real - P_0|`, dampening `α`, and spread `S`:
+The market engine runs iteratively. At each iteration k:
 
-**Step size per iteration**: `Δ = α * S` (constant)
+1. **Profit**: `π_i = Σ_t d_{i,t} · (P_{real,t} − P^m_{k,t}) · 24`
+   where `d_{i,t} = sign(P̂_{i,t} − P^m_{k,t})` is derived from the forecast.
+2. **Weight**: `w_i = max(0, π_i) / Σ_j max(0, π_j)`
+3. **Price update**: `P^{raw}_t = Σ_i w_i · P̂_{i,t}` (weighted average of forecasts)
+4. **Dampening**: `P^m_{k+1,t} = α · P^{raw}_t + (1−α) · P^m_{k,t}`
+5. **Convergence**: stop when `max_t |P^m_{k+1,t} − P^m_{k,t}| < ε`
 
-**Number of steps to first arrival or overshoot**: `n = ⌈D / Δ⌉`
+### Theorem 1: Forecast-Based PF Convergence
 
-**Overshoot**: `bias = n * Δ - D`
+**Claim**: When PF is the sole strategy with `P̂_PF = P_real`, the market
+price converges to `P_real` with geometric rate `(1 − α)`.
 
-### Theorem 1: Fixed PF Convergence (with bias)
+**Proof**:
 
-**Claim**: Fixed PF always "converges" (delta → 0) but with non-zero bias.
+*Step 1 — PF is always profitable when P^m ≠ P_real.*
+PF direction is `d = sign(P_real − P^m_k)`. Its daily profit is:
+```
+r_t = d_t · (P_{real,t} − P^m_{k,t}) · 24 = |P_{real,t} − P^m_{k,t}| · 24 ≥ 0
+```
+The total profit `π_PF = Σ_t r_t > 0` whenever at least one day has `P^m ≠ P_real`.
+Therefore `w_PF = 1.0`.
 
-**Proof**: After `⌈D/Δ⌉` iterations, the market price has moved past P_real.
-At this point, `π_PF = d_PF * (P_real - P_k) * 24 < 0` (PF becomes unprofitable
-because the market overshot past the real price). With weight 0, no strategy
-influences the market, so `P_{k+1} = P_k` (carry-forward). Delta = 0.
+*Step 2 — raw price equals real price.*
+With only PF active: `P^{raw}_t = w_PF · P̂_{PF,t} = 1.0 · P_{real,t} = P_{real,t}`.
 
-The final price is `P_0 + n * Δ = P_real + bias` where `bias ∈ [0, Δ)`.
+*Step 3 — dampened update is a contraction.*
+```
+P^m_{k+1,t} = α · P_{real,t} + (1 − α) · P^m_{k,t}
+```
+Define the error `e_{k,t} = P^m_{k,t} − P_{real,t}`:
+```
+e_{k+1,t} = (1 − α) · e_{k,t}
+```
+Therefore `|e_{k+1,t}| = (1 − α) · |e_{k,t}|`.
 
-**Result**: Fixed PF converges to `P_real ± Δ`, NOT to `P_real` itself. ∎
+For `α ∈ (0, 1]`, the mapping is a contraction with rate `(1 − α) < 1`.
+By the Banach fixed-point theorem, `e_{k,t} → 0` for all days t.
 
-### Theorem 2: Adaptive PF Non-Convergence (Oscillation)
+*Step 4 — RMSE decay.*
+```
+RMSE_k = √(Σ_t e²_{k,t} / N) = √(Σ_t (1−α)^{2k} · e²_{0,t} / N)
+       = (1−α)^k · RMSE_0
+```
 
-**Claim**: Adaptive PF does NOT converge when `D mod Δ ≠ 0`.
+The RMSE decays geometrically with rate `(1 − α)`. ∎
 
-**Proof**: Consider the iteration after first overshoot. The market is at
-`P_k = P_real + bias` (above P_real for upward movement). Adaptive PF
-recomputes: `d_PF,k = sign(P_real - P_k) = -1`. Now implied forecast is
-`P_k - S`, and dampened update gives `P_{k+1} = P_k - Δ`. This moves the
-market back, potentially undershooting.
+**Corollary — iteration count**: Convergence to threshold ε requires:
+```
+k* = ⌈ log(ε / D_max) / log(1 − α) ⌉
+```
+where `D_max = max_t |P_{real,t} − P_{0,t}|`.
 
-If `bias` and `Δ` create a periodic orbit, the system enters a stable 2-cycle.
-Specifically: the market alternates between `P_real + bias` and
-`P_real + bias - Δ = P_real - (Δ - bias)`.
+*Testable predictions*:
+1. `RMSE_k = RMSE_0 · (1 − α)^k` — exact at every iteration
+2. Convergence in `⌈log(ε/D_max) / log(1−α)⌉` iterations
+3. All dampening values α ∈ (0, 1] converge; higher α → fewer iterations
 
-The oscillation amplitude is `Δ` and is centered at `P_real + (bias - Δ/2)`.
-Since `Δ` is constant (it doesn't shrink as we approach P_real), this is
-NOT a contraction mapping. The oscillation persists indefinitely.
+### Theorem 2: Legacy Direction ± Spread Non-Convergence
 
-**Special case**: When `D/Δ` is an integer, `bias = 0` and the market lands
-exactly on `P_real`. PF profit = 0, weight = 0, carry-forward at `P_real`.
-This converges perfectly.
+**Claim**: With legacy synthesis `P̂_i = P^m_k ± S` (constant spread), adaptive
+PF oscillates when `D/(α·S)` is not an integer.
 
-**Result**: Adaptive PF converges iff `D/(α*S)` is an integer. ∎
+**Proof**: The step size is `Δ = α · S`, independent of the distance to P_real.
+After first overshoot, the market alternates between `P_real + bias` and
+`P_real − (Δ − bias)`, where `bias = ⌈D/Δ⌉ · Δ − D`.
 
-### Theorem 3: RMSE Bound
+The oscillation amplitude is Δ and persists indefinitely because the step
+size is constant — this is NOT a contraction mapping.
 
-**Claim**: The RMSE of the adaptive PF oscillation is approximately `α*S / √3`.
+*Testable predictions*:
+1. Legacy mode never converges (delta = α·S at every iteration)
+2. Final RMSE ≈ `α·S/√3`
+3. Larger spread → larger oscillation amplitude
 
-**Proof**: For each day, the market oscillates uniformly between
-`P_real - (Δ - bias)` and `P_real + bias`, with amplitude `Δ`.
-The RMS of a uniform distribution on `[-a, a]` is `a/√3`.
-Since `Δ = α*S`, the per-day RMSE is approximately `α*S / √3`.
-Over many days with varying `D` values, the biases are approximately
-uniformly distributed in `[0, Δ)`, and the RMSE converges to `α*S / √3`.
+### Theorem 3: Mixed-Strategy Equilibrium
 
-**Empirical verification**: With α=0.5, S=0.1: theoretical RMSE = 0.029.
-Observed RMSE on 2024 data: 0.028. ✓
+**Claim**: When PF competes with other strategies that produce forecasts
+`{P̂_i}`, the converged market price satisfies:
+```
+P* = Σ_i w_i(P*) · P̂_i
+```
+where `w_i(P*)` are the equilibrium weights. If PF has weight `w_PF`, then:
+```
+P* = w_PF · P_real + (1 − w_PF) · P̄_others
+```
+where `P̄_others` is the weighted average of other strategies' forecasts.
 
-### Theorem 4: Fundamental Design Limitation
+**Proof**: At a fixed point, the raw price equals the current price
+(dampening becomes irrelevant). The weighted average of forecasts must
+equal the market price. Since PF's forecast is P_real:
+```
+P* = w_PF · P_real + Σ_{i≠PF} w_i · P̂_i
+```
+The RMSE at convergence is:
+```
+RMSE* = (1 − w_PF) · |P̄_others − P_real|  (per-day)
+```
 
-**Claim**: The market engine cannot converge to P_real for any non-trivial
-configuration because the step size is constant.
+*Testable predictions*:
+1. Higher PF weight → lower RMSE
+2. PF weight determined by relative profitability against other strategies
+3. Market price lies between P_real and the non-PF consensus
 
-**Proof**: The implied forecast `f_i = P_k ± S` creates a fixed step size
-`Δ = α*S` regardless of the distance `|P_real - P_k|`. For convergence,
-we need `|P_{k+1} - P_real| < |P_k - P_real|` (contraction). But when
-the market is within distance `Δ` of P_real, the next step overshoots,
-creating `|P_{k+1} - P_real| > 0`. This alternates without shrinking.
+### Theorem 4: Resolution of the Constant Step Size Limitation
 
-**Fix**: The engine would need one of:
-1. **Adaptive spread**: `S_k = c * |P_real - P_k|` (proportional to distance)
-2. **Continuous forecasts**: Replace binary ±S with real-valued price predictions
-3. **Decay factor**: `S_k = S_0 * γ^k` (geometric spread decay)
+**Claim**: The forecast mechanism creates distance-proportional steps,
+resolving the fundamental limitation of the legacy engine.
 
-Any of these would create a contraction mapping with guaranteed convergence. ∎
+**Proof**: In forecast mode, PF's effective contribution to the price
+update is `α · (P_real − P^m_k)`. This step is proportional to the error
+`e_k`, creating a contraction. In legacy mode, the step is `α · S`
+(constant), creating oscillation.
+
+*Key insight*: The `forecast()` abstraction replaces the constant spread S
+with strategy-dependent price predictions. For PF, this is equivalent to
+an adaptive spread `S_k = |P_real − P^m_k|` that automatically shrinks
+as the market approaches truth.
 
 ---
 
-## Empirical Evidence (2024 Validation Data)
+## Empirical Validation
 
-### Perfect Foresight Standalone Backtest
+*To be populated by running experiments that test each theorem's predictions.*
 
-| Metric | Value |
-|--------|-------|
-| Total PnL | 193,415 EUR |
-| Sharpe Ratio | 15.73 |
-| Win Rate | 100.0% |
-| Trade Count | 366 |
+### Experiment 1: Theorem 1 — RMSE Trajectory (PF Only, Forecast Mode)
 
-This is the theoretical upper bound. No strategy can exceed this.
+*Validates: `RMSE_k = RMSE_0 · (1 − α)^k` at every iteration.*
 
-### Experiment 1: Fixed PF Only (Standard Market)
+| Iteration | Market RMSE | Theory RMSE | Match? |
+|-----------|------------|-------------|--------|
+| | | | |
 
-| Spread | Converged | Iterations | Delta | RMSE vs P_real |
-|--------|-----------|------------|-------|---------------|
-| 5.0 | Yes | 10 | 0.0000 | 22.20 |
-| 10.0 | Yes | 6 | 0.0000 | 22.39 |
-| 22.0 | Yes | 4 | 0.0000 | 24.76 |
+### Experiment 2: Theorem 1 — Iteration Count vs Dampening
 
-**Interpretation**: Fixed PF "converges" (delta=0 when it becomes unprofitable after
-overshoot) but the RMSE is terrible (22-25 EUR). The market price stops moving but
-is nowhere near the real price.
+*Validates: `k* = ⌈log(ε/D_max) / log(1−α)⌉` for various α.*
 
-### Experiment 2: Adaptive PF Only
+| α | Observed iters | Theory iters | Final RMSE |
+|---|----------------|--------------|------------|
+| | | | |
 
-| Spread | Converged | Iterations | Delta | RMSE vs P_real |
-|--------|-----------|------------|-------|---------------|
-| 5.0 | No | 200 | 2.500 | 1.43 |
-| 10.0 | No | 200 | 5.000 | 2.83 |
-| 22.0 | No | 200 | 11.000 | 6.32 |
+### Experiment 3: Theorem 2 — Legacy Mode Oscillation
 
-**Interpretation**: Adaptive PF oscillates but gets much closer to real prices.
-RMSE ≈ α*S/√3 as predicted by Theorem 3. With spread=5 (step=2.5), RMSE=1.43 vs
-theoretical 2.5/√3 = 1.44. Excellent agreement.
+*Validates: legacy adaptive PF oscillates with delta = α·S.*
 
-### Experiment 3: Fixed PF + All 9 Strategies (Standard Market)
+| Spread | Converged | Iterations | Delta | Final RMSE | Theory RMSE |
+|--------|-----------|------------|-------|------------|-------------|
+| | | | | | |
 
-| Spread | Converged | RMSE | PF Weight | Active Set |
-|--------|-----------|------|-----------|------------|
-| 5.0 | No | 21.12 | 0.000 | AlwaysLong, FossilDispatch |
-| 22.0 | No | 23.24 | 0.000 | AlwaysShort, WindForecast, LoadForecast |
+### Experiment 4: Theorem 3 — Mixed Strategy Equilibrium
 
-**Critical finding**: PF gets weight ZERO at the final iteration! The opposing
-strategies' oscillation drives PF unprofitable. PF cannot rescue a structurally
-unstable market.
+*Validates: market price is weighted average of surviving forecasts.*
 
-### Experiment 4: Adaptive PF + All 9 Strategies
+| Configuration | Converged | RMSE | PF Weight |
+|---------------|-----------|------|-----------|
+| | | | |
 
-| Spread | Converged | RMSE | PF Weight |
-|--------|-----------|------|-----------|
-| 5.0 | No | 1.20 | 0.447 |
-| 22.0 | No | 6.19 | 0.421 |
+### Experiment 5: Theorem 4 — Forecast vs Legacy Side-by-Side
 
-**Key result**: Adaptive PF maintains ~44% weight and dramatically reduces RMSE
-(from 31.5 baseline to 1.2-6.2). It cannot fully overcome the oscillation from
-other strategies but provides strong stabilization.
+*Validates: forecast mode converges where legacy mode oscillates.*
 
-### Experiment 5: Baseline Without PF
-
-| Converged | Iterations | Delta | RMSE |
-|-----------|------------|-------|------|
-| No | 100 | 15.65 | 31.50 |
-
-This reproduces the Phase 5 result: structural non-convergence.
-
-### Experiment 6: Adaptive PF with Tiny Spread
-
-| Spread | Converged | Iterations | Delta | RMSE |
-|--------|-----------|------------|-------|------|
-| 0.01 | Yes (!) | 1 | 0.005 | 31.258 |
-| 0.10 | No | 5000 | 0.050 | 0.028 |
-| 1.00 | No | 5000 | 0.500 | 0.281 |
-
-**Key insight**: spread=0.01 "converges" on iteration 1 because `α*S = 0.005 < 0.01`
-threshold, but the market barely moved (RMSE=31.26). The convergence is vacuous.
-spread=0.1 with 5000 iterations gives RMSE=0.028 — nearly perfect. This matches
-the theoretical prediction: RMSE = 0.05/√3 = 0.029.
+| Mode | Converged | Iterations | Final RMSE |
+|------|-----------|------------|------------|
+| | | | |
 
 ---
 
 ## Summary of Answers to Key Questions
 
-### Does adding PF guarantee convergence to P_real?
-
-**No.** Under the current market engine:
-
-- **Fixed PF**: Converges (delta=0) but with substantial bias. RMSE 22+ EUR.
-- **Adaptive PF (alone)**: Oscillates with RMSE ≈ α*S/√3. Does not formally converge
-  unless spread is impractically small.
-- **Adaptive PF (with other strategies)**: Reduces RMSE dramatically (~1-6 EUR) but
-  cannot fully overcome oscillation from opposing strategies.
-- **Fixed PF + other strategies**: PF gets pushed to zero weight by the oscillation
-  dynamics. Completely ineffective.
-
-### Why doesn't the engine converge?
-
-The fundamental issue is **constant step size**. The implied forecast `P ± S` creates
-a step of `α*S` per iteration that doesn't shrink as the market price approaches
-P_real. This prevents the formation of a contraction mapping. Binary directions
-(+1/-1) cannot express "almost there, just nudge a little."
-
-### What would fix convergence?
-
-1. **Adaptive spread**: `S_k ∝ |P_real - P_k|` — step shrinks near target
-2. **Continuous forecasts**: Let strategies output real-valued price predictions instead of ±1
-3. **Exponential decay**: `S_k = S_0 * γ^k` — spread decays over iterations
-4. **Gradient-based update**: Replace weight-by-profit with gradient descent on |P_market - P_real|
-
-### Implications for the hackathon platform
-
-The futures market engine, as designed, is better understood as a **mechanism for
-ranking strategy differentiation** than a convergence-to-truth engine. It rewards
-strategies that are correct AND contrarian (different from the consensus). This is
-actually a reasonable market design for a hackathon — it prevents the trivial strategy
-of copying the best performer — but it should not be interpreted as a price discovery
-mechanism that converges to real settlement prices.
+*To be populated after empirical validation.*
 
 ---
 
 ## Code Deliverables
 
-### New files
-- `src/energy_modelling/backtest/convergence.py` — Convergence analysis module
-  - `fixed_perfect_foresight_directions()` — Static PF directions
-  - `adaptive_perfect_foresight_directions()` — Dynamic PF directions
-  - `compute_theoretical_steps_to_arrival()` — Step count formula
-  - `compute_overshoot_bias()` — Overshoot formula
-  - `compute_convergence_trajectory()` — Extract trajectory from equilibrium
-  - `run_adaptive_foresight_market()` — Adaptive PF market runner
-  - `ConvergenceTrajectory` — Result dataclass
+### Modified files
+- `src/energy_modelling/backtest/types.py` — `forecast()` is now the single
+  abstract method; `act()` derives direction with `skip_buffer` dead zone
+- `strategies/*.py` — All 10 strategies refactored to forecast-first design
+- `src/energy_modelling/backtest/convergence.py` — Added `run_forecast_foresight_market()`
 
+### Existing files (unchanged)
 - `strategies/perfect_foresight.py` — PerfectForesightStrategy
-  - BacktestStrategy that cheats by looking up real settlement prices
-  - For analysis only, not a legitimate competitor
+  (`forecast()` returns the actual settlement price)
 
-### New tests
-- `tests/backtest/test_convergence.py` — 29 tests
-- `tests/backtest/test_perfect_foresight.py` — 7 tests
+### New functions in convergence.py
+- `run_forecast_foresight_market()` — Forecast-aware PF convergence analysis
+- `_run_forecast_iteration()` — Single iteration with real-valued forecasts
+- `_build_pf_forecasts()` — Build PF forecast dict from real prices
 
-All 36 new tests pass. Total test count: 38 (EDA) + 145 (challenge) + 36 (Phase 7) = 219+.
+### Tests
+- `tests/backtest/test_convergence.py` — 36 tests (29 existing + 7 new)
+  - `TestForecastForesightMarket` — 7 tests for forecast-based convergence
+
+All 225 tests pass.
