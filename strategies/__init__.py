@@ -21,6 +21,7 @@ from strategies.fossil_dispatch import FossilDispatchStrategy
 from strategies.fr_flow_signal import FRFlowSignalStrategy
 from strategies.fuel_index_trend import FuelIndexTrendStrategy
 from strategies.gas_trend import GasTrendStrategy
+from strategies.gas_carbon_joint_trend import GasCarbonJointTrendStrategy
 from strategies.gbm_net_demand import GBMNetDemandStrategy
 from strategies.gradient_boosting_direction import GradientBoostingStrategy
 from strategies.knn_direction import KNNDirectionStrategy
@@ -31,15 +32,20 @@ from strategies.lasso_top_features import LassoTopFeaturesStrategy
 from strategies.load_forecast import LoadForecastStrategy
 from strategies.load_surprise import LoadSurpriseStrategy
 from strategies.logistic_direction import LogisticDirectionStrategy
+from strategies.monday_effect import MondayEffectStrategy
+from strategies.month_seasonal import MonthSeasonalStrategy
 from strategies.multi_spread import MultiSpreadStrategy
 from strategies.net_demand import NetDemandStrategy
+from strategies.net_demand_momentum import NetDemandMomentumStrategy
 from strategies.neural_net import NeuralNetStrategy
 from strategies.nl_flow_signal import NLFlowSignalStrategy
 from strategies.nuclear_availability import NuclearAvailabilityStrategy
 from strategies.pls_regression import PLSRegressionStrategy
 from strategies.price_min_reversion import PriceMinReversionStrategy
 from strategies.price_zscore_reversion import PriceZScoreReversionStrategy
+from strategies.quarter_seasonal import QuarterSeasonalStrategy
 from strategies.random_forest_direction import RandomForestStrategy
+from strategies.renewable_regime import RenewableRegimeStrategy
 from strategies.renewables_penetration import RenewablesPenetrationStrategy
 from strategies.renewables_surplus import RenewablesSurplusStrategy
 from strategies.ridge_net_demand import RidgeNetDemandStrategy
@@ -48,9 +54,11 @@ from strategies.solar_forecast import SolarForecastStrategy
 from strategies.svm_direction import SVMDirectionStrategy
 from strategies.temperature_extreme import TemperatureExtremeStrategy
 from strategies.volatility_regime import VolatilityRegimeStrategy
+from strategies.volatility_regime_ml import VolatilityRegimeMLStrategy
 from strategies.weekly_cycle import WeeklyCycleStrategy
 from strategies.wind_forecast import WindForecastStrategy
 from strategies.wind_forecast_error import WindForecastErrorStrategy
+from strategies.zscore_momentum import ZScoreMomentumStrategy
 
 __all__ = [
     "AlwaysLongStrategy",
@@ -69,6 +77,7 @@ __all__ = [
     "FossilDispatchStrategy",
     "FRFlowSignalStrategy",
     "FuelIndexTrendStrategy",
+    "GasCarbonJointTrendStrategy",
     "GasTrendStrategy",
     "GBMNetDemandStrategy",
     "GradientBoostingStrategy",
@@ -80,7 +89,10 @@ __all__ = [
     "LoadForecastStrategy",
     "LoadSurpriseStrategy",
     "LogisticDirectionStrategy",
+    "MondayEffectStrategy",
+    "MonthSeasonalStrategy",
     "MultiSpreadStrategy",
+    "NetDemandMomentumStrategy",
     "NetDemandStrategy",
     "NeuralNetStrategy",
     "NLFlowSignalStrategy",
@@ -88,7 +100,9 @@ __all__ = [
     "PLSRegressionStrategy",
     "PriceMinReversionStrategy",
     "PriceZScoreReversionStrategy",
+    "QuarterSeasonalStrategy",
     "RandomForestStrategy",
+    "RenewableRegimeStrategy",
     "RenewablesPenetrationStrategy",
     "RenewablesSurplusStrategy",
     "RidgeNetDemandStrategy",
@@ -96,8 +110,10 @@ __all__ = [
     "SolarForecastStrategy",
     "SVMDirectionStrategy",
     "TemperatureExtremeStrategy",
+    "VolatilityRegimeMLStrategy",
     "VolatilityRegimeStrategy",
     "WeeklyCycleStrategy",
     "WindForecastStrategy",
     "WindForecastErrorStrategy",
+    "ZScoreMomentumStrategy",
 ]
