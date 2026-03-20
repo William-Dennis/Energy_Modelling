@@ -15,7 +15,6 @@ Threshold: median of |price_change_eur_mwh| from training data.
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
@@ -50,6 +49,15 @@ class Lag2ReversionStrategy(BacktestStrategy):
         if abs(change_2d_ago) < self._threshold:
             return None
         return -1 if change_2d_ago > 0 else 1
+
+    def forecast(self, state: BacktestState) -> float:
+        history = state.history
+        if history.empty or len(history) < 2:
+            return state.last_settlement_price
+
+        change_2d_ago = float(history["price_change_eur_mwh"].iloc[-2])
+        # Mean-reversion: forecast that the price will revert the lag-2 move
+        return state.last_settlement_price - change_2d_ago
 
     def reset(self) -> None:
         pass

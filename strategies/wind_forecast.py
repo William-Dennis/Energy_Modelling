@@ -29,10 +29,15 @@ class WindForecastStrategy(BacktestStrategy):
 
     def __init__(self) -> None:
         self._threshold: float | None = None
+        self._mean_abs_change: float = 1.0
 
     def fit(self, train_data: pd.DataFrame) -> None:
         combined = train_data[_OFFSHORE_COL] + train_data[_ONSHORE_COL]
         self._threshold = float(combined.median())
+        if "price_change_eur_mwh" in train_data.columns:
+            self._mean_abs_change = float(train_data["price_change_eur_mwh"].abs().mean())
+            if self._mean_abs_change <= 0:
+                self._mean_abs_change = 1.0
 
     def act(self, state: BacktestState) -> int | None:
         if self._threshold is None:
@@ -40,6 +45,12 @@ class WindForecastStrategy(BacktestStrategy):
             raise RuntimeError(msg)
         combined = float(state.features[_OFFSHORE_COL]) + float(state.features[_ONSHORE_COL])
         return -1 if combined >= self._threshold else 1
+
+    def forecast(self, state: BacktestState) -> float:
+        direction = self.act(state)
+        if direction is None:
+            return state.last_settlement_price
+        return state.last_settlement_price + direction * self._mean_abs_change
 
     def reset(self) -> None:
         pass

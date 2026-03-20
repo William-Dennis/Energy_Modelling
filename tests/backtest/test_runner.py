@@ -47,6 +47,10 @@ class _TrackingStrategy(BacktestStrategy):
         self.history_lengths.append(len(state.history))
         return 1 if state.features["load_actual_mw_mean"] >= 42_000.0 else -1
 
+    def forecast(self, state: BacktestState) -> float:
+        direction = 1 if state.features["load_actual_mw_mean"] >= 42_000.0 else -1
+        return state.last_settlement_price + direction * 1.0
+
 
 def test_runner_fits_on_train_rows_and_uses_prior_history() -> None:
     strategy = _TrackingStrategy()
@@ -82,6 +86,9 @@ def test_runner_computes_daily_pnl() -> None:
 class _BadStrategy(BacktestStrategy):
     def act(self, state: BacktestState) -> int | None:
         return 2
+
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price
 
 
 def test_runner_rejects_invalid_prediction() -> None:

@@ -14,7 +14,6 @@ from energy_modelling.backtest.futures_market_runner import (
 )
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -52,6 +51,9 @@ class _AlwaysLong(BacktestStrategy):
     def act(self, state: BacktestState) -> int | None:
         return 1
 
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price + 1.0
+
 
 class _AlwaysShort(BacktestStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
@@ -60,9 +62,18 @@ class _AlwaysShort(BacktestStrategy):
     def act(self, state: BacktestState) -> int | None:
         return -1
 
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price - 1.0
+
 
 class _PerfectForesight(BacktestStrategy):
     """Uses history to look at target_direction in previous row (cheats via labels)."""
+
+    _FORECAST_MAP = {
+        date(2024, 1, 1): 55.0,
+        date(2024, 1, 2): 48.0,
+        date(2024, 1, 3): 52.0,
+    }
 
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
@@ -82,6 +93,9 @@ class _PerfectForesight(BacktestStrategy):
             return 1
         return 1
 
+    def forecast(self, state: BacktestState) -> float:
+        return self._FORECAST_MAP.get(state.delivery_date, state.last_settlement_price)
+
 
 class _Skipper(BacktestStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
@@ -89,6 +103,9 @@ class _Skipper(BacktestStrategy):
 
     def act(self, state: BacktestState) -> int | None:
         return None
+
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price
 
 
 # ---------------------------------------------------------------------------

@@ -27,9 +27,14 @@ class LoadForecastStrategy(BacktestStrategy):
 
     def __init__(self) -> None:
         self._threshold: float | None = None
+        self._mean_abs_change: float = 1.0
 
     def fit(self, train_data: pd.DataFrame) -> None:
         self._threshold = float(train_data[_LOAD_COL].median())
+        if "price_change_eur_mwh" in train_data.columns:
+            self._mean_abs_change = float(train_data["price_change_eur_mwh"].abs().mean())
+            if self._mean_abs_change <= 0:
+                self._mean_abs_change = 1.0
 
     def act(self, state: BacktestState) -> int | None:
         if self._threshold is None:
@@ -37,6 +42,12 @@ class LoadForecastStrategy(BacktestStrategy):
             raise RuntimeError(msg)
         load = float(state.features[_LOAD_COL])
         return 1 if load >= self._threshold else -1
+
+    def forecast(self, state: BacktestState) -> float:
+        direction = self.act(state)
+        if direction is None:
+            return state.last_settlement_price
+        return state.last_settlement_price + direction * self._mean_abs_change
 
     def reset(self) -> None:
         pass

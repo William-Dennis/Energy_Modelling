@@ -43,5 +43,15 @@ class BacktestStrategy(ABC):
     def act(self, state: BacktestState) -> int | None:
         """Return ``+1`` for long, ``-1`` for short, or ``None`` to skip."""
 
+    @abstractmethod
+    def forecast(self, state: BacktestState) -> float:
+        """Return an explicit price forecast for the delivery date.
+
+        The futures market engine uses the forecast directly in the
+        weighted-average price update (spec Step 4).  The direction
+        returned by ``act()`` should be consistent with the forecast
+        relative to the current market price.
+        """
+
     def reset(self) -> None:  # noqa: B027
         """Reset any internal state before a new evaluation run."""

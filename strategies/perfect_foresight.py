@@ -10,8 +10,6 @@ from __future__ import annotations
 
 from datetime import date
 
-import pandas as pd
-
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
 
@@ -43,6 +41,13 @@ class PerfectForesightStrategy(BacktestStrategy):
         if real_price > state.last_settlement_price:
             return 1
         return -1
+
+    def forecast(self, state: BacktestState) -> float:
+        """Return the actual settlement price (perfect foresight)."""
+        real_price = self._settlement_lookup.get(state.delivery_date)
+        if real_price is None:
+            return state.last_settlement_price
+        return real_price
 
     def reset(self) -> None:
         """No-op: nothing to reset."""

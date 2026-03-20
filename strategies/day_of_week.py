@@ -40,11 +40,22 @@ class DayOfWeekStrategy(BacktestStrategy):
     reduced industrial demand.
     """
 
+    def __init__(self) -> None:
+        self._mean_change_by_day: dict[int, float] = {}
+
     def fit(self, train_data: pd.DataFrame) -> None:
-        pass
+        if "price_change_eur_mwh" in train_data.columns and "delivery_date" in train_data.columns:
+            df = train_data.copy()
+            df["_dow"] = pd.to_datetime(df["delivery_date"]).dt.weekday + 1  # Mon=1..Sun=7
+            self._mean_change_by_day = df.groupby("_dow")["price_change_eur_mwh"].mean().to_dict()
 
     def act(self, state: BacktestState) -> int | None:
         return _DAY_SIGNAL[state.delivery_date.isoweekday()]
+
+    def forecast(self, state: BacktestState) -> float:
+        dow = state.delivery_date.isoweekday()
+        mean_change = self._mean_change_by_day.get(dow, 0.0)
+        return state.last_settlement_price + mean_change
 
     def reset(self) -> None:
         pass

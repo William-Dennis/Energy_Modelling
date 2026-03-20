@@ -42,5 +42,13 @@ class WeeklyCycleStrategy(BacktestStrategy):
             return -1
         return None
 
+    def forecast(self, state: BacktestState) -> float:
+        history = state.history
+        if history.empty or len(history) < 7:
+            return state.last_settlement_price
+
+        change_7d_ago = float(history["price_change_eur_mwh"].iloc[-7])
+        return state.last_settlement_price + change_7d_ago
+
     def reset(self) -> None:
         pass

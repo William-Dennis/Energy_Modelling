@@ -14,9 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
-
 
 # ---------------------------------------------------------------------------
 # Types
@@ -135,16 +133,22 @@ def compute_market_prices(
     weights: dict[str, float],
     current_market_prices: pd.Series,
     forecast_spread: float,
+    strategy_forecasts: dict[str, dict] | None = None,
 ) -> pd.Series:
     """Compute new market prices as a weighted average of implied forecasts.
 
-    For a strategy with direction +1, the implied forecast is
-    ``market_price + spread``.  For -1, it is ``market_price - spread``.
-    Skipped days (None/NA) are excluded from that day's aggregation.
+    When a strategy provides an explicit forecast for a day via
+    ``strategy_forecasts``, that value is used directly.  Otherwise the
+    implied forecast is synthesised as ``market_price ± spread`` from the
+    direction (the legacy behaviour).
 
+    Skipped days (None/NA) are excluded from that day's aggregation.
     If no strategy has weight for a given day, the price carries forward
     from ``current_market_prices``.
     """
+
+    if strategy_forecasts is None:
+        strategy_forecasts = {}
 
     index = current_market_prices.index
     new_prices = current_market_prices.copy().astype(float)
@@ -161,7 +165,14 @@ def compute_market_prices(
             d = d_series.loc[t]
             if pd.isna(d) or d == 0:
                 continue
-            implied_forecast = float(current_market_prices.loc[t]) + float(d) * forecast_spread
+
+            # Use actual forecast when available, fall back to synthesis
+            forecast = strategy_forecasts.get(name, {}).get(t)
+            if forecast is not None:
+                implied_forecast = float(forecast)
+            else:
+                implied_forecast = float(current_market_prices.loc[t]) + float(d) * forecast_spread
+
             numerator += w * implied_forecast
             denominator += w
         if denominator > 0.0:
@@ -181,6 +192,7 @@ def run_futures_market_iteration(
     real_prices: pd.Series,
     forecast_spread: float,
     iteration: int,
+    strategy_forecasts: dict[str, dict] | None = None,
 ) -> FuturesMarketIteration:
     """Execute one full iteration of the synthetic futures market.
 
@@ -193,7 +205,9 @@ def run_futures_market_iteration(
     profits = compute_strategy_profits(directions, market_prices, real_prices)
     weights = compute_weights(profits)
     active = [name for name, w in weights.items() if w > 0.0]
-    new_prices = compute_market_prices(directions, weights, market_prices, forecast_spread)
+    new_prices = compute_market_prices(
+        directions, weights, market_prices, forecast_spread, strategy_forecasts
+    )
 
     return FuturesMarketIteration(
         iteration=iteration,
@@ -212,6 +226,7 @@ def run_futures_market(
     convergence_threshold: float = 0.01,
     forecast_spread: float | None = None,
     dampening: float = 0.5,
+    strategy_forecasts: dict[str, dict] | None = None,
 ) -> FuturesMarketEquilibrium:
     """Run the synthetic futures market until prices converge.
 
@@ -234,6 +249,11 @@ def run_futures_market(
         Blend factor in ``[0, 1]`` for the update rule:
         ``P_new = dampening * P_computed + (1 - dampening) * P_old``.
         Lower values slow convergence but improve stability.
+    strategy_forecasts:
+        ``{strategy_name: {date: forecast_price}}`` of explicit price
+        forecasts.  When a strategy provides a forecast for a given day it
+        is used directly in the weighted-average update; otherwise the
+        engine falls back to direction ± spread synthesis.
     """
 
     if forecast_spread is None:
@@ -253,6 +273,7 @@ def run_futures_market(
             real_prices=real_prices,
             forecast_spread=forecast_spread,
             iteration=k,
+            strategy_forecasts=strategy_forecasts,
         )
         iterations.append(result)
 
