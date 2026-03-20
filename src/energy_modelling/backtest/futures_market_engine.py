@@ -297,6 +297,7 @@ def run_futures_market(
     weight_mode: str = "linear",
     weight_cap: float = 1.0,
     price_mode: str = "mean",
+    running_avg_k: int | None = None,
 ) -> FuturesMarketEquilibrium:
     """Run the synthetic futures market until prices converge (spec Step 5).
 
@@ -324,11 +325,19 @@ def run_futures_market(
         Per-strategy weight cap when ``weight_mode="capped"``.
     price_mode:
         Forecast aggregation method.  ``"mean"`` (spec) or ``"median"``.
+    running_avg_k:
+        If set, the published market price at each iteration is the mean of
+        the last *k* raw iteration candidates.  This running-average
+        smoothing breaks the 3-step limit cycle that otherwise prevents
+        convergence.  ``None`` (default) disables smoothing (spec-compliant).
+        **Recommended production value: 5** (Phase 8 experiment winner —
+        converges within 50 iters, MAE 10.85 on 2024, 9.29 on 2025).
     """
     current_prices = initial_market_prices.copy().astype(float)
     iterations: list[FuturesMarketIteration] = []
     converged = False
     delta = float("inf")
+    price_history: list[pd.Series] = []
 
     for k in tqdm(range(max_iterations), desc="Market simulation", unit="iter"):
         result = run_futures_market_iteration(
@@ -341,21 +350,34 @@ def run_futures_market(
             price_mode=price_mode,
         )
 
-        # Apply dampening: blend candidate towards current prices
+        # Apply within-iteration alpha dampening
         if alpha < 1.0:
-            blended = alpha * result.market_prices + (1.0 - alpha) * current_prices
-            # Replace iteration's market_prices with blended version for delta calc
+            candidate = alpha * result.market_prices + (1.0 - alpha) * current_prices
+        else:
+            candidate = result.market_prices
+
+        # Apply cross-iteration running-average smoothing (E1)
+        if running_avg_k is not None and running_avg_k > 1:
+            price_history.append(candidate.copy())
+            if len(price_history) > running_avg_k:
+                price_history = price_history[-running_avg_k:]
+            published = pd.concat(price_history, axis=1).mean(axis=1)
+        else:
+            published = candidate
+
+        # Store the published (smoothed) prices in the iteration snapshot
+        if published is not result.market_prices:
             result = FuturesMarketIteration(
                 iteration=result.iteration,
-                market_prices=blended,
+                market_prices=published,
                 strategy_profits=result.strategy_profits,
                 strategy_weights=result.strategy_weights,
                 active_strategies=result.active_strategies,
             )
 
-        delta = float((result.market_prices - current_prices).abs().max())
+        delta = float((published - current_prices).abs().max())
         iterations.append(result)
-        current_prices = result.market_prices
+        current_prices = published
 
         if delta < convergence_threshold:
             converged = True
