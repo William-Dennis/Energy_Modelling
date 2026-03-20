@@ -12,8 +12,10 @@ from __future__ import annotations
 
 from datetime import date
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from energy_modelling.backtest.futures_market_runner import (
@@ -102,8 +104,159 @@ def _fmt_market_lb(frame: pd.DataFrame) -> pd.DataFrame:
 # Market section for one period
 # ---------------------------------------------------------------------------
 
+# Outer band (p10–p90): subtle fill, no border lines
+_OUTER_COLOR = "rgba(99,110,250,0.12)"
+_OUTER_BORDER = "rgba(99,110,250,0.35)"
+# Inner band (p25–p75): stronger fill
+_INNER_COLOR = "rgba(99,110,250,0.25)"
+_INNER_BORDER = "rgba(99,110,250,0.55)"
+# Median line
+_MEDIAN_COLOR = "#636EFA"
+# Real-price reference lines
+_REAL_COLOR = "rgba(255,255,255,0.45)"
+_REAL_LABEL_COLOR = "rgba(255,255,255,0.6)"
 
-def _render_market_period(period: str, mr: FuturesMarketResult | None) -> None:
+
+def _render_price_quantile_evolution(
+    eq_iterations: list,
+    daily_data: pd.DataFrame,
+    eval_start: date,
+    eval_end: date,
+) -> None:
+    """Chart: synthetic price quantile fan across iterations vs real market."""
+    if len(eq_iterations) < 2:
+        return
+
+    # Per-iteration quantile arrays
+    iters = [it.iteration for it in eq_iterations]
+    qs = {q: [] for q in [0.10, 0.25, 0.50, 0.75, 0.90]}
+    for it in eq_iterations:
+        vals = it.market_prices.values
+        for q in qs:
+            qs[q].append(float(np.quantile(vals, q)))
+
+    p10, p25, p50, p75, p90 = qs[0.10], qs[0.25], qs[0.50], qs[0.75], qs[0.90]
+
+    # Real settlement quantiles
+    data = daily_data.copy()
+    data["delivery_date"] = pd.to_datetime(data["delivery_date"]).dt.date
+    data = data.set_index("delivery_date")
+    mask = (data.index >= eval_start) & (data.index <= eval_end)
+    real_vals = data.loc[mask, "settlement_price"].astype(float).values
+    rq = {q: float(np.quantile(real_vals, q)) for q in [0.10, 0.25, 0.50, 0.75, 0.90]}
+
+    st.subheader("Synthetic Price Distribution vs Iterations")
+
+    fig = go.Figure()
+
+    # --- Outer band: p10–p90 (fill between) ---
+    fig.add_trace(
+        go.Scatter(
+            x=iters,
+            y=p90,
+            mode="lines",
+            line={"width": 0, "color": _OUTER_BORDER},
+            name="p90",
+            showlegend=False,
+            hovertemplate="Iter %{x} — p90: %{y:.1f} EUR/MWh<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=iters,
+            y=p10,
+            mode="lines",
+            line={"width": 0, "color": _OUTER_BORDER},
+            fill="tonexty",
+            fillcolor=_OUTER_COLOR,
+            name="p10–p90 range",
+            showlegend=True,
+            hovertemplate="Iter %{x} — p10: %{y:.1f} EUR/MWh<extra></extra>",
+        )
+    )
+
+    # --- Inner band: p25–p75 ---
+    fig.add_trace(
+        go.Scatter(
+            x=iters,
+            y=p75,
+            mode="lines",
+            line={"width": 0, "color": _INNER_BORDER},
+            name="p75",
+            showlegend=False,
+            hovertemplate="Iter %{x} — p75: %{y:.1f} EUR/MWh<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=iters,
+            y=p25,
+            mode="lines",
+            line={"width": 0, "color": _INNER_BORDER},
+            fill="tonexty",
+            fillcolor=_INNER_COLOR,
+            name="p25–p75 range",
+            showlegend=True,
+            hovertemplate="Iter %{x} — p25: %{y:.1f} EUR/MWh<extra></extra>",
+        )
+    )
+
+    # --- Median line ---
+    fig.add_trace(
+        go.Scatter(
+            x=iters,
+            y=p50,
+            mode="lines+markers",
+            line={"color": _MEDIAN_COLOR, "width": 2.5},
+            marker={"size": 6, "color": _MEDIAN_COLOR},
+            name="p50 (median)",
+            hovertemplate="Iter %{x} — median: %{y:.1f} EUR/MWh<extra></extra>",
+        )
+    )
+
+    # --- Real settlement reference lines ---
+    x_min, x_max = iters[0], iters[-1]
+    ref_labels = {0.10: "p10", 0.25: "p25", 0.50: "p50", 0.75: "p75", 0.90: "p90"}
+    for i, (q, label) in enumerate(ref_labels.items()):
+        show = i == 0  # single legend entry for all real lines
+        fig.add_trace(
+            go.Scatter(
+                x=[x_min, x_max],
+                y=[rq[q], rq[q]],
+                mode="lines",
+                line={"color": _REAL_COLOR, "dash": "dot", "width": 1},
+                name="Real settlement" if show else None,
+                showlegend=show,
+                hovertemplate=f"Real {label}: {rq[q]:.1f} EUR/MWh<extra></extra>",
+            )
+        )
+        fig.add_annotation(
+            x=x_max,
+            y=rq[q],
+            text=f"<b>{label}</b>",
+            showarrow=False,
+            xanchor="left",
+            xshift=6,
+            font={"size": 10, "color": _REAL_LABEL_COLOR},
+        )
+
+    fig.update_layout(
+        xaxis_title="Iteration",
+        yaxis_title="Price (EUR/MWh)",
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "left", "x": 0},
+        xaxis={"dtick": 1, "gridcolor": "rgba(255,255,255,0.08)"},
+        yaxis={"gridcolor": "rgba(255,255,255,0.08)"},
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin={"r": 60},
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _render_market_period(
+    period: str, mr: FuturesMarketResult | None, daily_data: pd.DataFrame | None = None
+) -> None:
     if mr is None:
         st.info(f"Market simulation not available for {period}.")
         return
@@ -150,6 +303,12 @@ def _render_market_period(period: str, mr: FuturesMarketResult | None) -> None:
         )
         fig.add_hline(y=0.01, line_dash="dash", line_color="red", annotation_text="Threshold")
         st.plotly_chart(fig, use_container_width=True)
+
+    # Price quantile evolution vs real settlement
+    if daily_data is not None and len(eq.iterations) > 1:
+        eval_start = eq.iterations[0].market_prices.index.min()
+        eval_end = eq.iterations[0].market_prices.index.max()
+        _render_price_quantile_evolution(eq.iterations, daily_data, eval_start, eval_end)
 
     # Weight evolution
     st.subheader("Strategy Weights Across Iterations")
@@ -257,9 +416,9 @@ def render() -> None:
 
     tabs = st.tabs(["Market: 2024", "Market: 2025"])
     with tabs[0]:
-        _render_market_period("2024", m24)
+        _render_market_period("2024", m24, daily_data=public_daily)
     with tabs[1]:
         if hidden_daily is None:
             st.info("Hidden 2025 data not available.")
         else:
-            _render_market_period("2025", m25)
+            _render_market_period("2025", m25, daily_data=hidden_daily)
