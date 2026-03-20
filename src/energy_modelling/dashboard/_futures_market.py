@@ -79,15 +79,22 @@ def _market_lb(market_result: FuturesMarketResult) -> pd.DataFrame:
 
 
 def _fmt_market_lb(frame: pd.DataFrame) -> pd.DataFrame:
-    return frame.drop(columns=["Score"]).assign(
-        **{
-            "Market PnL": lambda df: df["Market PnL"].map(lambda v: f"EUR {v:,.2f}"),
-            "Original PnL": lambda df: df["Original PnL"].map(lambda v: f"EUR {v:,.2f}"),
-            "Sharpe": lambda df: df["Sharpe"].map(lambda v: f"{v:.2f}"),
-            "Max Drawdown": lambda df: df["Max Drawdown"].map(lambda v: f"EUR {v:,.2f}"),
-            "Trades": lambda df: df["Trades"].map(lambda v: f"{v:.0f}"),
-            "Win Rate": lambda df: df["Win Rate"].map(lambda v: f"{v:.1%}"),
-        }
+    return (
+        frame.drop(columns=["Score"])
+        .rename(
+            columns={
+                "Market PnL": "Market PnL (EUR)",
+                "Original PnL": "Original PnL (EUR)",
+                "Max Drawdown": "Max Drawdown (EUR)",
+            }
+        )
+        .assign(
+            **{
+                "Sharpe": lambda df: df["Sharpe"].map(lambda v: f"{v:.2f}"),
+                "Trades": lambda df: df["Trades"].map(lambda v: f"{v:.0f}"),
+                "Win Rate": lambda df: df["Win Rate"].map(lambda v: f"{v:.1%}"),
+            }
+        )
     )
 
 

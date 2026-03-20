@@ -66,8 +66,18 @@ def _plot_price_change_charts(changes: pd.Series) -> None:
 
 def _plot_direction_by_month(changes: pd.Series) -> None:
     month_names = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
     ]
     months = pd.Series(
         changes.index.month.map(lambda m: month_names[m - 1]),
@@ -138,7 +148,7 @@ def _plot_acf(changes: pd.Series) -> None:
     fig.add_trace(go.Bar(x=acf.index, y=acf.values, name="ACF"))
     fig.add_hline(y=sig, line_dash="dash", line_color="red", annotation_text="95% CI")
     fig.add_hline(y=-sig, line_dash="dash", line_color="red")
-    fig.add_hline(y=0, line_color="black", line_width=0.5)
+    fig.add_hline(y=0, line_color="white", line_width=0.5)
     fig.update_layout(
         title="Autocorrelation of Daily Price Changes",
         xaxis_title="Lag (days)",

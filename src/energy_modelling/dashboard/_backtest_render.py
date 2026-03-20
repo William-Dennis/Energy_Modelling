@@ -17,14 +17,16 @@ from energy_modelling.dashboard import monthly_pnl_heatmap
 
 def _fmt_leaderboard(frame: pd.DataFrame) -> pd.DataFrame:
     """Format a leaderboard frame for display."""
-    return frame.drop(columns=["Score"]).assign(
-        **{
-            "Total PnL": lambda df: df["Total PnL"].map(lambda v: f"EUR {v:,.2f}"),
-            "Sharpe": lambda df: df["Sharpe"].map(lambda v: f"{v:.2f}"),
-            "Max Drawdown": lambda df: df["Max Drawdown"].map(lambda v: f"EUR {v:,.2f}"),
-            "Trades": lambda df: df["Trades"].map(lambda v: f"{v:.0f}"),
-            "Win Rate": lambda df: df["Win Rate"].map(lambda v: f"{v:.1%}"),
-        }
+    return (
+        frame.drop(columns=["Score"])
+        .rename(columns={"Total PnL": "Total PnL (EUR)", "Max Drawdown": "Max Drawdown (EUR)"})
+        .assign(
+            **{
+                "Sharpe": lambda df: df["Sharpe"].map(lambda v: f"{v:.2f}"),
+                "Trades": lambda df: df["Trades"].map(lambda v: f"{v:.0f}"),
+                "Win Rate": lambda df: df["Win Rate"].map(lambda v: f"{v:.1%}"),
+            }
+        )
     )
 
 
@@ -52,28 +54,25 @@ def _render_period_summary(
         rows.append(
             {
                 "Strategy": name,
-                "2024 PnL": v.metrics["total_pnl"] if v else float("nan"),
+                "2024 PnL (EUR)": v.metrics["total_pnl"] if v else float("nan"),
                 "2024 Sharpe": v.metrics["sharpe_ratio"] if v else float("nan"),
-                "2024 Max DD": v.metrics["max_drawdown"] if v else float("nan"),
-                "2025 PnL": h.metrics["total_pnl"] if h else float("nan"),
+                "2024 Max DD (EUR)": v.metrics["max_drawdown"] if v else float("nan"),
+                "2025 PnL (EUR)": h.metrics["total_pnl"] if h else float("nan"),
                 "2025 Sharpe": h.metrics["sharpe_ratio"] if h else float("nan"),
-                "2025 Max DD": h.metrics["max_drawdown"] if h else float("nan"),
+                "2025 Max DD (EUR)": h.metrics["max_drawdown"] if h else float("nan"),
             }
         )
-    frame = pd.DataFrame(rows).sort_values(["2024 PnL", "2025 PnL"], ascending=[False, False])
-
-    def _safe(v: float, fmt: str) -> str:
-        return "-" if pd.isna(v) else fmt.format(v)
+    frame = pd.DataFrame(rows).sort_values(
+        ["2024 PnL (EUR)", "2025 PnL (EUR)"], ascending=[False, False]
+    )
 
     st.dataframe(
         frame.assign(
             **{
-                "2024 PnL": lambda df: df["2024 PnL"].map(lambda v: f"EUR {v:,.2f}"),
                 "2024 Sharpe": lambda df: df["2024 Sharpe"].map(lambda v: f"{v:.2f}"),
-                "2024 Max DD": lambda df: df["2024 Max DD"].map(lambda v: f"EUR {v:,.2f}"),
-                "2025 PnL": lambda df: df["2025 PnL"].map(lambda v: _safe(v, "EUR {0:,.2f}")),
-                "2025 Sharpe": lambda df: df["2025 Sharpe"].map(lambda v: _safe(v, "{0:.2f}")),
-                "2025 Max DD": lambda df: df["2025 Max DD"].map(lambda v: _safe(v, "EUR {0:,.2f}")),
+                "2025 Sharpe": lambda df: df["2025 Sharpe"].map(
+                    lambda v: "-" if pd.isna(v) else f"{v:.2f}"
+                ),
             }
         ),
         use_container_width=True,
@@ -185,13 +184,16 @@ def _render_strategy_detail(
 
 
 def _render_detail_charts(
-    strategy_name: str, period: str, result: BacktestResult,
+    strategy_name: str,
+    period: str,
+    result: BacktestResult,
 ) -> None:
     """Render PnL histogram, heatmap, and predictions table."""
     cl, cr = st.columns(2)
     with cl:
         fig = px.histogram(
-            result.daily_pnl, nbins=40,
+            result.daily_pnl,
+            nbins=40,
             title=f"Daily PnL - {strategy_name} ({period})",
             labels={"value": "Daily PnL", "count": "Frequency"},
         )
@@ -206,11 +208,13 @@ def _render_detail_charts(
         )
     st.subheader(f"Latest Predictions - {period}")
     st.dataframe(
-        pd.DataFrame({
-            "prediction": result.predictions,
-            "daily_pnl": result.daily_pnl,
-            "cumulative_pnl": result.cumulative_pnl,
-        }).tail(20),
+        pd.DataFrame(
+            {
+                "prediction": result.predictions,
+                "daily_pnl": result.daily_pnl,
+                "cumulative_pnl": result.cumulative_pnl,
+            }
+        ).tail(20),
         use_container_width=True,
     )
 

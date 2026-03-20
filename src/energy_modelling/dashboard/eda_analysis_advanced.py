@@ -161,8 +161,8 @@ def quarterly_direction_rates(
     df = pd.DataFrame(
         {
             "change": price_changes.values,
-            "year": dates.year,
-            "quarter": dates.quarter,
+            "year": dates.dt.year,
+            "quarter": dates.dt.quarter,
         }
     )
     df["is_up"] = df["change"] > 0

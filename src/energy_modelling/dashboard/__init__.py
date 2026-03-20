@@ -80,12 +80,12 @@ def monthly_pnl_heatmap(
             y=[str(y) for y in pivot.index],
             colorscale="RdYlGn",
             zmid=0,
-            text=[[f"EUR {v:,.0f}" for v in row] for row in pivot.values],
+            text=[[f"{v:,.0f}" for v in row] for row in pivot.values],
             texttemplate="%{text}",
-            hovertemplate="Month: %{x}<br>Year: %{y}<br>PnL: %{text}<extra></extra>",
+            hovertemplate="Month: %{x}<br>Year: %{y}<br>PnL (EUR): %{text}<extra></extra>",
         )
     )
-    fig.update_layout(title=title, yaxis_autorange="reversed")
+    fig.update_layout(title=f"{title} (EUR)", yaxis_autorange="reversed")
     return fig
 
 

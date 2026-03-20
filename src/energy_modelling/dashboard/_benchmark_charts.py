@@ -47,11 +47,13 @@ def _build_comparison_matrix(
     rows: list[dict[str, object]] = []
     for bench_id, strat_results in bench_results.items():
         for strat_name, result in strat_results.items():
-            rows.append({
-                "Strategy": strat_name,
-                "Benchmark": bench_id,
-                "Value": result.metrics.get(metric, 0.0),
-            })
+            rows.append(
+                {
+                    "Strategy": strat_name,
+                    "Benchmark": bench_id,
+                    "Value": result.metrics.get(metric, 0.0),
+                }
+            )
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
@@ -63,16 +65,18 @@ def _render_heatmap(matrix: pd.DataFrame, metric_label: str) -> None:
     if matrix.empty:
         st.info("No benchmark data to display.")
         return
-    fig = go.Figure(data=go.Heatmap(
-        z=matrix.values,
-        x=matrix.columns.tolist(),
-        y=matrix.index.tolist(),
-        colorscale="RdYlGn",
-        text=matrix.round(2).astype(str).values,
-        texttemplate="%{text}",
-        textfont={"size": 10},
-        colorbar_title=metric_label,
-    ))
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=matrix.values,
+            x=matrix.columns.tolist(),
+            y=matrix.index.tolist(),
+            colorscale="RdYlGn",
+            text=matrix.round(2).astype(str).values,
+            texttemplate="%{text}",
+            textfont={"size": 10},
+            colorbar_title=metric_label,
+        )
+    )
     fig.update_layout(
         title=f"Strategy × Benchmark: {metric_label}",
         xaxis_title="Benchmark",
@@ -83,11 +87,11 @@ def _render_heatmap(matrix: pd.DataFrame, metric_label: str) -> None:
 
 
 def _render_comparison_table(matrix: pd.DataFrame) -> None:
-    """Show the raw comparison table with EUR formatting."""
+    """Show the raw comparison table with EUR units in column headers."""
     if matrix.empty:
         return
-    formatted = matrix.map(lambda v: f"EUR {v:,.0f}")
-    st.dataframe(formatted, use_container_width=True)
+    renamed = matrix.rename(columns={col: f"{col} (EUR)" for col in matrix.columns})
+    st.dataframe(renamed, use_container_width=True)
 
 
 def _run_benchmarks(

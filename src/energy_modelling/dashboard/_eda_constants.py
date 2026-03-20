@@ -74,7 +74,7 @@ GEN_COLORS = {
     "Wind Onshore": "#1E90FF",
     "Wind Offshore": "#4169E1",
     "Lignite": "#8B4513",
-    "Hard Coal": "#333333",
+    "Hard Coal": "#7A7A7A",
     "Natural Gas": "#FF6347",
     "Nuclear": "#9370DB",
     "Biomass": "#228B22",
