@@ -80,12 +80,23 @@ def compute_strategy_profits(
     directions: dict[str, pd.Series],
     market_prices: pd.Series,
     real_prices: pd.Series,
+    strategy_forecasts: dict[str, dict] | None = None,
 ) -> dict[str, float]:
     """Compute total profit for each strategy against the market price.
 
-    For each strategy *i* and day *t*:
+    When a strategy provides explicit price forecasts via ``strategy_forecasts``,
+    the profit is computed as a forecast-alignment bonus:
 
-        r_{i,t} = direction_{i,t} * (real_price_t - market_price_t) * 24
+        r_{i,t} = sign(forecast_{i,t} - market_t) * (real_t - market_t) * 24
+
+    This makes profit adaptive to the *current* market price rather than
+    frozen binary directions from the initial backtest.  Strategies whose
+    forecasts match the direction of the real price movement are rewarded;
+    those that forecast in the wrong direction are penalised.
+
+    Without forecasts, the legacy formula is used:
+
+        r_{i,t} = direction_{i,t} * (real_t - market_t) * 24
 
     Parameters
     ----------
@@ -96,18 +107,42 @@ def compute_strategy_profits(
         Current market price per delivery date (same index as directions).
     real_prices:
         Ground-truth settlement price per delivery date.
+    strategy_forecasts:
+        Optional ``{strategy_name: {date: forecast_price}}`` of explicit
+        forecasts.  When present, adaptive profit is used instead of frozen
+        directions.
 
     Returns
     -------
     dict mapping strategy name to total profit (float).
     """
 
+    if strategy_forecasts is None:
+        strategy_forecasts = {}
+
     profits: dict[str, float] = {}
     for name, direction_series in directions.items():
-        # Align all series to the market_prices index
-        d = direction_series.reindex(market_prices.index).astype("Float64")
+        forecasts = strategy_forecasts.get(name)
         price_change = real_prices.reindex(market_prices.index) - market_prices
-        daily_pnl = d.fillna(0.0) * price_change * 24.0
+
+        if forecasts:
+            # Adaptive: derive direction from forecast vs current market
+            import numpy as np  # noqa: PLC0415
+
+            adaptive_dir = pd.Series(
+                {
+                    t: float(np.sign(float(forecasts[t]) - float(market_prices.loc[t])))
+                    if t in forecasts
+                    else 0.0
+                    for t in market_prices.index
+                },
+                dtype=float,
+            )
+            daily_pnl = adaptive_dir * price_change * 24.0
+        else:
+            d = direction_series.reindex(market_prices.index).astype("Float64")
+            daily_pnl = d.fillna(0.0) * price_change * 24.0
+
         profits[name] = float(daily_pnl.sum())
     return profits
 
@@ -202,7 +237,7 @@ def run_futures_market_iteration(
     3. Compute new market prices from the weighted implied forecasts.
     """
 
-    profits = compute_strategy_profits(directions, market_prices, real_prices)
+    profits = compute_strategy_profits(directions, market_prices, real_prices, strategy_forecasts)
     weights = compute_weights(profits)
     active = [name for name, w in weights.items() if w > 0.0]
     new_prices = compute_market_prices(
@@ -275,11 +310,21 @@ def run_futures_market(
             iteration=k,
             strategy_forecasts=strategy_forecasts,
         )
-        iterations.append(result)
 
         # Dampened update
         new_prices = dampening * result.market_prices + (1.0 - dampening) * current_prices
         delta = float((new_prices - current_prices).abs().max())
+
+        # Store the *dampened* prices so dashboard charts show the actual
+        # converging trajectory, not the raw undampened jump.
+        dampened_snapshot = FuturesMarketIteration(
+            iteration=result.iteration,
+            market_prices=new_prices,
+            strategy_profits=result.strategy_profits,
+            strategy_weights=result.strategy_weights,
+            active_strategies=result.active_strategies,
+        )
+        iterations.append(dampened_snapshot)
 
         current_prices = new_prices
 
