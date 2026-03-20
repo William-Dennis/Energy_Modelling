@@ -10,8 +10,8 @@ Training
 * All available numeric features in the training split are used.
 * Features are standardised (zero mean, unit variance) before fitting so that
   the regularisation penalty is applied fairly across different scales.
-* The regularisation strength alpha is chosen by 5-fold time-series
-  cross-validation (``TimeSeriesSplit``) over a log-spaced grid.
+* Alpha is fixed at 0.1 — a moderate L1 penalty that balances sparsity and
+  fit quality on typical energy-price datasets.
 
 Signal
 ------
@@ -28,7 +28,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Lasso
-from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -48,18 +47,13 @@ _EXCLUDE_COLUMNS: frozenset[str] = frozenset(
     }
 )
 
-# Alpha candidates evaluated during cross-validation
-_ALPHA_GRID: list[float] = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0]
-
-_N_CV_SPLITS: int = 5
+_ALPHA = 0.1
 
 
 class LassoRegressionStrategy(BacktestStrategy):
     """L1-regularised linear regression on all available features.
 
-    Uses ``TimeSeriesSplit`` CV to select the Lasso alpha that minimises
-    mean-squared error on the training set, then fits a final model on the
-    full training window.
+    Alpha is fixed at 0.1 — no cross-validation search.
     """
 
     def __init__(self) -> None:
@@ -80,31 +74,8 @@ class LassoRegressionStrategy(BacktestStrategy):
         # Calibrate skip_buffer to half the median absolute price change
         self.skip_buffer = float(np.median(np.abs(y))) * 0.5
 
-        # Time-series CV to choose alpha
-        best_alpha = _ALPHA_GRID[0]
-        best_mse = float("inf")
-        tscv = TimeSeriesSplit(n_splits=_N_CV_SPLITS)
-
-        for alpha in _ALPHA_GRID:
-            pipe = Pipeline(
-                [("scaler", StandardScaler()), ("lasso", Lasso(alpha=alpha, max_iter=5000))]
-            )
-            fold_mses: list[float] = []
-            for train_idx, val_idx in tscv.split(X):
-                pipe.fit(X[train_idx], y[train_idx])
-                preds = pipe.predict(X[val_idx])
-                fold_mses.append(float(np.mean((preds - y[val_idx]) ** 2)))
-            mean_mse = float(np.mean(fold_mses))
-            if mean_mse < best_mse:
-                best_mse = mean_mse
-                best_alpha = alpha
-
-        # Fit final model on full training data with the chosen alpha
         self._pipeline = Pipeline(
-            [
-                ("scaler", StandardScaler()),
-                ("lasso", Lasso(alpha=best_alpha, max_iter=5000)),
-            ]
+            [("scaler", StandardScaler()), ("lasso", Lasso(alpha=_ALPHA, max_iter=5000))]
         )
         self._pipeline.fit(X, y)
 

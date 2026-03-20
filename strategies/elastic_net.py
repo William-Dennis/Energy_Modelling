@@ -1,8 +1,8 @@
 """Elastic Net regression strategy (L1 + L2 regularisation).
 
 Combines the sparsity of Lasso with the stability of Ridge.  The mixing
-parameter ``l1_ratio`` is fixed at 0.5 (equal L1/L2), and the alpha is
-chosen by 5-fold TimeSeriesSplit CV.
+parameter ``l1_ratio`` is fixed at 0.5 (equal L1/L2), and alpha is fixed
+at 0.1.
 """
 
 from __future__ import annotations
@@ -10,22 +10,20 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import ElasticNet
-from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from energy_modelling.backtest.types import BacktestState
 from strategies.ml_base import _MLStrategyBase
 
-_ALPHA_GRID = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+_ALPHA = 0.1
 _L1_RATIO = 0.5
-_N_SPLITS = 5
 
 
 class ElasticNetStrategy(_MLStrategyBase):
     """Elastic Net (L1+L2) regression on all available features.
 
-    Alpha is tuned by time-series CV; l1_ratio is fixed at 0.5.
+    Alpha is fixed at 0.1, l1_ratio fixed at 0.5 — no cross-validation search.
     """
 
     def __init__(self) -> None:
@@ -37,25 +35,10 @@ class ElasticNetStrategy(_MLStrategyBase):
         X = self._get_X_train(train_data, self._feature_cols)
         y = self._get_y_train(train_data)
         self.skip_buffer = float(np.median(np.abs(y))) * 0.5
-        best_alpha, best_mse = _ALPHA_GRID[0], float("inf")
-        tscv = TimeSeriesSplit(n_splits=_N_SPLITS)
-        for alpha in _ALPHA_GRID:
-            pipe = Pipeline(
-                [
-                    ("s", StandardScaler()),
-                    ("m", ElasticNet(alpha=alpha, l1_ratio=_L1_RATIO, max_iter=5000)),
-                ]
-            )
-            mses = [
-                float(np.mean((pipe.fit(X[ti], y[ti]).predict(X[vi]) - y[vi]) ** 2))
-                for ti, vi in tscv.split(X)
-            ]
-            if (m := float(np.mean(mses))) < best_mse:
-                best_mse, best_alpha = m, alpha
         self._pipeline = Pipeline(
             [
                 ("s", StandardScaler()),
-                ("m", ElasticNet(alpha=best_alpha, l1_ratio=_L1_RATIO, max_iter=5000)),
+                ("m", ElasticNet(alpha=_ALPHA, l1_ratio=_L1_RATIO, max_iter=5000)),
             ]
         )
         self._pipeline.fit(X, y)

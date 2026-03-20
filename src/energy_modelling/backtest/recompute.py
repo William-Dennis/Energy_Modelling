@@ -21,9 +21,12 @@ import hashlib
 import json
 import logging
 import time
+from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor
 from datetime import date
 from pathlib import Path
 
+import pandas as pd
 from tqdm import tqdm
 
 from energy_modelling.backtest.benchmarks import ALL_BENCHMARKS, get_benchmark
@@ -33,7 +36,8 @@ from energy_modelling.backtest.io import (
     save_backtest_results,
     save_market_results,
 )
-from energy_modelling.backtest.runner import run_backtest
+from energy_modelling.backtest.runner import BacktestResult, run_backtest
+from energy_modelling.backtest.types import BacktestStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +46,41 @@ TRAINING_END = date(2023, 12, 31)
 EVAL_START = date(2024, 1, 1)
 EVAL_END = date(2024, 12, 31)
 
+# Reduced set of benchmarks run by default (covers representative spread without
+# running all 8 which would take 8× longer for diminishing insight).
+DEFAULT_BENCHMARKS = ["baseline", "noise_5", "oracle"]
+
 _FINGERPRINT_FILE = RESULTS_DIR / ".fingerprint.json"
+
+
+# ---------------------------------------------------------------------------
+# Worker (top-level so it is picklable for ProcessPoolExecutor)
+# ---------------------------------------------------------------------------
+
+
+def _run_backtest_worker(
+    name: str,
+    factory: Callable[[], BacktestStrategy],
+    daily_data: pd.DataFrame,
+    training_end: date,
+    evaluation_start: date,
+    evaluation_end: date,
+    entry_prices: pd.Series | None,
+) -> tuple[str, BacktestResult]:
+    """Subprocess worker: instantiate, fit and evaluate one strategy.
+
+    Returns ``(name, BacktestResult)``.
+    """
+    strategy = factory()
+    result = run_backtest(
+        strategy=strategy,
+        daily_data=daily_data,
+        training_end=training_end,
+        evaluation_start=evaluation_start,
+        evaluation_end=evaluation_end,
+        entry_prices=entry_prices,
+    )
+    return name, result
 
 
 # ---------------------------------------------------------------------------
@@ -131,6 +169,7 @@ def recompute_all(
     evaluation_end: date | None = None,
     *,
     force: bool = False,
+    max_workers: int | None = None,
 ) -> None:
     """Regenerate all backtest results.
 
@@ -139,11 +178,14 @@ def recompute_all(
     strategies:
         Strategy display names to include (default: all discovered strategies).
     benchmarks:
-        Benchmark IDs to run (default: all from ``ALL_BENCHMARKS``).
+        Benchmark IDs to run (default: ``DEFAULT_BENCHMARKS``).
     training_end, evaluation_start, evaluation_end:
         Override the default date window.
     force:
         If True, regenerate everything regardless of cache state.
+    max_workers:
+        Number of worker processes. ``None`` lets :class:`ProcessPoolExecutor`
+        choose (one per CPU). Set to 1 for serial execution.
     """
     from energy_modelling.backtest.futures_market_runner import (
         run_futures_market_evaluation,
@@ -178,7 +220,7 @@ def recompute_all(
         strat_factories = {k: v for k, v in strat_factories.items() if k in strategies}
     logger.info("Strategies (%d): %s", len(strat_factories), list(strat_factories.keys()))
 
-    bench_ids = list(ALL_BENCHMARKS.keys()) if benchmarks is None else benchmarks
+    bench_ids = DEFAULT_BENCHMARKS if benchmarks is None else benchmarks
     logger.info("Benchmarks: %s", bench_ids)
 
     t0 = time.perf_counter()
@@ -193,23 +235,37 @@ def recompute_all(
             continue
 
         entry_prices = get_benchmark(bench_id, daily)
-        results = {}
-        for name, factory in tqdm(
-            strat_factories.items(),
-            desc=f"  {bench_id}",
-            unit="strat",
-            leave=False,
-        ):
-            strategy = factory()
-            result = run_backtest(
-                strategy=strategy,
-                daily_data=daily,
-                training_end=t_end,
-                evaluation_start=e_start,
-                evaluation_end=e_end,
-                entry_prices=entry_prices if bench_id != "baseline" else None,
-            )
-            results[name] = result
+        ep = entry_prices if bench_id != "baseline" else None
+
+        results: dict[str, BacktestResult] = {}
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            futures_map = {
+                executor.submit(
+                    _run_backtest_worker,
+                    name,
+                    factory,
+                    daily,
+                    t_end,
+                    e_start,
+                    e_end,
+                    ep,
+                ): name
+                for name, factory in tqdm(
+                    strat_factories.items(),
+                    desc=f"  {bench_id} (submitting)",
+                    unit="strat",
+                    leave=False,
+                )
+            }
+            for future in tqdm(
+                futures_map,
+                desc=f"  {bench_id} (collecting)",
+                unit="strat",
+                leave=False,
+            ):
+                name, result = future.result()
+                results[name] = result
+
         save_backtest_results(results, RESULTS_DIR / pkl_name)
         _record_fingerprint(pkl_name, fp_val)
         logger.info("Saved %s", pkl_name)
@@ -241,17 +297,32 @@ def recompute_all(
             hidden = load_daily(hid_path)
             combined = combine_public_hidden(daily, hidden)
             logger.info("Hidden data (%d rows). Running 2025 backtests...", len(hidden))
-            hid_results: dict = {}
-            for name, factory in tqdm(strat_factories.items(), desc="2025 backtest", unit="strat"):
-                strategy = factory()
-                result = run_backtest(
-                    strategy=strategy,
-                    daily_data=combined,
-                    training_end=date(2024, 12, 31),
-                    evaluation_start=date(2025, 1, 1),
-                    evaluation_end=date(2025, 12, 31),
-                )
-                hid_results[name] = result
+            hid_results: dict[str, BacktestResult] = {}
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                futures_map = {
+                    executor.submit(
+                        _run_backtest_worker,
+                        name,
+                        factory,
+                        combined,
+                        date(2024, 12, 31),
+                        date(2025, 1, 1),
+                        date(2025, 12, 31),
+                        None,
+                    ): name
+                    for name, factory in tqdm(
+                        strat_factories.items(),
+                        desc="2025 backtest (submitting)",
+                        unit="strat",
+                    )
+                }
+                for future in tqdm(
+                    futures_map,
+                    desc="2025 backtest (collecting)",
+                    unit="strat",
+                ):
+                    name, result = future.result()
+                    hid_results[name] = result
             save_backtest_results(hid_results, RESULTS_DIR / hid_pkl)
             _record_fingerprint(hid_pkl, fp_hid)
             logger.info("Saved %s", hid_pkl)
@@ -269,6 +340,7 @@ def recompute_all(
             training_end=t_end,
             evaluation_start=e_start,
             evaluation_end=e_end,
+            max_workers=max_workers,
         )
         save_market_results(m24, RESULTS_DIR / "market_2024.pkl")
         logger.info("Saved market_2024.pkl")
@@ -284,6 +356,7 @@ def recompute_all(
                 training_end=date(2024, 12, 31),
                 evaluation_start=date(2025, 1, 1),
                 evaluation_end=date(2025, 12, 31),
+                max_workers=max_workers,
             )
             save_market_results(m25, RESULTS_DIR / "market_2025.pkl")
             logger.info("Saved market_2025.pkl")
@@ -309,7 +382,12 @@ def main() -> None:
         "--benchmarks",
         nargs="*",
         default=None,
-        help="Benchmark IDs (default: all)",
+        help=f"Benchmark IDs (default: {DEFAULT_BENCHMARKS})",
+    )
+    parser.add_argument(
+        "--all-benchmarks",
+        action="store_true",
+        help="Run all 8 benchmarks instead of the default reduced set",
     )
     parser.add_argument(
         "--training-end",
@@ -335,6 +413,12 @@ def main() -> None:
         help="Force regeneration, ignoring cache",
     )
     parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=None,
+        help="Number of parallel worker processes (default: number of CPUs)",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -347,11 +431,18 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
+    bench_ids = None
+    if args.all_benchmarks:
+        bench_ids = list(ALL_BENCHMARKS.keys())
+    elif args.benchmarks is not None:
+        bench_ids = args.benchmarks
+
     recompute_all(
         strategies=args.strategies,
-        benchmarks=args.benchmarks,
+        benchmarks=bench_ids,
         training_end=_parse_date(args.training_end),
         evaluation_start=_parse_date(args.evaluation_start),
         evaluation_end=_parse_date(args.evaluation_end),
         force=args.force,
+        max_workers=args.max_workers,
     )

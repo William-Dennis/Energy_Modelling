@@ -8,6 +8,7 @@ them into the synthetic futures market to produce market-adjusted PnL.
 from __future__ import annotations
 
 from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 
@@ -93,6 +94,46 @@ def _collect_forecasts(
     return forecasts
 
 
+def _run_single_strategy(
+    name: str,
+    factory: Callable[[], BacktestStrategy],
+    daily_data: pd.DataFrame,
+    training_end: date,
+    evaluation_start: date,
+    evaluation_end: date,
+) -> tuple[str, BacktestResult, dict]:
+    """Worker: fit strategy, collect predictions and forecasts.
+
+    Designed to run in a subprocess via :class:`ProcessPoolExecutor`.
+    Combines Phase 1 (run_backtest) and Phase 2b (_collect_forecasts) so the
+    fitted strategy object is used in the same process and never pickled.
+
+    Returns
+    -------
+    tuple of (name, BacktestResult, forecasts_dict)
+    """
+    from energy_modelling.backtest.feature_engineering import add_derived_features  # noqa: PLC0415
+    from energy_modelling.backtest.runner import _normalise_daily_data  # noqa: PLC0415
+
+    strategy = factory()
+    result = run_backtest(
+        strategy=strategy,
+        daily_data=daily_data,
+        training_end=training_end,
+        evaluation_start=evaluation_start,
+        evaluation_end=evaluation_end,
+    )
+
+    # Prepare eval data for forecast collection (mirrors run_futures_market_evaluation)
+    data = _normalise_daily_data(daily_data)
+    data = add_derived_features(data)
+    eval_mask = (data.index >= evaluation_start) & (data.index <= evaluation_end)
+    eval_data = data.loc[eval_mask]
+
+    forecasts = _collect_forecasts(strategy, eval_data, data)
+    return name, result, forecasts
+
+
 def run_futures_market_evaluation(
     strategy_factories: dict[str, Callable[[], BacktestStrategy]],
     daily_data: pd.DataFrame,
@@ -104,6 +145,7 @@ def run_futures_market_evaluation(
     forecast_spread: float | None = None,
     dampening: float = 0.5,
     initial_market_prices: pd.Series | None = None,
+    max_workers: int | None = None,
 ) -> FuturesMarketResult:
     """Run all strategies, then evaluate them under the synthetic market.
 
@@ -112,29 +154,44 @@ def run_futures_market_evaluation(
     2. Feed all directions into ``run_futures_market`` to find
        the equilibrium market price.
     3. Recompute each strategy's PnL against the market price.
+
+    Parameters
+    ----------
+    max_workers:
+        Number of worker processes for parallelism. ``None`` uses
+        :class:`ProcessPoolExecutor` defaults (one per CPU).
+        Set to 1 to disable parallelism (serial execution).
     """
 
-    # Phase 1: Collect original results and directions
+    # Phase 1 + 2b: Fit strategies and collect forecasts (parallel)
     original_results: dict[str, BacktestResult] = {}
-    directions: dict[str, pd.Series] = {}
-    strategies: dict[str, BacktestStrategy] = {}
+    strategy_forecasts: dict[str, dict] = {}
 
-    for name, factory in strategy_factories.items():
-        strategy = factory()
-        result = run_backtest(
-            strategy=strategy,
-            daily_data=daily_data,
-            training_end=training_end,
-            evaluation_start=evaluation_start,
-            evaluation_end=evaluation_end,
-        )
-        original_results[name] = result
-        directions[name] = result.predictions
-        strategies[name] = strategy
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(
+                _run_single_strategy,
+                name,
+                factory,
+                daily_data,
+                training_end,
+                evaluation_start,
+                evaluation_end,
+            ): name
+            for name, factory in strategy_factories.items()
+        }
+        for future in futures:
+            name, result, forecasts = future.result()
+            original_results[name] = result
+            strategy_forecasts[name] = forecasts
 
     if not original_results:
         msg = "No strategies were evaluated successfully."
         raise ValueError(msg)
+
+    directions: dict[str, pd.Series] = {
+        name: result.predictions for name, result in original_results.items()
+    }
 
     # Phase 2: Extract ground truth from daily data
     # Normalise the daily data index to date objects
@@ -155,11 +212,6 @@ def run_futures_market_evaluation(
     settlement_prices = eval_data["settlement_price"].astype(float)
     if initial_market_prices is None:
         initial_market_prices = eval_data["last_settlement_price"].astype(float)
-
-    # Phase 2b: Collect forecasts from strategies
-    strategy_forecasts: dict[str, dict] = {}
-    for name, strategy in strategies.items():
-        strategy_forecasts[name] = _collect_forecasts(strategy, eval_data, data)
 
     # Phase 3: Run market convergence
     equilibrium = run_futures_market(

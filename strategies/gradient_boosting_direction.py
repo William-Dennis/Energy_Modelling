@@ -1,26 +1,30 @@
 """Gradient Boosting direction classifier strategy.
 
-Uses sklearn's ``GradientBoostingClassifier`` to predict price-move direction.
-Fixed hyperparameters: 200 trees, learning_rate=0.05, max_depth=4.
+Uses sklearn's ``HistGradientBoostingClassifier`` to predict price-move
+direction.  HistGBM is significantly faster than the legacy
+``GradientBoostingClassifier`` (histogram-based splits, native missing-value
+support) while producing comparable accuracy.
+
+Fixed hyperparameters: 200 iterations, learning_rate=0.05, max_depth=4.
 """
 
 from __future__ import annotations
 
 import pandas as pd
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from energy_modelling.backtest.types import BacktestState
 from strategies.ml_base import _MLStrategyBase
 
-_N_ESTIMATORS = 200
+_MAX_ITER = 200
 _LEARNING_RATE = 0.05
 _MAX_DEPTH = 4
 
 
 class GradientBoostingStrategy(_MLStrategyBase):
-    """Gradient Boosting classifier: 200 trees, lr=0.05, max_depth=4."""
+    """HistGradientBoosting classifier: 200 iterations, lr=0.05, max_depth=4."""
 
     def __init__(self) -> None:
         self._pipeline: Pipeline | None = None
@@ -35,8 +39,8 @@ class GradientBoostingStrategy(_MLStrategyBase):
                 ("s", StandardScaler()),
                 (
                     "m",
-                    GradientBoostingClassifier(
-                        n_estimators=_N_ESTIMATORS,
+                    HistGradientBoostingClassifier(
+                        max_iter=_MAX_ITER,
                         learning_rate=_LEARNING_RATE,
                         max_depth=_MAX_DEPTH,
                         random_state=42,
