@@ -35,6 +35,7 @@ from energy_modelling.backtest.benchmarks import (
     perfect_foresight_price,
     yesterday_settlement,
 )
+from energy_modelling.backtest.recompute import recompute_all
 from energy_modelling.backtest.runner import BacktestResult, run_backtest
 from energy_modelling.backtest.scoring import (
     compute_backtest_metrics,
@@ -74,6 +75,7 @@ __all__ = [
     "perfect_foresight_price",
     "results_exist",
     "rolling_sharpe",
+    "recompute_all",
     "save_backtest_results",
     "save_market_results",
     "run_backtest",

@@ -10,6 +10,7 @@ Tabs
 2. **Backtest** -- Multi-strategy leaderboard (yesterday-settlement pricing).
 3. **Futures Market** -- Synthetic futures market model (organizer tool).
 4. **Futures Market Simulation** -- Converged market price vs real settlement.
+5. **Benchmark Comparison** -- Strategy robustness across entry-price scenarios.
 """
 
 from __future__ import annotations
@@ -28,12 +29,13 @@ st.caption(
     "bidding zone, 2019-2025.  All timestamps UTC."
 )
 
-tab_eda, tab_ch, tab_mkt, tab_acc = st.tabs(
+tab_eda, tab_ch, tab_mkt, tab_acc, tab_bench = st.tabs(
     [
         "EDA",
         "Backtest",
         "Futures Market",
         "Futures Market Simulation",
+        "Benchmark Comparison",
     ]
 )
 
@@ -56,3 +58,8 @@ with tab_acc:
     from energy_modelling.dashboard._accuracy import render as _render_acc
 
     _render_acc()
+
+with tab_bench:
+    from energy_modelling.dashboard._benchmark_charts import render as _render_bench
+
+    _render_bench()

@@ -4,7 +4,7 @@ This challenge asks students to design a trading strategy for the **DE-LU day-ah
 
 ## Objective
 
-Build a `StudentStrategy` class that decides each day whether to:
+Build a `BacktestStrategy` class that decides each day whether to:
 
 - go `long` (`+1`)
 - go `short` (`-1`)
@@ -43,10 +43,10 @@ Quantity is fixed at `1 MW`, so students only choose direction.
 
 ## Student Submission Contract
 
-Students edit `submission/student_strategy.py` and implement:
+Students create a strategy file in the `strategies/` directory and implement:
 
 ```python
-class StudentStrategy:
+class MyStrategy(BacktestStrategy):
     def fit(self, train_data):
         ...
 
@@ -61,7 +61,7 @@ The baseline implementation is the naive-copy strategy and always returns `1`.
 Generate the daily public dataset with:
 
 ```bash
-uv run build-challenge-data
+uv run build-backtest-data
 ```
 
 This writes:
@@ -79,6 +79,13 @@ For the actual hackathon release, distribute only:
 
 - `data/backtest/daily_public.csv`
 - `data/backtest/daily_public_glossary.csv`
-- `submission/student_strategy.py`
+- `strategies/` directory with example strategies
 - `notebooks/hackathon_baseline.ipynb`
 - this challenge brief
+
+## Benchmark System
+
+The platform includes an entry-price benchmark system for testing strategy robustness.
+Benchmarks vary the entry price used in evaluation (noisy, biased, oracle) to check
+whether a strategy depends on a specific price level. Pre-computed results are saved
+under `data/results/` and can be regenerated with `recompute-all`.
