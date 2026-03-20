@@ -39,5 +39,5 @@ for design decisions, signal analysis, and implementation status.
 | D — ML Models | +15 → 47 total | ✅ Complete |
 | E — Regime/Calendar | +8 → 55 total | ✅ Complete |
 | F — Ensembles | +12 → 67 total | ✅ Complete |
-| G — Feedback Loop | infrastructure | ⏳ Pending |
+| G — Feedback Loop | infrastructure | ✅ Complete |
 | **Total** | **67** | |

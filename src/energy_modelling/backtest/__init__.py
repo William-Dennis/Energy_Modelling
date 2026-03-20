@@ -18,6 +18,11 @@ from energy_modelling.backtest.data import (
     strip_hidden_labels,
     write_backtest_data,
 )
+from energy_modelling.backtest.feedback import (
+    StrategyReport,
+    feature_contribution_analysis,
+    strategy_correlation_matrix,
+)
 from energy_modelling.backtest.futures_market_engine import (
     FuturesMarketEquilibrium,
     FuturesMarketIteration,
@@ -46,6 +51,7 @@ from energy_modelling.backtest.scoring import (
     rolling_sharpe,
 )
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
+from energy_modelling.backtest.walk_forward import walk_forward_validate
 
 __all__ = [
     "ALL_BENCHMARKS",
@@ -82,6 +88,10 @@ __all__ = [
     "run_futures_market_evaluation",
     "run_futures_market",
     "strip_hidden_labels",
+    "StrategyReport",
+    "feature_contribution_analysis",
+    "strategy_correlation_matrix",
+    "walk_forward_validate",
     "write_backtest_data",
     "yesterday_settlement",
 ]
