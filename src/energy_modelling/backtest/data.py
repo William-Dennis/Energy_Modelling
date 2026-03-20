@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from energy_modelling.backtest.feature_engineering import add_derived_features
 from energy_modelling.futures_market.data import (
     _FORECAST_FEATURE_COLS,
     _REALISED_FEATURE_COLS,
@@ -75,6 +76,8 @@ def build_daily_backtest_frame(dataset_path: Path | str) -> pd.DataFrame:
     daily["pnl_long_eur"] = daily["price_change_eur_mwh"] * 24.0
     daily["pnl_short_eur"] = -daily["pnl_long_eur"]
     daily["split"] = [_split_for_year(delivery_date.year) for delivery_date in daily.index]
+
+    daily = add_derived_features(daily)
 
     ordered = [
         "delivery_date",
