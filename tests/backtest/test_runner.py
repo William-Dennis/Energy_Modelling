@@ -43,9 +43,10 @@ class _TrackingStrategy(BacktestStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         self.fit_rows = len(train_data)
 
-    def act(self, state: BacktestState) -> int | None:
+    def forecast(self, state: BacktestState) -> float:
         self.history_lengths.append(len(state.history))
-        return 1 if state.features["load_actual_mw_mean"] >= 42_000.0 else -1
+        direction = 1 if state.features["load_actual_mw_mean"] >= 42_000.0 else -1
+        return state.last_settlement_price + direction * 1.0
 
 
 def test_runner_fits_on_train_rows_and_uses_prior_history() -> None:
@@ -80,8 +81,13 @@ def test_runner_computes_daily_pnl() -> None:
 
 
 class _BadStrategy(BacktestStrategy):
+    # Intentionally overrides act() (bypassing forecast-first design) to return
+    # an invalid value (2) — tests that the runner's validation catches it.
     def act(self, state: BacktestState) -> int | None:
-        return 2
+        return 2  # type: ignore[return-value]
+
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price
 
 
 def test_runner_rejects_invalid_prediction() -> None:

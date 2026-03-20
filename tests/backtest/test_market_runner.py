@@ -14,7 +14,6 @@ from energy_modelling.backtest.futures_market_runner import (
 )
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -49,46 +48,40 @@ class _AlwaysLong(BacktestStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
 
-    def act(self, state: BacktestState) -> int | None:
-        return 1
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price + 1.0
 
 
 class _AlwaysShort(BacktestStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
 
-    def act(self, state: BacktestState) -> int | None:
-        return -1
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price - 1.0
 
 
 class _PerfectForesight(BacktestStrategy):
     """Uses history to look at target_direction in previous row (cheats via labels)."""
 
+    _FORECAST_MAP = {
+        date(2024, 1, 1): 55.0,
+        date(2024, 1, 2): 48.0,
+        date(2024, 1, 3): 52.0,
+    }
+
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
 
-    def act(self, state: BacktestState) -> int | None:
-        # We go long when price will rise. Since we can't see the current label,
-        # we just hard-code the correct answers for our test data:
-        # 2024-01-01: settlement=55 > last=51 => +1
-        # 2024-01-02: settlement=48 < last=55 => -1
-        # 2024-01-03: settlement=52 > last=48 => +1
-        dd = state.delivery_date
-        if dd == date(2024, 1, 1):
-            return 1
-        if dd == date(2024, 1, 2):
-            return -1
-        if dd == date(2024, 1, 3):
-            return 1
-        return 1
+    def forecast(self, state: BacktestState) -> float:
+        return self._FORECAST_MAP.get(state.delivery_date, state.last_settlement_price)
 
 
 class _Skipper(BacktestStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
 
-    def act(self, state: BacktestState) -> int | None:
-        return None
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price
 
 
 # ---------------------------------------------------------------------------

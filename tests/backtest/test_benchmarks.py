@@ -43,8 +43,8 @@ def _make_daily_frame() -> pd.DataFrame:
 
 
 class _AlwaysLong(BacktestStrategy):
-    def act(self, state: BacktestState) -> int | None:
-        return 1
+    def forecast(self, state: BacktestState) -> float:
+        return state.last_settlement_price + 1.0
 
 
 # ── Factory unit tests ──────────────────────────────────────────────

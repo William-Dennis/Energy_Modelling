@@ -13,10 +13,23 @@ from datetime import date
 
 import pandas as pd
 
-from energy_modelling.backtest.futures_market_engine import FuturesMarketEquilibrium, run_futures_market
+from energy_modelling.backtest.futures_market_engine import (
+    FuturesMarketEquilibrium,
+    run_futures_market,
+)
 from energy_modelling.backtest.runner import BacktestResult, run_backtest
 from energy_modelling.backtest.scoring import compute_backtest_metrics
-from energy_modelling.backtest.types import BacktestStrategy
+from energy_modelling.backtest.types import BacktestState, BacktestStrategy
+
+_STATE_EXCLUDE_COLUMNS = {
+    "delivery_date",
+    "split",
+    "settlement_price",
+    "price_change_eur_mwh",
+    "target_direction",
+    "pnl_long_eur",
+    "pnl_short_eur",
+}
 
 
 @dataclass(frozen=True)
@@ -55,6 +68,30 @@ def _recompute_pnl_against_market(
     return (direction * price_change * 24.0).rename("pnl")
 
 
+def _collect_forecasts(
+    strategy: BacktestStrategy,
+    eval_data: pd.DataFrame,
+    full_data: pd.DataFrame,
+) -> dict:
+    """Call ``strategy.forecast()`` for each evaluation date.
+
+    Returns a dict mapping ``date -> float`` for every evaluation date.
+    All strategies are required to produce a forecast.
+    """
+
+    forecasts: dict = {}
+    for delivery_date, row in eval_data.iterrows():
+        features = row.drop(labels=list(_STATE_EXCLUDE_COLUMNS), errors="ignore").copy()
+        state = BacktestState(
+            delivery_date=delivery_date,
+            last_settlement_price=float(row["last_settlement_price"]),
+            features=features,
+            history=full_data.loc[full_data.index < delivery_date].copy(),
+        )
+        forecasts[delivery_date] = float(strategy.forecast(state))
+    return forecasts
+
+
 def run_futures_market_evaluation(
     strategy_factories: dict[str, Callable[[], BacktestStrategy]],
     daily_data: pd.DataFrame,
@@ -79,6 +116,7 @@ def run_futures_market_evaluation(
     # Phase 1: Collect original results and directions
     original_results: dict[str, BacktestResult] = {}
     directions: dict[str, pd.Series] = {}
+    strategies: dict[str, BacktestStrategy] = {}
 
     for name, factory in strategy_factories.items():
         strategy = factory()
@@ -91,6 +129,7 @@ def run_futures_market_evaluation(
         )
         original_results[name] = result
         directions[name] = result.predictions
+        strategies[name] = strategy
 
     if not original_results:
         msg = "No strategies were evaluated successfully."
@@ -112,6 +151,11 @@ def run_futures_market_evaluation(
     if initial_market_prices is None:
         initial_market_prices = eval_data["last_settlement_price"].astype(float)
 
+    # Phase 2b: Collect forecasts from strategies
+    strategy_forecasts: dict[str, dict] = {}
+    for name, strategy in strategies.items():
+        strategy_forecasts[name] = _collect_forecasts(strategy, eval_data, data)
+
     # Phase 3: Run market convergence
     equilibrium = run_futures_market(
         directions=directions,
@@ -121,6 +165,7 @@ def run_futures_market_evaluation(
         convergence_threshold=convergence_threshold,
         forecast_spread=forecast_spread,
         dampening=dampening,
+        strategy_forecasts=strategy_forecasts,
     )
 
     # Phase 4: Recompute PnL for each strategy under market prices

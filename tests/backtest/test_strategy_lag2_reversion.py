@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 import pandas as pd
-import pytest
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 from strategies.lag2_reversion import Lag2ReversionStrategy
@@ -54,14 +53,13 @@ class TestLag2ReversionInterface:
     def test_fit_computes_threshold(self) -> None:
         s = Lag2ReversionStrategy()
         s.fit(_make_train_data())
-        assert s._threshold is not None
-        assert s._threshold > 0
+        assert s.skip_buffer > 0
 
     def test_reset_preserves_threshold(self) -> None:
         s = Lag2ReversionStrategy()
         s.fit(_make_train_data())
         s.reset()
-        assert s._threshold is not None
+        assert s.skip_buffer > 0
 
 
 class TestLag2ReversionSignal:
@@ -115,11 +113,10 @@ class TestLag2ReversionThreshold:
         train = pd.DataFrame({"price_change_eur_mwh": [10.0, -10.0, 10.0, -10.0]})
         s.fit(train)
         # median of |changes| = median([10, 10, 10, 10]) = 10
-        assert s._threshold == 10.0
+        assert s.skip_buffer == 10.0
 
 
 class TestLag2ReversionNotFitted:
-    def test_raises_before_fit(self) -> None:
+    def test_skip_buffer_initialized_to_zero(self) -> None:
         s = Lag2ReversionStrategy()
-        with pytest.raises(RuntimeError, match="fit"):
-            s.act(_make_state([10.0, 1.0]))
+        assert s.skip_buffer == 0.0

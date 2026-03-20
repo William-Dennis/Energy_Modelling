@@ -19,6 +19,7 @@ from energy_modelling.backtest.convergence import (
     compute_theoretical_steps_to_arrival,
     fixed_perfect_foresight_directions,
     run_adaptive_foresight_market,
+    run_forecast_foresight_market,
 )
 from energy_modelling.backtest.futures_market_engine import run_futures_market
 
@@ -445,3 +446,102 @@ class TestFixedPFOscillation:
         # This should show oscillation behavior
         # Check that delta is not negligible
         assert len(eq.iterations) > 0  # At minimum we get some iterations
+
+
+# ---------------------------------------------------------------------------
+# Forecast-aware convergence (run_forecast_foresight_market)
+# ---------------------------------------------------------------------------
+
+
+class TestForecastForesightMarket:
+    """Test convergence with real-valued PF forecasts (not direction ± spread)."""
+
+    def test_converges_for_single_day(self) -> None:
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=100,
+            dampening=0.5,
+        )
+        assert eq.converged
+
+    def test_converges_to_real_price_single_day(self) -> None:
+        """With PF forecast = real price, market converges exactly to P_real."""
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=100,
+            dampening=0.5,
+        )
+        assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
+
+    def test_converges_multi_day(self) -> None:
+        dates, real, initial = _multi_day_setup()
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=100,
+            dampening=0.5,
+        )
+        assert eq.converged
+        for t in dates:
+            assert eq.final_market_prices.loc[t] == pytest.approx(real.loc[t], abs=0.01)
+
+    def test_geometric_convergence_rate(self) -> None:
+        """Error should decay geometrically with rate (1 - α)."""
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=50,
+            dampening=0.5,
+        )
+        traj = compute_convergence_trajectory(eq, real)
+        # With α=0.5, error halves each iteration. After 10 iterations:
+        # error = 10 * 0.5^10 ≈ 0.0098
+        assert traj.final_rmse < 0.02
+
+    def test_higher_dampening_converges_faster(self) -> None:
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq_low = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=200,
+            dampening=0.3,
+        )
+        eq_high = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=200,
+            dampening=0.7,
+        )
+        assert len(eq_high.iterations) <= len(eq_low.iterations)
+
+    def test_no_oscillation_regardless_of_distance(self) -> None:
+        """Unlike direction ± spread, forecast mode never oscillates."""
+        dates, real, initial = _single_day_setup(real=100.0, initial=90.0)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=200,
+            dampening=0.5,
+        )
+        # Must converge — no oscillation possible with contraction mapping
+        assert eq.converged
+        assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
+
+    def test_large_price_gap_still_converges(self) -> None:
+        """Even with a huge initial gap, forecast mode converges."""
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([500.0], index=dates)
+        initial = pd.Series([50.0], index=dates)
+        eq = run_forecast_foresight_market(
+            real_prices=real,
+            initial_market_prices=initial,
+            max_iterations=200,
+            dampening=0.5,
+        )
+        assert eq.converged
+        assert eq.final_market_prices.iloc[0] == pytest.approx(500.0, abs=0.01)

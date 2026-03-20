@@ -29,18 +29,13 @@ class WeeklyCycleStrategy(BacktestStrategy):
     def fit(self, train_data: pd.DataFrame) -> None:
         pass
 
-    def act(self, state: BacktestState) -> int | None:
+    def forecast(self, state: BacktestState) -> float:
         history = state.history
         if history.empty or len(history) < 7:
-            return None
+            return state.last_settlement_price
 
         change_7d_ago = float(history["price_change_eur_mwh"].iloc[-7])
-
-        if change_7d_ago > 0:
-            return 1
-        if change_7d_ago < 0:
-            return -1
-        return None
+        return state.last_settlement_price + change_7d_ago
 
     def reset(self) -> None:
         pass

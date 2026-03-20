@@ -20,17 +20,6 @@ import pandas as pd
 
 from energy_modelling.backtest.types import BacktestState, BacktestStrategy
 
-# isoweekday(): Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=7
-_DAY_SIGNAL: dict[int, int | None] = {
-    1: 1,  # Monday  → long
-    2: 1,  # Tuesday → long
-    3: None,  # Wednesday → skip
-    4: None,  # Thursday  → skip
-    5: -1,  # Friday   → short
-    6: -1,  # Saturday → short
-    7: -1,  # Sunday   → short
-}
-
 
 class DayOfWeekStrategy(BacktestStrategy):
     """Go long Mon/Tue, short Fri/Sat/Sun, skip Wed/Thu.
@@ -40,11 +29,19 @@ class DayOfWeekStrategy(BacktestStrategy):
     reduced industrial demand.
     """
 
-    def fit(self, train_data: pd.DataFrame) -> None:
-        pass
+    def __init__(self) -> None:
+        self._mean_change_by_day: dict[int, float] = {}
 
-    def act(self, state: BacktestState) -> int | None:
-        return _DAY_SIGNAL[state.delivery_date.isoweekday()]
+    def fit(self, train_data: pd.DataFrame) -> None:
+        if "price_change_eur_mwh" in train_data.columns and "delivery_date" in train_data.columns:
+            df = train_data.copy()
+            df["dow"] = pd.to_datetime(df["delivery_date"]).dt.weekday + 1  # Mon=1..Sun=7
+            self._mean_change_by_day = df.groupby("dow")["price_change_eur_mwh"].mean().to_dict()
+
+    def forecast(self, state: BacktestState) -> float:
+        dow = state.delivery_date.isoweekday()
+        mean_change = self._mean_change_by_day.get(dow, 0.0)
+        return state.last_settlement_price + mean_change
 
     def reset(self) -> None:
         pass

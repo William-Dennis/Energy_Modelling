@@ -49,13 +49,14 @@ class TestPerfectForesightDirection:
         assert strategy.act(state) == -1
 
     def test_long_when_equal(self, strategy: PerfectForesightStrategy) -> None:
-        # Real = 95, last = 95 → equal → -1 (not strictly greater)
+        # Real = 95, last = 95 → equal → None (within dead zone)
         state = _make_state(date(2024, 1, 3), 95.0)
-        assert strategy.act(state) == -1
+        assert strategy.act(state) is None
 
     def test_default_long_for_unknown_date(self, strategy: PerfectForesightStrategy) -> None:
+        # Unknown date → forecast = last_settlement → None (within dead zone)
         state = _make_state(date(2024, 12, 31), 90.0)
-        assert strategy.act(state) == 1
+        assert strategy.act(state) is None
 
 
 class TestPerfectForesightInterface:
