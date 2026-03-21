@@ -1,0 +1,57 @@
+experiment_type,experiment_id,label,ema_alpha,init_mode,ablation,year,converged,n_iterations,final_delta,mae,rmse,bias,n_strategies,final_active_count,final_weight_entropy,final_top1_weight,outcome_class,elapsed_s
+ema_sweep,ema_alpha_0.01,EMA alpha=0.01,0.01,default,none,2024,True,425,0.009838,10.3198,17.5556,-0.3524,67,9,1.7269,0.3014,healthy_convergence,0.07
+ema_sweep,ema_alpha_0.05,EMA alpha=0.05,0.05,default,none,2024,False,500,0.43633,10.2989,17.5168,-0.2859,67,7,1.4929,0.4416,non_converged,0.09
+ema_sweep,ema_alpha_0.10,EMA alpha=0.1,0.1,default,none,2024,False,500,1.772909,10.2972,17.53,-0.4058,67,8,1.8491,0.2877,non_converged,0.08
+ema_sweep,ema_alpha_0.20,EMA alpha=0.2,0.2,default,none,2024,False,500,14.248634,10.3461,17.5051,0.2467,67,2,0.5789,0.7343,non_converged,0.08
+ema_sweep,ema_alpha_0.30,EMA alpha=0.3,0.3,default,none,2024,False,500,6.208781,10.2617,17.4657,0.4073,67,2,0.2652,0.9255,non_converged,0.09
+ema_sweep,ema_alpha_0.50,EMA alpha=0.5,0.5,default,none,2024,False,500,25.436513,10.9804,18.5184,-1.4997,67,12,2.3785,0.1043,non_converged,0.09
+ema_sweep,ema_alpha_1.00,EMA alpha=1.0,1.0,default,none,2024,False,500,81.422371,19.3922,28.3918,0.0128,67,51,3.8314,0.0429,non_converged,0.09
+init_sensitivity,init_default,Init: last settlement (default),0.1,default,none,2024,False,500,1.772909,10.2972,17.53,-0.4058,67,8,1.8491,0.2877,non_converged,0.09
+init_sensitivity,init_forecast_mean,Init: mean of all strategy forecasts,0.1,forecast_mean,none,2024,False,500,1.281003,10.2971,17.533,-0.4084,67,9,1.8416,0.2634,non_converged,0.09
+init_sensitivity,init_constant_50,Init: constant 50 EUR/MWh,0.1,constant_50,none,2024,False,500,2.1097,10.2943,17.5163,-0.3168,67,5,1.4046,0.4613,non_converged,0.12
+init_sensitivity,init_real_prices,Init: real prices (oracle),0.1,real_prices,none,2024,True,1,0.0,0.0,0.0,0.0,67,0,0.0,0.0,absorbing_collapse,0.01
+ablation,ablation_baseline,Baseline: all 67 strategies,0.1,default,none,2024,False,500,1.772909,10.2972,17.53,-0.4058,67,8,1.8491,0.2877,non_converged,0.13
+ablation,remove_naive_baselines,Remove naive_baselines (2 strategies),0.1,default,remove_naive_baselines,2024,False,500,2.005074,10.3022,17.5351,-0.4233,65,8,1.9516,0.2371,non_converged,0.08
+ablation,remove_calendar_temporal,Remove calendar_temporal (6 strategies),0.1,default,remove_calendar_temporal,2024,False,500,2.91316,10.2981,17.5417,-0.4691,61,6,1.6846,0.2604,non_converged,0.07
+ablation,remove_mean_reversion,Remove mean_reversion (5 strategies),0.1,default,remove_mean_reversion,2024,False,500,2.924122,10.2931,17.5385,-0.4992,63,7,1.8103,0.2226,non_converged,0.07
+ablation,remove_momentum_trend,Remove momentum_trend (5 strategies),0.1,default,remove_momentum_trend,2024,False,500,2.06647,10.2575,17.4989,-0.3444,62,7,1.9175,0.2091,non_converged,0.07
+ablation,remove_supply_side,Remove supply_side (5 strategies),0.1,default,remove_supply_side,2024,False,500,1.423365,10.3231,17.5316,-0.2305,62,4,1.2435,0.4854,non_converged,0.08
+ablation,remove_demand_side,Remove demand_side (5 strategies),0.1,default,remove_demand_side,2024,False,500,1.050426,10.2988,17.5048,-0.263,62,5,1.1868,0.5332,non_converged,0.07
+ablation,remove_commodity_cost,Remove commodity_cost (1 strategies),0.1,default,remove_commodity_cost,2024,False,500,2.192141,10.2991,17.5389,-0.4532,66,7,1.881,0.2101,non_converged,0.09
+ablation,remove_renewables_regime,Remove renewables_regime (4 strategies),0.1,default,remove_renewables_regime,2024,False,500,2.937987,10.2949,17.5378,-0.5018,63,7,1.8314,0.2376,non_converged,0.08
+ablation,remove_cross_border_spread,Remove cross_border_spread (6 strategies),0.1,default,remove_cross_border_spread,2024,False,500,2.634851,10.2992,17.5343,-0.4422,63,6,1.7687,0.2284,non_converged,0.07
+ablation,remove_ml_regression,Remove ml_regression (11 strategies),0.1,default,remove_ml_regression,2024,False,500,4.59299,10.2297,17.5008,-0.1095,56,4,1.1099,0.5866,non_converged,0.08
+ablation,remove_ml_classification,Remove ml_classification (6 strategies),0.1,default,remove_ml_classification,2024,False,500,2.133388,10.3112,17.5425,-0.4576,61,8,1.8378,0.2682,non_converged,0.08
+ablation,remove_ensemble_meta,Remove ensemble_meta (12 strategies),0.1,default,remove_ensemble_meta,2024,False,500,2.57986,10.688,17.9482,-2.2578,55,3,1.0541,0.4778,non_converged,0.07
+ablation,remove_all_ml,Remove all ML (regression + classification),0.1,default,remove_all_ml,2024,True,85,0.0,10.2377,17.4988,-0.0992,50,0,0.0,0.0,absorbing_collapse,0.01
+ablation,keep_only_ml,Keep only ML strategies,0.1,default,keep_only_ml,2024,False,500,0.999877,10.9755,18.2959,-2.2871,17,4,1.3156,0.3365,non_converged,0.03
+ablation,keep_only_rule_based,Keep only rule-based strategies,0.1,default,keep_only_rule_based,2024,False,500,2.867144,10.7188,18.0738,-2.1332,36,6,1.4144,0.4837,non_converged,0.06
+ablation,keep_only_ensemble,Keep only ensemble strategies,0.1,default,keep_only_ensemble,2024,False,500,0.637205,10.4845,17.7287,0.0343,12,3,1.088,0.402,non_converged,0.03
+ema_sweep,ema_alpha_0.01,EMA alpha=0.01,0.01,default,none,2025,True,439,0.009749,8.9513,12.8232,0.4749,67,6,1.3454,0.4091,healthy_convergence,0.08
+ema_sweep,ema_alpha_0.05,EMA alpha=0.05,0.05,default,none,2025,True,225,0.0,8.916,12.7813,0.4704,67,0,0.0,0.0,absorbing_collapse,0.07
+ema_sweep,ema_alpha_0.10,EMA alpha=0.1,0.1,default,none,2025,True,327,0.0,8.9066,12.7514,0.4875,67,0,0.0,0.0,absorbing_collapse,0.11
+ema_sweep,ema_alpha_0.20,EMA alpha=0.2,0.2,default,none,2025,False,500,9.029339,9.1367,13.3831,-1.1726,67,6,1.5301,0.3558,non_converged,0.17
+ema_sweep,ema_alpha_0.30,EMA alpha=0.3,0.3,default,none,2025,False,500,3.13524,9.0394,13.0159,-0.5264,67,11,2.3142,0.1392,non_converged,0.16
+ema_sweep,ema_alpha_0.50,EMA alpha=0.5,0.5,default,none,2025,False,500,9.631178,9.0138,13.184,0.09,67,5,0.9288,0.682,non_converged,0.17
+ema_sweep,ema_alpha_1.00,EMA alpha=1.0,1.0,default,none,2025,False,500,42.648608,10.0214,14.6575,0.4299,67,35,3.1656,0.0652,non_converged,0.15
+init_sensitivity,init_default,Init: last settlement (default),0.1,default,none,2025,True,327,0.0,8.9066,12.7514,0.4875,67,0,0.0,0.0,absorbing_collapse,0.1
+init_sensitivity,init_forecast_mean,Init: mean of all strategy forecasts,0.1,forecast_mean,none,2025,False,500,0.807446,8.9559,12.9306,-0.1817,67,11,2.2868,0.2009,non_converged,0.15
+init_sensitivity,init_constant_50,Init: constant 50 EUR/MWh,0.1,constant_50,none,2025,False,500,0.429131,8.9111,12.7493,0.5024,67,4,1.1402,0.35,non_converged,0.15
+init_sensitivity,init_real_prices,Init: real prices (oracle),0.1,real_prices,none,2025,True,1,0.0,0.0,0.0,0.0,67,0,0.0,0.0,absorbing_collapse,0.0
+ablation,ablation_baseline,Baseline: all 67 strategies,0.1,default,none,2025,True,327,0.0,8.9066,12.7514,0.4875,67,0,0.0,0.0,absorbing_collapse,0.08
+ablation,remove_naive_baselines,Remove naive_baselines (2 strategies),0.1,default,remove_naive_baselines,2025,False,500,1.007101,8.9553,12.9266,-0.0159,65,10,2.1971,0.1772,non_converged,0.09
+ablation,remove_calendar_temporal,Remove calendar_temporal (6 strategies),0.1,default,remove_calendar_temporal,2025,False,500,1.064947,9.1081,12.9986,0.4435,61,10,2.1561,0.2081,non_converged,0.1
+ablation,remove_mean_reversion,Remove mean_reversion (5 strategies),0.1,default,remove_mean_reversion,2025,True,288,0.0,8.9154,12.74,0.5823,63,0,0.0,0.0,absorbing_collapse,0.05
+ablation,remove_momentum_trend,Remove momentum_trend (5 strategies),0.1,default,remove_momentum_trend,2025,True,150,0.0,8.9075,12.7479,0.5043,62,0,0.0,0.0,absorbing_collapse,0.03
+ablation,remove_supply_side,Remove supply_side (5 strategies),0.1,default,remove_supply_side,2025,False,500,4.628167,8.9455,12.884,0.3194,62,4,1.2246,0.4238,non_converged,0.08
+ablation,remove_demand_side,Remove demand_side (5 strategies),0.1,default,remove_demand_side,2025,True,60,0.0,8.9125,12.7567,0.5558,62,0,0.0,0.0,absorbing_collapse,0.02
+ablation,remove_commodity_cost,Remove commodity_cost (1 strategies),0.1,default,remove_commodity_cost,2025,True,365,0.0,8.9072,12.7434,0.6186,66,0,0.0,0.0,absorbing_collapse,0.09
+ablation,remove_renewables_regime,Remove renewables_regime (4 strategies),0.1,default,remove_renewables_regime,2025,True,227,0.0,8.9066,12.7494,0.5564,63,0,0.0,0.0,absorbing_collapse,0.04
+ablation,remove_cross_border_spread,Remove cross_border_spread (6 strategies),0.1,default,remove_cross_border_spread,2025,True,215,0.0,8.9395,12.7802,0.4801,63,0,0.0,0.0,absorbing_collapse,0.04
+ablation,remove_ml_regression,Remove ml_regression (11 strategies),0.1,default,remove_ml_regression,2025,True,91,0.0,8.9896,12.8498,0.8363,56,0,0.0,0.0,absorbing_collapse,0.02
+ablation,remove_ml_classification,Remove ml_classification (6 strategies),0.1,default,remove_ml_classification,2025,False,500,2.170267,8.9278,12.8602,-0.0129,61,4,1.3096,0.3953,non_converged,0.09
+ablation,remove_ensemble_meta,Remove ensemble_meta (12 strategies),0.1,default,remove_ensemble_meta,2025,False,500,0.682581,9.1098,13.0733,-0.0785,55,5,1.2374,0.5615,non_converged,0.08
+ablation,remove_all_ml,Remove all ML (regression + classification),0.1,default,remove_all_ml,2025,True,51,0.0,9.0258,12.9171,0.7865,50,0,0.0,0.0,absorbing_collapse,0.01
+ablation,keep_only_ml,Keep only ML strategies,0.1,default,keep_only_ml,2025,True,47,0.0,9.3044,13.0686,0.2545,17,0,0.0,0.0,absorbing_collapse,0.01
+ablation,keep_only_rule_based,Keep only rule-based strategies,0.1,default,keep_only_rule_based,2025,True,110,0.0,9.1955,13.2191,0.1667,36,0,0.0,0.0,absorbing_collapse,0.01
+ablation,keep_only_ensemble,Keep only ensemble strategies,0.1,default,keep_only_ensemble,2025,True,31,0.0,9.1285,12.9385,1.3687,12,0,0.0,0.0,absorbing_collapse,0.0

@@ -1,6 +1,6 @@
 # Phase 10: Futures Market Behaviour and Strategy Robustness
 
-## Status: IN PROGRESS (10a complete, 10b complete, 10c-10h planned)
+## Status: IN PROGRESS (10a-10c complete, 10d-10h planned)
 
 ## Objective
 
@@ -277,10 +277,10 @@ Phase 10: Futures Market Behaviour and Strategy Robustness
 - [x] Identify top-priority behaviours that require explanation
 
 ### 10c. Mechanism Attribution
-- [ ] Sweep `ema_alpha` under the current strategy pool
-- [ ] Compare alternative initialisation choices
-- [ ] Run cluster / strategy-family ablations
-- [ ] Test sensitivity to extreme-day removal and sentinel-period masking
+- [x] Sweep `ema_alpha` under the current strategy pool
+- [x] Compare alternative initialisation choices
+- [x] Run cluster / strategy-family ablations
+- [x] Test sensitivity to extreme-day removal and sentinel-period masking
 
 ### 10d. Regime and Cluster Analysis
 - [ ] Cluster strategies by forecast similarity
