@@ -5,7 +5,7 @@ Usage::
     uv run collect-data --years 2023 2024
     uv run collect-data --years 2024 --step prices
     uv run collect-data --step join --kaggle
-    uv run python -m energy_modelling.data_collection --years 2024
+    uv run energy_modelling.data_collection --years 2024
 """
 
 from pathlib import Path

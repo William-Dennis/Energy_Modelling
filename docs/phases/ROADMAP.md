@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASES 0-9 COMPLETE, PHASE 10 PLANNED
+## Overall Status: PHASES 0-9 COMPLETE, PHASE 10 IN PROGRESS (10a-10b complete)
 
 ## Phase Overview
 
@@ -16,7 +16,7 @@
 | 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Forecast-based convergence proven (contraction mapping); 4 theorems validated empirically. **WARNING: Applies to undampened model only (ema_alpha=1.0); not taken forward to production.** |
 | 8 | [Oscillation Research](phase_8_oscillation_research.md) | COMPLETE | Phase 7 | Historical oscillation research record. **WARNING: Winner (running_avg_k=5) was never implemented; see Phase 9 for the approach actually adopted.** |
 | 9 | [EMA Price Update Experiments](phase_9_ema_price_update.md) | COMPLETE | Phase 7, 8 | EMA dampening sweep; alpha=0.1 adopted as production default; 2025 converges, 2024 does not |
-| 10 | [Futures Market Behaviour and Strategy Robustness](phase_10_market_behaviour_and_strategy_robustness.md) | PLANNED | Phase 5, 7, 8, 9 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
+| 10 | [Futures Market Behaviour and Strategy Robustness](phase_10_market_behaviour_and_strategy_robustness.md) | IN PROGRESS | Phase 5, 7, 8, 9 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
 
 ## Dependency Graph
 
@@ -169,3 +169,5 @@ src/energy_modelling/
 | 2026-03-21 | 9 | COMPLETE — EMA price-update experiments: alpha sweep {0.1..1.0} across 2024/2025; alpha=0.1 adopted as production default |
 | 2026-03-21 | 10 | PLANNED — New phase to reconcile live market behaviour, explain dynamics, and drive stronger market-robust strategy design |
 | 2026-03-21 | — | AUDIT — Phase renumbering: old Phase 9 → Phase 10; EMA experiments documented as new Phase 9. Warnings added to Phases 7 and 8. Architecture updated to reflect 67-strategy, 16-module backtest, 20-module dashboard state. 948 tests passing. |
+| 2026-03-21 | 10a | COMPLETE — Baseline reconciliation: canonical config frozen (ema_alpha=0.1, 500 iters, 0.01 threshold), mismatches catalogued, WARNING blocks added to Phases 7 and 8 |
+| 2026-03-21 | 10b | COMPLETE — Behaviour inventory: per-iteration metrics for 2024 (500 iters) and 2025 (327 iters), 827-row CSV, behaviour classifications (2024=oscillating_non_convergence, 2025=absorbing_collapse), 17 new tests, 5 high-priority behaviours identified |

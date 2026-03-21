@@ -69,7 +69,7 @@ All 6 target files refactored to ≤300 lines. `_eda.py` (1788 lines) split into
 
 ## Current State (Post-Issues)
 
-- **948 tests passing** (all pass via `uv run python -m pytest`)
+- **948 tests passing** (all pass via `uv run pytest`)
 - **Full rename complete**: `challenge` → `backtest`, `market_simulation` → `futures_market`
 - **67 strategies** implemented (2 baseline + 7 Phase 4 + 58 expansion)
 - **Dashboard** has 5 tabs: EDA, Backtest, Futures Market, Accuracy, Benchmark Comparison

@@ -1,0 +1,3 @@
+year,converged,n_iterations,final_delta,initial_mae,best_mae,best_mae_iteration,final_mae,mae_degraded_after_best,initial_active,final_active,min_active,active_collapse,active_collapse_iteration,monotone_damped,oscillating,absorbing_state,initial_entropy,final_entropy,max_top1_weight,behaviour_label
+2024,False,500,1.7729085515543872,21.258361283919516,10.268016115094015,90,10.29724903842514,False,60,8,4,False,,False,True,False,3.8013942675345667,1.8491159071312595,0.8356013996116475,oscillating_non_convergence
+2025,True,327,2.842170943040401e-14,19.878461372640995,8.891096098359963,230,8.906602344891908,False,60,0,0,True,61.0,False,True,True,3.807750046737952,0.0,1.0,absorbing_collapse

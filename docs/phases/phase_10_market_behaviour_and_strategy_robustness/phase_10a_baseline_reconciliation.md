@@ -132,7 +132,7 @@ treated as default current-state facts unless re-verified.
 
 ### Tests
 
-- All 948 tests pass when run with `uv run python -m pytest` (which uses the
+- All 948 tests pass when run with `uv run pytest` (which uses the
   project's managed virtual environment where `pytest_mock` is installed).
 - `scripts/verify_theorems.py` exits with ALL THEOREMS VERIFIED (after the
   `ema_alpha=1.0` fix applied in the current session).

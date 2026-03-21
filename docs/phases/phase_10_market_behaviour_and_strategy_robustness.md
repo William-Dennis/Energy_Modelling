@@ -1,6 +1,6 @@
 # Phase 10: Futures Market Behaviour and Strategy Robustness
 
-## Status: PLANNED
+## Status: IN PROGRESS (10a complete, 10b complete, 10c-10h planned)
 
 ## Objective
 
@@ -90,9 +90,9 @@ specific claims are re-validated.
 
 ## Current Verification Status
 
-- All 948 tests pass via `uv run python -m pytest`.
+- All 965 tests pass via `uv run pytest` (948 original + 17 new Phase 10b tests).
 - `scripts/verify_theorems.py` exits with ALL THEOREMS VERIFIED.
-- 12 pre-existing ruff warnings are tracked for cleanup (unrelated to Phase 10).
+- `uv run ruff check .` reports zero warnings.
 
 ## Prerequisites
 
@@ -271,10 +271,10 @@ Phase 10: Futures Market Behaviour and Strategy Robustness
 - [x] Define the canonical baseline configuration for all Phase 10 analysis
 
 ### 10b. Behaviour Inventory
-- [ ] Compute per-iteration metric panel for 2024
-- [ ] Compute per-iteration metric panel for 2025
-- [ ] Classify run-level behaviour modes
-- [ ] Identify top-priority behaviours that require explanation
+- [x] Compute per-iteration metric panel for 2024
+- [x] Compute per-iteration metric panel for 2025
+- [x] Classify run-level behaviour modes
+- [x] Identify top-priority behaviours that require explanation
 
 ### 10c. Mechanism Attribution
 - [ ] Sweep `ema_alpha` under the current strategy pool
