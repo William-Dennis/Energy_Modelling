@@ -18,7 +18,10 @@ Experiment parameters (Phase 8 research, default values reproduce the spec):
   - ``"linear"``: raw profit proportional (spec).
   - ``"log"``: log(1 + profit) proportional, reduces winner-take-all effect.
   - ``"capped"``: linear but each weight is capped at ``weight_cap``.
+  - ``"softmax"``: softmax temperature weighting; requires ``softmax_temp`` param.
 - ``weight_cap`` (float, default 1.0): effective only when ``weight_mode="capped"``.
+- ``softmax_temp`` (float, default 1.0): temperature for softmax weight mode.
+  High T → uniform weights, low T → winner-take-all.
 - ``price_mode`` (str, default ``"mean"``): aggregation of weighted forecasts.
   - ``"mean"``: weighted arithmetic mean (spec).
   - ``"median"``: weighted median, more robust to outlier forecasts.
@@ -27,8 +30,18 @@ Experiment parameters (Phase 8 research, default values reproduce the spec):
   default of 1 reproduces the original spec (single-step check).  A value of 3
   prevents the oscillating sequence from falsely triggering on a momentary dip below
   threshold during a limit cycle.
+- ``monotone_window`` (int, default 0): if > 0, use a *stricter* convergence check:
+  the last ``monotone_window`` deltas must be **strictly monotonically decreasing**
+  AND the final delta must be below ``convergence_threshold``.  Overrides
+  ``convergence_window`` when set.  Requires genuine convergence, not a lucky dip.
 - ``running_avg_k`` (int | None, default None): running average over last k price
   candidates.  Phase 8 E1 experiment parameter.
+- ``soft_sign_sigma`` (float | None, default None): if set, replaces hard ``sign()``
+  with ``tanh((F - P) / sigma)``.  Eliminates discontinuous regime flips.
+- ``weight_ema_beta`` (float | None, default None): if set, applies EMA smoothing to
+  the weight vector across iterations: ``w = beta*w_prev + (1-beta)*w_raw``.
+- ``profit_ema_beta`` (float | None, default None): if set, applies EMA smoothing to
+  per-strategy profits across iterations before weight computation.
 """
 
 from __future__ import annotations
@@ -342,6 +355,10 @@ def _vec_iteration(
     weight_mode: str = "linear",
     weight_cap: float = 1.0,
     price_mode: str = "mean",
+    softmax_temp: float = 1.0,
+    soft_sign_sigma: float | None = None,
+    prev_profits: np.ndarray | None = None,
+    profit_ema_beta: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """One vectorised market iteration.
 
@@ -353,39 +370,66 @@ def _vec_iteration(
         Pre-built forecast matrix.
     weight_mode, weight_cap, price_mode:
         Same as :func:`run_futures_market`.
+    softmax_temp:
+        Temperature for ``weight_mode="softmax"``.
+    soft_sign_sigma:
+        If set, use ``tanh((F-P)/sigma)`` instead of hard ``sign()``.
+    prev_profits:
+        Previous iteration's profit array for EMA smoothing (shape ``(S,)``).
+    profit_ema_beta:
+        EMA decay for profit smoothing.  Requires ``prev_profits``.
 
     Returns
     -------
     new_market_vec : np.ndarray, shape (T,)
-    profits : np.ndarray, shape (S,)
+    profits : np.ndarray, shape (S,)  (raw, before EMA)
     weights : np.ndarray, shape (S,)
     """
     F, real_vec = fm.F, fm.real_vec
 
     # Steps 1-2: trading direction and per-strategy profit
-    direction = np.sign(F - market_vec[np.newaxis, :])  # (S, T)
+    if soft_sign_sigma is not None and soft_sign_sigma > 0.0:
+        direction = np.tanh((F - market_vec[np.newaxis, :]) / soft_sign_sigma)  # (S, T)
+    else:
+        direction = np.sign(F - market_vec[np.newaxis, :])  # (S, T)
+
     price_change = real_vec - market_vec  # (T,)
     profits = (direction * price_change[np.newaxis, :]).sum(axis=1)  # (S,)
 
-    # Step 3: weights
-    if weight_mode == "log":
-        raw = np.log1p(np.maximum(profits, 0.0))
+    # Apply profit EMA smoothing across iterations
+    if profit_ema_beta is not None and prev_profits is not None:
+        smooth_profits = profit_ema_beta * prev_profits + (1.0 - profit_ema_beta) * profits
     else:
-        raw = np.maximum(profits, 0.0)
+        smooth_profits = profits
 
-    total = raw.sum()
-    if total == 0.0:
-        weights = np.zeros_like(raw)
+    # Step 3: weights
+    if weight_mode == "softmax":
+        # All strategies get weight — no hard zero cutoff
+        temp = max(softmax_temp, 1e-9)
+        shifted = smooth_profits / temp
+        shifted -= shifted.max()  # numerical stability
+        raw = np.exp(shifted)
+        total = raw.sum()
+        weights = raw / total if total > 0.0 else np.ones(len(raw)) / len(raw)
+    elif weight_mode == "log":
+        raw = np.log1p(np.maximum(smooth_profits, 0.0))
+        total = raw.sum()
+        weights = raw / total if total > 0.0 else np.zeros_like(raw)
     else:
-        weights = raw / total
-        if weight_mode == "capped":
-            cap = max(min(weight_cap, 1.0), 1e-9)
-            weights = np.minimum(weights, cap)
-            cap_total = weights.sum()
-            if cap_total > 0.0:
-                weights /= cap_total
-            else:
-                weights = np.zeros_like(weights)
+        raw = np.maximum(smooth_profits, 0.0)
+        total = raw.sum()
+        if total == 0.0:
+            weights = np.zeros_like(raw)
+        else:
+            weights = raw / total
+            if weight_mode == "capped":
+                cap = max(min(weight_cap, 1.0), 1e-9)
+                weights = np.minimum(weights, cap)
+                cap_total = weights.sum()
+                if cap_total > 0.0:
+                    weights /= cap_total
+                else:
+                    weights = np.zeros_like(weights)
 
     # Step 4: new market prices
     if price_mode == "median":
@@ -458,11 +502,16 @@ def run_futures_market(
     max_iterations: int = 20,
     convergence_threshold: float = 0.01,
     convergence_window: int = 1,
+    monotone_window: int = 0,
     alpha: float = 1.0,
     weight_mode: str = "linear",
     weight_cap: float = 1.0,
+    softmax_temp: float = 1.0,
     price_mode: str = "mean",
     running_avg_k: int | None = None,
+    soft_sign_sigma: float | None = None,
+    weight_ema_beta: float | None = None,
+    profit_ema_beta: float | None = None,
 ) -> FuturesMarketEquilibrium:
     """Run the synthetic futures market until prices converge (spec Step 5).
 
@@ -486,21 +535,38 @@ def run_futures_market(
         Default 1 reproduces the original spec (single-step check).
         Setting to 3 prevents a momentary dip in an oscillating sequence
         from falsely triggering convergence.
+    monotone_window:
+        If > 0, use a stricter convergence criterion: the last
+        ``monotone_window`` deltas must be **strictly monotonically
+        decreasing** AND the final delta must be below
+        ``convergence_threshold``.  Overrides ``convergence_window``.
+        Requires genuine convergence, not a lucky dip.
     alpha:
         Dampening factor in [0, 1].  The updated price is blended as
         ``alpha * candidate + (1 - alpha) * current``.  Default 1.0
         reproduces the original spec (no dampening).
     weight_mode:
         Profit-to-weight mapping.  ``"linear"`` (spec), ``"log"``,
-        or ``"capped"``.
+        ``"capped"``, or ``"softmax"``.
     weight_cap:
         Per-strategy weight cap when ``weight_mode="capped"``.
+    softmax_temp:
+        Temperature for ``weight_mode="softmax"``.
     price_mode:
         Forecast aggregation method.  ``"mean"`` (spec) or ``"median"``.
     running_avg_k:
         If set, the published market price at each iteration is the mean of
         the last *k* raw price candidates.  Phase 8 E1 experiment parameter.
         ``None`` (default) disables.
+    soft_sign_sigma:
+        If set, replaces hard ``sign()`` with ``tanh((F-P)/sigma)``.
+        Eliminates the discontinuous regime flip at zero crossing.
+    weight_ema_beta:
+        If set, applies EMA smoothing to the weight vector across iterations:
+        ``w_pub = beta*w_prev + (1-beta)*w_raw``.  Dampens active-set flips.
+    profit_ema_beta:
+        If set, applies EMA smoothing to per-strategy profits before weight
+        computation: ``p_smooth = beta*p_prev + (1-beta)*p_raw``.
     """
     current_prices = initial_market_prices.copy().astype(float)
     iterations: list[FuturesMarketIteration] = []
@@ -508,6 +574,11 @@ def run_futures_market(
     delta = float("inf")
     price_history: deque[np.ndarray] = deque(maxlen=running_avg_k) if running_avg_k else deque()
     recent_deltas: list[float] = []
+    delta_history: list[float] = []
+
+    # EMA state across iterations
+    prev_profits_arr: np.ndarray | None = None
+    prev_weights_arr: np.ndarray | None = None
 
     # Pre-build (S × T) forecast matrix once — avoids repeated dict iteration
     fm = _build_forecast_matrix(strategy_forecasts, current_prices.index, real_prices)
@@ -518,8 +589,46 @@ def run_futures_market(
         market_vec = current_prices.to_numpy(dtype=np.float64)
 
         new_vec, profits_arr, weights_arr = _vec_iteration(
-            market_vec, fm, weight_mode=weight_mode, weight_cap=weight_cap, price_mode=price_mode
+            market_vec,
+            fm,
+            weight_mode=weight_mode,
+            weight_cap=weight_cap,
+            price_mode=price_mode,
+            softmax_temp=softmax_temp,
+            soft_sign_sigma=soft_sign_sigma,
+            prev_profits=prev_profits_arr,
+            profit_ema_beta=profit_ema_beta,
         )
+
+        # Weight EMA: smooth weight vector across iterations
+        if weight_ema_beta is not None and prev_weights_arr is not None:
+            weights_arr = weight_ema_beta * prev_weights_arr + (1.0 - weight_ema_beta) * weights_arr
+            w_sum = weights_arr.sum()
+            if w_sum > 0.0:
+                weights_arr = weights_arr / w_sum
+        prev_weights_arr = weights_arr.copy()
+        prev_profits_arr = profits_arr.copy()
+
+        # Recompute new_vec using (potentially EMA-smoothed) weights
+        if weight_ema_beta is not None:
+            w_sum = weights_arr.sum()
+            if price_mode == "median":
+                new_vec_ema = market_vec.copy()
+                if w_sum > 0.0:
+                    for t in range(len(market_vec)):
+                        order = np.argsort(fm.F[:, t])
+                        f_sorted = fm.F[:, t][order]
+                        w_sorted = weights_arr[order]
+                        w_norm = w_sorted / w_sorted.sum() if w_sorted.sum() > 0 else w_sorted
+                        cumulative = np.cumsum(w_norm)
+                        idx = np.searchsorted(cumulative, 0.5)
+                        new_vec_ema[t] = f_sorted[min(idx, len(f_sorted) - 1)]
+                new_vec = new_vec_ema
+            else:
+                if w_sum > 0.0:
+                    new_vec = (weights_arr @ fm.F) / w_sum
+                else:
+                    new_vec = market_vec.copy()
 
         # Apply within-iteration alpha dampening
         if alpha < 1.0:
@@ -550,19 +659,31 @@ def run_futures_market(
         )
 
         delta = float(np.abs(published_vec - market_vec).max())
+        delta_history.append(delta)
         iterations.append(result)
         current_prices = published
 
-        # Stricter convergence: require convergence_window consecutive
-        # iterations all below threshold
-        if delta < convergence_threshold:
-            recent_deltas.append(delta)
+        # Convergence check — two modes:
+        if monotone_window > 0:
+            # Strict monotone: last monotone_window deltas must be strictly
+            # decreasing AND the most recent delta must be below threshold.
+            if len(delta_history) >= monotone_window:
+                tail = delta_history[-monotone_window:]
+                if (
+                    all(tail[i] < tail[i - 1] for i in range(1, len(tail)))
+                    and tail[-1] < convergence_threshold
+                ):
+                    converged = True
+                    break
         else:
-            recent_deltas = []
-
-        if len(recent_deltas) >= convergence_window:
-            converged = True
-            break
+            # Original: require convergence_window consecutive sub-threshold deltas
+            if delta < convergence_threshold:
+                recent_deltas.append(delta)
+            else:
+                recent_deltas = []
+            if len(recent_deltas) >= convergence_window:
+                converged = True
+                break
 
     return FuturesMarketEquilibrium(
         iterations=iterations,

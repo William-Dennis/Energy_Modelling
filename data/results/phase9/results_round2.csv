@@ -1,0 +1,155 @@
+id,label,converged,genuinely_monotone,n_iterations,final_delta,mae,n_spikes,longest_mono_tail,weight_mode,softmax_temp,running_avg_k,soft_sign_sigma,weight_ema_beta,profit_ema_beta,alpha,year
+R2_G1_T3.0,Softmax T=3.0,False,False,400,26.784065,11.0331,399,2,softmax,3.0,,,,,1.0,2024
+R2_G1_T4.0,Softmax T=4.0,False,False,400,26.78408,11.0331,399,3,softmax,4.0,,,,,1.0,2024
+R2_G1_T6.0,Softmax T=6.0,False,False,400,26.7857,11.0331,399,4,softmax,6.0,,,,,1.0,2024
+R2_G1_T8.0,Softmax T=8.0,False,False,400,26.801145,11.0331,399,4,softmax,8.0,,,,,1.0,2024
+R2_G1_T12.0,Softmax T=12.0,False,False,400,26.962542,11.3179,398,4,softmax,12.0,,,,,1.0,2024
+R2_G1_T15.0,Softmax T=15.0,False,False,400,27.230431,11.3051,399,6,softmax,15.0,,,,,1.0,2024
+R2_G1_T25.0,Softmax T=25.0,False,False,400,28.472929,11.033,399,7,softmax,25.0,,,,,1.0,2024
+R2_G1_T30.0,Softmax T=30.0,False,False,400,29.023359,11.0324,399,5,softmax,30.0,,,,,1.0,2024
+R2_G6_T5.0_K7,Softmax T=5.0 + K=7,False,False,400,42.673095,10.5225,350,4,softmax,5.0,7.0,,,,1.0,2024
+R2_G6_T5.0_K12,Softmax T=5.0 + K=12,True,True,17,0.0,10.4361,15,5,softmax,5.0,12.0,,,,1.0,2024
+R2_G6_T5.0_K15,Softmax T=5.0 + K=15,True,True,20,0.000766,10.3148,17,5,softmax,5.0,15.0,,,,1.0,2024
+R2_G6_T5.0_K20,Softmax T=5.0 + K=20,True,True,193,0.0,10.165,117,5,softmax,5.0,20.0,,,,1.0,2024
+R2_G6_T5.0_K25,Softmax T=5.0 + K=25,True,True,30,0.0,10.2535,24,5,softmax,5.0,25.0,,,,1.0,2024
+R2_G6_T8.0_K7,Softmax T=8.0 + K=7,False,False,400,42.675026,10.5133,350,4,softmax,8.0,7.0,,,,1.0,2024
+R2_G6_T8.0_K12,Softmax T=8.0 + K=12,True,True,17,0.000203,10.3379,14,5,softmax,8.0,12.0,,,,1.0,2024
+R2_G6_T8.0_K15,Softmax T=8.0 + K=15,True,True,120,5e-06,10.1497,75,5,softmax,8.0,15.0,,,,1.0,2024
+R2_G6_T8.0_K20,Softmax T=8.0 + K=20,False,False,400,5.036395,10.162,266,6,softmax,8.0,20.0,,,,1.0,2024
+R2_G6_T8.0_K25,Softmax T=8.0 + K=25,True,True,83,0.003532,10.266,47,5,softmax,8.0,25.0,,,,1.0,2024
+R2_G6_T10.0_K7,Softmax T=10.0 + K=7,False,False,400,42.675081,10.5079,350,5,softmax,10.0,7.0,,,,1.0,2024
+R2_G6_T10.0_K12,Softmax T=10.0 + K=12,False,False,400,0.0,10.49,216,6,softmax,10.0,12.0,,,,1.0,2024
+R2_G6_T10.0_K15,Softmax T=10.0 + K=15,True,True,175,5.5e-05,10.3998,106,5,softmax,10.0,15.0,,,,1.0,2024
+R2_G6_T10.0_K20,Softmax T=10.0 + K=20,True,True,79,0.00796,10.1628,50,5,softmax,10.0,20.0,,,,1.0,2024
+R2_G6_T10.0_K25,Softmax T=10.0 + K=25,True,True,173,0.003206,10.2124,94,5,softmax,10.0,25.0,,,,1.0,2024
+R2_G6_T15.0_K7,Softmax T=15.0 + K=7,False,False,400,40.09223,10.4939,253,4,softmax,15.0,7.0,,,,1.0,2024
+R2_G6_T15.0_K12,Softmax T=15.0 + K=12,False,False,400,2.643553,10.3808,262,6,softmax,15.0,12.0,,,,1.0,2024
+R2_G6_T15.0_K15,Softmax T=15.0 + K=15,True,True,70,0.000438,10.1926,55,5,softmax,15.0,15.0,,,,1.0,2024
+R2_G6_T15.0_K20,Softmax T=15.0 + K=20,True,True,46,0.005194,10.2011,32,5,softmax,15.0,20.0,,,,1.0,2024
+R2_G6_T15.0_K25,Softmax T=15.0 + K=25,True,True,212,0.00298,10.167,142,6,softmax,15.0,25.0,,,,1.0,2024
+R2_G3_b0.75,Weight EMA beta=0.75,False,False,400,4.794635,10.3176,399,6,linear,1.0,,,0.75,,1.0,2024
+R2_G3_b0.8,Weight EMA beta=0.8,False,False,400,4.294949,10.2544,398,8,linear,1.0,,,0.8,,1.0,2024
+R2_G3_b0.87,Weight EMA beta=0.87,False,False,400,3.662054,10.2888,388,12,linear,1.0,,,0.87,,1.0,2024
+R2_G3_b0.92,Weight EMA beta=0.92,False,False,400,1.902013,10.2927,355,17,linear,1.0,,,0.92,,1.0,2024
+R2_G3_b0.93,Weight EMA beta=0.93,False,False,400,1.403644,10.3003,337,20,linear,1.0,,,0.93,,1.0,2024
+R2_G3_b0.95,Weight EMA beta=0.95,False,False,400,1.168201,10.3008,140,28,linear,1.0,,,0.95,,1.0,2024
+R2_G3_b0.97,Weight EMA beta=0.97,True,True,211,0.005515,10.2764,19,48,linear,1.0,,,0.97,,1.0,2024
+R2_G5_K7_b0.8,K=7 + Weight EMA beta=0.8,False,False,400,3.049449,10.338,368,7,linear,1.0,7.0,,0.8,,1.0,2024
+R2_G5_K10_b0.8,K=10 + Weight EMA beta=0.8,False,False,400,2.522434,10.3343,339,9,linear,1.0,10.0,,0.8,,1.0,2024
+R2_G5_K12_b0.8,K=12 + Weight EMA beta=0.8,False,False,400,4.046035,10.3056,313,11,linear,1.0,12.0,,0.8,,1.0,2024
+R2_G5_K15_b0.8,K=15 + Weight EMA beta=0.8,False,False,400,3.21585,10.3662,269,14,linear,1.0,15.0,,0.8,,1.0,2024
+R2_G5_K7_b0.85,K=7 + Weight EMA beta=0.85,False,False,400,2.58919,10.3051,338,10,linear,1.0,7.0,,0.85,,1.0,2024
+R2_G5_K10_b0.85,K=10 + Weight EMA beta=0.85,False,False,400,3.485442,10.3036,336,9,linear,1.0,10.0,,0.85,,1.0,2024
+R2_G5_K12_b0.85,K=12 + Weight EMA beta=0.85,False,False,400,1.771863,10.3376,324,11,linear,1.0,12.0,,0.85,,1.0,2024
+R2_G5_K15_b0.85,K=15 + Weight EMA beta=0.85,False,False,400,1.297089,10.3538,285,14,linear,1.0,15.0,,0.85,,1.0,2024
+R2_G5_K7_b0.9,K=7 + Weight EMA beta=0.9,False,False,400,2.082164,10.3007,308,15,linear,1.0,7.0,,0.9,,1.0,2024
+R2_G5_K10_b0.9,K=10 + Weight EMA beta=0.9,False,False,400,1.829938,10.3183,310,14,linear,1.0,10.0,,0.9,,1.0,2024
+R2_G5_K12_b0.9,K=12 + Weight EMA beta=0.9,False,False,400,2.065092,10.316,303,14,linear,1.0,12.0,,0.9,,1.0,2024
+R2_G5_K15_b0.9,K=15 + Weight EMA beta=0.9,False,False,400,1.142915,10.3569,285,14,linear,1.0,15.0,,0.9,,1.0,2024
+R2_G5_K7_b0.92,K=7 + Weight EMA beta=0.92,False,False,400,1.740223,10.3003,275,19,linear,1.0,7.0,,0.92,,1.0,2024
+R2_G5_K10_b0.92,K=10 + Weight EMA beta=0.92,False,False,400,2.255946,10.2961,281,18,linear,1.0,10.0,,0.92,,1.0,2024
+R2_G5_K12_b0.92,K=12 + Weight EMA beta=0.92,False,False,400,1.455868,10.3237,276,18,linear,1.0,12.0,,0.92,,1.0,2024
+R2_G5_K15_b0.92,K=15 + Weight EMA beta=0.92,False,False,400,0.959811,10.3379,258,17,linear,1.0,15.0,,0.92,,1.0,2024
+R2_G2_s3.0,Soft-sign sigma=3.0,False,False,400,56.793686,11.7463,399,3,linear,1.0,,3.0,,,1.0,2024
+R2_G2_s7.0,Soft-sign sigma=7.0,False,False,400,57.901683,11.667,399,3,linear,1.0,,7.0,,,1.0,2024
+R2_G2_s15.0,Soft-sign sigma=15.0,False,False,400,63.558829,11.4813,399,3,linear,1.0,,15.0,,,1.0,2024
+R2_G2_s25.0,Soft-sign sigma=25.0,False,False,400,63.039022,17.5525,399,3,linear,1.0,,25.0,,,1.0,2024
+R2_G2_s30.0,Soft-sign sigma=30.0,False,False,400,51.5311,16.1806,399,6,linear,1.0,,30.0,,,1.0,2024
+R2_G4_b0.6,Profit EMA beta=0.6,False,False,400,55.686402,12.5463,399,4,linear,1.0,,,,0.6,1.0,2024
+R2_G4_b0.75,Profit EMA beta=0.75,False,False,400,8.862192,11.4415,399,4,linear,1.0,,,,0.75,1.0,2024
+R2_G4_b0.8,Profit EMA beta=0.8,False,False,400,20.723631,10.9703,399,5,linear,1.0,,,,0.8,1.0,2024
+R2_G4_b0.87,Profit EMA beta=0.87,False,False,400,27.285195,14.1317,399,5,linear,1.0,,,,0.87,1.0,2024
+R2_G4_b0.92,Profit EMA beta=0.92,False,False,400,78.952584,19.3476,398,3,linear,1.0,,,,0.92,1.0,2024
+R2_G10_T5.0_b0.8_K10,Softmax T=5.0 + WEMA b=0.8 + K=10,False,False,400,0.961109,10.3658,364,11,softmax,5.0,10.0,,0.8,,1.0,2024
+R2_G10_T5.0_b0.8_K15,Softmax T=5.0 + WEMA b=0.8 + K=15,False,False,400,2.104636,10.3797,323,14,softmax,5.0,15.0,,0.8,,1.0,2024
+R2_G10_T5.0_b0.9_K10,Softmax T=5.0 + WEMA b=0.9 + K=10,False,False,400,0.922079,10.314,301,15,softmax,5.0,10.0,,0.9,,1.0,2024
+R2_G10_T5.0_b0.9_K15,Softmax T=5.0 + WEMA b=0.9 + K=15,False,False,400,0.651585,10.2425,281,14,softmax,5.0,15.0,,0.9,,1.0,2024
+R2_G10_T10.0_b0.8_K10,Softmax T=10.0 + WEMA b=0.8 + K=10,False,False,400,3.684558,10.35,365,14,softmax,10.0,10.0,,0.8,,1.0,2024
+R2_G10_T10.0_b0.8_K15,Softmax T=10.0 + WEMA b=0.8 + K=15,False,False,400,3.369345,10.3694,306,14,softmax,10.0,15.0,,0.8,,1.0,2024
+R2_G10_T10.0_b0.9_K10,Softmax T=10.0 + WEMA b=0.9 + K=10,False,False,400,3.069417,10.3221,323,14,softmax,10.0,10.0,,0.9,,1.0,2024
+R2_G10_T10.0_b0.9_K15,Softmax T=10.0 + WEMA b=0.9 + K=15,False,False,400,3.057531,10.3689,257,16,softmax,10.0,15.0,,0.9,,1.0,2024
+R2_G11_s5.0_b0.8_K10,Soft-sign s=5.0 + WEMA b=0.8 + K=10,False,False,400,1.313727,10.2468,345,9,linear,1.0,10.0,5.0,0.8,,1.0,2024
+R2_G11_s5.0_b0.8_K15,Soft-sign s=5.0 + WEMA b=0.8 + K=15,False,False,400,1.179499,10.2608,259,14,linear,1.0,15.0,5.0,0.8,,1.0,2024
+R2_G11_s5.0_b0.9_K10,Soft-sign s=5.0 + WEMA b=0.9 + K=10,False,False,400,0.973704,10.2346,245,13,linear,1.0,10.0,5.0,0.9,,1.0,2024
+R2_G11_s5.0_b0.9_K15,Soft-sign s=5.0 + WEMA b=0.9 + K=15,False,False,400,0.884304,10.2109,194,14,linear,1.0,15.0,5.0,0.9,,1.0,2024
+R2_G11_s10.0_b0.8_K10,Soft-sign s=10.0 + WEMA b=0.8 + K=10,False,False,400,3.660759,10.1976,324,11,linear,1.0,10.0,10.0,0.8,,1.0,2024
+R2_G11_s10.0_b0.8_K15,Soft-sign s=10.0 + WEMA b=0.8 + K=15,False,False,400,1.861371,10.2284,257,13,linear,1.0,15.0,10.0,0.8,,1.0,2024
+R2_G11_s10.0_b0.9_K10,Soft-sign s=10.0 + WEMA b=0.9 + K=10,False,False,400,2.526211,10.1895,236,13,linear,1.0,10.0,10.0,0.9,,1.0,2024
+R2_G11_s10.0_b0.9_K15,Soft-sign s=10.0 + WEMA b=0.9 + K=15,False,False,400,1.554302,10.1984,173,14,linear,1.0,15.0,10.0,0.9,,1.0,2024
+R2_G1_T3.0,Softmax T=3.0,False,False,400,28.594288,9.9489,399,2,softmax,3.0,,,,,1.0,2025
+R2_G1_T4.0,Softmax T=4.0,False,False,400,28.594288,9.9489,399,2,softmax,4.0,,,,,1.0,2025
+R2_G1_T6.0,Softmax T=6.0,False,False,400,28.594288,9.9489,399,2,softmax,6.0,,,,,1.0,2025
+R2_G1_T8.0,Softmax T=8.0,False,False,400,28.594285,9.9489,399,2,softmax,8.0,,,,,1.0,2025
+R2_G1_T12.0,Softmax T=12.0,False,False,400,28.593786,9.9488,399,2,softmax,12.0,,,,,1.0,2025
+R2_G1_T15.0,Softmax T=15.0,False,False,400,28.590768,9.9485,399,2,softmax,15.0,,,,,1.0,2025
+R2_G1_T25.0,Softmax T=25.0,False,False,400,28.514753,9.94,399,2,softmax,25.0,,,,,1.0,2025
+R2_G1_T30.0,Softmax T=30.0,False,False,400,28.422134,9.9297,399,2,softmax,30.0,,,,,1.0,2025
+R2_G6_T5.0_K7,Softmax T=5.0 + K=7,True,True,101,0.0,9.2648,81,6,softmax,5.0,7.0,,,,1.0,2025
+R2_G6_T5.0_K12,Softmax T=5.0 + K=12,True,True,59,0.000959,8.9918,36,9,softmax,5.0,12.0,,,,1.0,2025
+R2_G6_T5.0_K15,Softmax T=5.0 + K=15,True,True,50,0.000118,8.9787,29,9,softmax,5.0,15.0,,,,1.0,2025
+R2_G6_T5.0_K20,Softmax T=5.0 + K=20,True,True,105,0.000351,8.9413,41,9,softmax,5.0,20.0,,,,1.0,2025
+R2_G6_T5.0_K25,Softmax T=5.0 + K=25,True,True,94,0.009775,8.9887,29,9,softmax,5.0,25.0,,,,1.0,2025
+R2_G6_T8.0_K7,Softmax T=8.0 + K=7,False,False,400,12.553816,8.9541,286,6,softmax,8.0,7.0,,,,1.0,2025
+R2_G6_T8.0_K12,Softmax T=8.0 + K=12,True,True,83,6.5e-05,9.0425,47,9,softmax,8.0,12.0,,,,1.0,2025
+R2_G6_T8.0_K15,Softmax T=8.0 + K=15,True,True,103,0.006217,8.9629,63,9,softmax,8.0,15.0,,,,1.0,2025
+R2_G6_T8.0_K20,Softmax T=8.0 + K=20,True,True,100,0.008609,8.9401,39,9,softmax,8.0,20.0,,,,1.0,2025
+R2_G6_T8.0_K25,Softmax T=8.0 + K=25,True,True,197,0.009918,8.9502,61,9,softmax,8.0,25.0,,,,1.0,2025
+R2_G6_T10.0_K7,Softmax T=10.0 + K=7,False,False,400,2.065031,9.0561,273,6,softmax,10.0,7.0,,,,1.0,2025
+R2_G6_T10.0_K12,Softmax T=10.0 + K=12,True,True,103,0.000236,8.9996,58,9,softmax,10.0,12.0,,,,1.0,2025
+R2_G6_T10.0_K15,Softmax T=10.0 + K=15,True,True,120,0.004858,8.9608,69,9,softmax,10.0,15.0,,,,1.0,2025
+R2_G6_T10.0_K20,Softmax T=10.0 + K=20,True,True,140,2e-05,8.9402,46,9,softmax,10.0,20.0,,,,1.0,2025
+R2_G6_T10.0_K25,Softmax T=10.0 + K=25,True,True,118,0.003159,8.9395,35,9,softmax,10.0,25.0,,,,1.0,2025
+R2_G6_T15.0_K7,Softmax T=15.0 + K=7,True,True,26,0.00834,9.207,21,6,softmax,15.0,7.0,,,,1.0,2025
+R2_G6_T15.0_K12,Softmax T=15.0 + K=12,True,True,119,0.001469,9.0155,72,9,softmax,15.0,12.0,,,,1.0,2025
+R2_G6_T15.0_K15,Softmax T=15.0 + K=15,True,True,292,0.003145,8.9704,145,9,softmax,15.0,15.0,,,,1.0,2025
+R2_G6_T15.0_K20,Softmax T=15.0 + K=20,True,True,77,0.002285,8.9328,26,9,softmax,15.0,20.0,,,,1.0,2025
+R2_G6_T15.0_K25,Softmax T=15.0 + K=25,True,True,230,0.005956,8.9296,55,9,softmax,15.0,25.0,,,,1.0,2025
+R2_G3_b0.75,Weight EMA beta=0.75,False,False,400,2.098612,9.0381,399,8,linear,1.0,,,0.75,,1.0,2025
+R2_G3_b0.8,Weight EMA beta=0.8,False,False,400,1.568604,8.9159,396,11,linear,1.0,,,0.8,,1.0,2025
+R2_G3_b0.87,Weight EMA beta=0.87,False,False,400,1.505306,9.0214,246,16,linear,1.0,,,0.87,,1.0,2025
+R2_G3_b0.92,Weight EMA beta=0.92,False,False,400,0.346732,8.9109,75,23,linear,1.0,,,0.92,,1.0,2025
+R2_G3_b0.93,Weight EMA beta=0.93,False,False,400,0.614566,8.9237,59,26,linear,1.0,,,0.93,,1.0,2025
+R2_G3_b0.95,Weight EMA beta=0.95,False,False,400,0.0,8.917,25,37,linear,1.0,,,0.95,,1.0,2025
+R2_G3_b0.97,Weight EMA beta=0.97,False,False,400,0.339501,8.9082,26,61,linear,1.0,,,0.97,,1.0,2025
+R2_G5_K7_b0.8,K=7 + Weight EMA beta=0.8,False,False,400,1.037715,8.965,160,9,linear,1.0,7.0,,0.8,,1.0,2025
+R2_G5_K10_b0.8,K=10 + Weight EMA beta=0.8,False,False,400,0.968173,8.953,87,9,linear,1.0,10.0,,0.8,,1.0,2025
+R2_G5_K12_b0.8,K=12 + Weight EMA beta=0.8,False,False,400,0.688216,8.9487,70,11,linear,1.0,12.0,,0.8,,1.0,2025
+R2_G5_K15_b0.8,K=15 + Weight EMA beta=0.8,False,False,400,0.533954,8.9514,58,14,linear,1.0,15.0,,0.8,,1.0,2025
+R2_G5_K7_b0.85,K=7 + Weight EMA beta=0.85,False,False,400,0.319407,8.9008,87,12,linear,1.0,7.0,,0.85,,1.0,2025
+R2_G5_K10_b0.85,K=10 + Weight EMA beta=0.85,False,False,400,0.475634,8.9444,46,12,linear,1.0,10.0,,0.85,,1.0,2025
+R2_G5_K12_b0.85,K=12 + Weight EMA beta=0.85,False,False,400,0.649798,8.9619,33,11,linear,1.0,12.0,,0.85,,1.0,2025
+R2_G5_K15_b0.85,K=15 + Weight EMA beta=0.85,False,False,400,0.284713,8.9253,24,14,linear,1.0,15.0,,0.85,,1.0,2025
+R2_G5_K7_b0.9,K=7 + Weight EMA beta=0.9,False,False,400,0.519555,8.9334,22,18,linear,1.0,7.0,,0.9,,1.0,2025
+R2_G5_K10_b0.9,K=10 + Weight EMA beta=0.9,False,False,400,0.261711,8.9537,21,18,linear,1.0,10.0,,0.9,,1.0,2025
+R2_G5_K12_b0.9,K=12 + Weight EMA beta=0.9,False,False,400,0.422592,8.9033,22,18,linear,1.0,12.0,,0.9,,1.0,2025
+R2_G5_K15_b0.9,K=15 + Weight EMA beta=0.9,False,False,400,0.622676,8.9225,23,17,linear,1.0,15.0,,0.9,,1.0,2025
+R2_G5_K7_b0.92,K=7 + Weight EMA beta=0.92,False,False,400,0.277941,8.8875,23,23,linear,1.0,7.0,,0.92,,1.0,2025
+R2_G5_K10_b0.92,K=10 + Weight EMA beta=0.92,False,False,400,0.332034,8.9511,22,23,linear,1.0,10.0,,0.92,,1.0,2025
+R2_G5_K12_b0.92,K=12 + Weight EMA beta=0.92,False,False,400,0.291443,8.9393,23,23,linear,1.0,12.0,,0.92,,1.0,2025
+R2_G5_K15_b0.92,K=15 + Weight EMA beta=0.92,False,False,400,0.489116,8.9043,23,22,linear,1.0,15.0,,0.92,,1.0,2025
+R2_G2_s3.0,Soft-sign sigma=3.0,False,False,400,44.227673,10.1138,399,3,linear,1.0,,3.0,,,1.0,2025
+R2_G2_s7.0,Soft-sign sigma=7.0,False,False,400,45.272906,10.113,399,3,linear,1.0,,7.0,,,1.0,2025
+R2_G2_s15.0,Soft-sign sigma=15.0,False,False,400,46.542109,9.9724,399,4,linear,1.0,,15.0,,,1.0,2025
+R2_G2_s25.0,Soft-sign sigma=25.0,False,False,400,47.750197,9.9581,399,3,linear,1.0,,25.0,,,1.0,2025
+R2_G2_s30.0,Soft-sign sigma=30.0,False,False,400,48.402735,9.9606,399,3,linear,1.0,,30.0,,,1.0,2025
+R2_G4_b0.6,Profit EMA beta=0.6,False,False,400,13.080128,9.3434,394,6,linear,1.0,,,,0.6,1.0,2025
+R2_G4_b0.75,Profit EMA beta=0.75,False,False,400,6.912415,9.6634,399,3,linear,1.0,,,,0.75,1.0,2025
+R2_G4_b0.8,Profit EMA beta=0.8,False,False,400,10.353977,9.7277,323,3,linear,1.0,,,,0.8,1.0,2025
+R2_G4_b0.87,Profit EMA beta=0.87,False,False,400,35.369076,10.6686,398,3,linear,1.0,,,,0.87,1.0,2025
+R2_G4_b0.92,Profit EMA beta=0.92,False,False,400,16.012707,9.2429,398,5,linear,1.0,,,,0.92,1.0,2025
+R2_G10_T5.0_b0.8_K10,Softmax T=5.0 + WEMA b=0.8 + K=10,False,False,400,0.867713,8.9738,285,10,softmax,5.0,10.0,,0.8,,1.0,2025
+R2_G10_T5.0_b0.8_K15,Softmax T=5.0 + WEMA b=0.8 + K=15,False,False,400,1.179111,9.0564,179,14,softmax,5.0,15.0,,0.8,,1.0,2025
+R2_G10_T5.0_b0.9_K10,Softmax T=5.0 + WEMA b=0.9 + K=10,False,False,400,0.885815,8.9705,138,19,softmax,5.0,10.0,,0.9,,1.0,2025
+R2_G10_T5.0_b0.9_K15,Softmax T=5.0 + WEMA b=0.9 + K=15,False,False,400,0.749425,8.9606,59,21,softmax,5.0,15.0,,0.9,,1.0,2025
+R2_G10_T10.0_b0.8_K10,Softmax T=10.0 + WEMA b=0.8 + K=10,False,False,400,1.701602,8.9219,327,10,softmax,10.0,10.0,,0.8,,1.0,2025
+R2_G10_T10.0_b0.8_K15,Softmax T=10.0 + WEMA b=0.8 + K=15,False,False,400,1.528078,8.9805,167,14,softmax,10.0,15.0,,0.8,,1.0,2025
+R2_G10_T10.0_b0.9_K10,Softmax T=10.0 + WEMA b=0.9 + K=10,False,False,400,0.783115,8.9075,96,19,softmax,10.0,10.0,,0.9,,1.0,2025
+R2_G10_T10.0_b0.9_K15,Softmax T=10.0 + WEMA b=0.9 + K=15,False,False,400,0.610454,8.8981,57,21,softmax,10.0,15.0,,0.9,,1.0,2025
+R2_G11_s5.0_b0.8_K10,Soft-sign s=5.0 + WEMA b=0.8 + K=10,False,False,400,0.684474,8.9512,83,9,linear,1.0,10.0,5.0,0.8,,1.0,2025
+R2_G11_s5.0_b0.8_K15,Soft-sign s=5.0 + WEMA b=0.8 + K=15,False,False,400,0.454915,8.9289,42,14,linear,1.0,15.0,5.0,0.8,,1.0,2025
+R2_G11_s5.0_b0.9_K10,Soft-sign s=5.0 + WEMA b=0.9 + K=10,False,False,400,0.531214,8.9026,15,16,linear,1.0,10.0,5.0,0.9,,1.0,2025
+R2_G11_s5.0_b0.9_K15,Soft-sign s=5.0 + WEMA b=0.9 + K=15,False,False,400,0.338611,8.9424,12,14,linear,1.0,15.0,5.0,0.9,,1.0,2025
+R2_G11_s10.0_b0.8_K10,Soft-sign s=10.0 + WEMA b=0.8 + K=10,False,False,400,1.210043,8.9357,90,9,linear,1.0,10.0,10.0,0.8,,1.0,2025
+R2_G11_s10.0_b0.8_K15,Soft-sign s=10.0 + WEMA b=0.8 + K=15,False,False,400,0.453577,8.9416,25,14,linear,1.0,15.0,10.0,0.8,,1.0,2025
+R2_G11_s10.0_b0.9_K10,Soft-sign s=10.0 + WEMA b=0.9 + K=10,False,False,400,0.716524,8.9306,12,15,linear,1.0,10.0,10.0,0.9,,1.0,2025
+R2_G11_s10.0_b0.9_K15,Soft-sign s=10.0 + WEMA b=0.9 + K=15,False,False,400,0.439724,8.9177,10,14,linear,1.0,15.0,10.0,0.9,,1.0,2025

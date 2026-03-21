@@ -1,0 +1,139 @@
+id,label,converged,genuinely_monotone,n_iterations,final_delta,mae,n_spikes,longest_mono_tail,weight_mode,softmax_temp,running_avg_k,soft_sign_sigma,weight_ema_beta,profit_ema_beta,alpha,year
+BASE_K30,Baseline K=30 (Phase 8b winner),False,False,300,0.03828,10.305,50,7,linear,1.0,30.0,,,,1.0,2024
+G1_T0.5,Softmax T=0.5,False,False,300,26.784064,11.0331,299,2,softmax,0.5,,,,,1.0,2024
+G1_T1.0,Softmax T=1.0,False,False,300,26.784064,11.0331,299,2,softmax,1.0,,,,,1.0,2024
+G1_T2.0,Softmax T=2.0,False,False,300,26.784064,11.0331,299,2,softmax,2.0,,,,,1.0,2024
+G1_T5.0,Softmax T=5.0,False,False,300,26.784317,11.0331,299,4,softmax,5.0,,,,,1.0,2024
+G1_T10.0,Softmax T=10.0,False,False,300,26.854088,11.323,299,4,softmax,10.0,,,,,1.0,2024
+G1_T20.0,Softmax T=20.0,False,False,300,27.842652,11.2766,299,8,softmax,20.0,,,,,1.0,2024
+G1_T50.0,Softmax T=50.0,False,False,300,30.969381,10.9941,299,6,softmax,50.0,,,,,1.0,2024
+G2_s1.0,Soft-sign sigma=1.0,False,False,300,57.559175,11.7622,299,4,linear,1.0,,1.0,,,1.0,2024
+G2_s2.0,Soft-sign sigma=2.0,False,False,300,80.946638,19.4236,299,3,linear,1.0,,2.0,,,1.0,2024
+G2_s5.0,Soft-sign sigma=5.0,False,False,300,80.701407,19.4916,299,3,linear,1.0,,5.0,,,1.0,2024
+G2_s10.0,Soft-sign sigma=10.0,False,False,300,80.942929,19.6122,299,3,linear,1.0,,10.0,,,1.0,2024
+G2_s20.0,Soft-sign sigma=20.0,False,False,300,15.602843,10.4683,299,3,linear,1.0,,20.0,,,1.0,2024
+G2_s50.0,Soft-sign sigma=50.0,False,False,300,21.421845,10.5022,299,5,linear,1.0,,50.0,,,1.0,2024
+G3_b0.5,Weight EMA beta=0.5,False,False,300,23.372697,10.3929,299,3,linear,1.0,,,0.5,,1.0,2024
+G3_b0.7,Weight EMA beta=0.7,False,False,300,7.424831,10.256,299,5,linear,1.0,,,0.7,,1.0,2024
+G3_b0.85,Weight EMA beta=0.85,False,False,300,4.238188,10.3072,298,10,linear,1.0,,,0.85,,1.0,2024
+G3_b0.9,Weight EMA beta=0.9,False,False,300,4.633076,10.2841,272,15,linear,1.0,,,0.9,,1.0,2024
+G3_b0.95,Weight EMA beta=0.95,False,False,300,0.584609,10.298,112,28,linear,1.0,,,0.95,,1.0,2024
+G4_b0.5,Profit EMA beta=0.5,False,False,300,41.689529,10.6637,281,4,linear,1.0,,,,0.5,1.0,2024
+G4_b0.7,Profit EMA beta=0.7,False,False,300,3.848686,11.3933,298,4,linear,1.0,,,,0.7,1.0,2024
+G4_b0.85,Profit EMA beta=0.85,False,False,300,78.828336,19.4577,299,5,linear,1.0,,,,0.85,1.0,2024
+G4_b0.9,Profit EMA beta=0.9,False,False,300,61.590904,18.7676,298,4,linear,1.0,,,,0.9,1.0,2024
+G5_K5_b0.7,K=5 + Weight EMA beta=0.7,False,False,300,2.682146,10.3301,292,6,linear,1.0,5.0,,0.7,,1.0,2024
+G5_K5_b0.85,K=5 + Weight EMA beta=0.85,False,False,300,2.204773,10.2792,257,10,linear,1.0,5.0,,0.85,,1.0,2024
+G5_K5_b0.9,K=5 + Weight EMA beta=0.9,False,False,300,1.293319,10.29,232,15,linear,1.0,5.0,,0.9,,1.0,2024
+G5_K10_b0.7,K=10 + Weight EMA beta=0.7,False,False,300,0.82558,10.3415,240,9,linear,1.0,10.0,,0.7,,1.0,2024
+G5_K10_b0.85,K=10 + Weight EMA beta=0.85,False,False,300,2.378656,10.3235,252,9,linear,1.0,10.0,,0.85,,1.0,2024
+G5_K10_b0.9,K=10 + Weight EMA beta=0.9,False,False,300,1.551543,10.31,233,14,linear,1.0,10.0,,0.9,,1.0,2024
+G5_K15_b0.7,K=15 + Weight EMA beta=0.7,False,False,300,2.612165,10.428,183,14,linear,1.0,15.0,,0.7,,1.0,2024
+G5_K15_b0.85,K=15 + Weight EMA beta=0.85,False,False,300,0.692239,10.39,216,14,linear,1.0,15.0,,0.85,,1.0,2024
+G5_K15_b0.9,K=15 + Weight EMA beta=0.9,False,False,300,0.966959,10.3194,214,14,linear,1.0,15.0,,0.9,,1.0,2024
+G5_K20_b0.7,K=20 + Weight EMA beta=0.7,False,False,300,0.060615,10.365,149,17,linear,1.0,20.0,,0.7,,1.0,2024
+G5_K20_b0.85,K=20 + Weight EMA beta=0.85,False,False,300,1.672734,10.3787,181,19,linear,1.0,20.0,,0.85,,1.0,2024
+G5_K20_b0.9,K=20 + Weight EMA beta=0.9,False,False,300,1.560657,10.3443,178,19,linear,1.0,20.0,,0.9,,1.0,2024
+G6_T2.0_K5,Softmax T=2.0 + K=5,False,False,300,56.092398,10.4278,201,4,softmax,2.0,5.0,,,,1.0,2024
+G6_T2.0_K10,Softmax T=2.0 + K=10,False,False,300,0.652093,10.4719,166,4,softmax,2.0,10.0,,,,1.0,2024
+G6_T2.0_K20,Softmax T=2.0 + K=20,True,True,88,0.000161,10.1556,56,5,softmax,2.0,20.0,,,,1.0,2024
+G6_T5.0_K5,Softmax T=5.0 + K=5,True,True,16,0.0,10.9985,12,5,softmax,5.0,5.0,,,,1.0,2024
+G6_T5.0_K10,Softmax T=5.0 + K=10,False,False,300,0.651642,10.4712,166,4,softmax,5.0,10.0,,,,1.0,2024
+G6_T5.0_K20,Softmax T=5.0 + K=20,True,True,193,0.0,10.165,117,5,softmax,5.0,20.0,,,,1.0,2024
+G6_T10.0_K5,Softmax T=10.0 + K=5,False,False,300,56.088962,10.4685,201,4,softmax,10.0,5.0,,,,1.0,2024
+G6_T10.0_K10,Softmax T=10.0 + K=10,False,False,300,0.0,10.4013,169,4,softmax,10.0,10.0,,,,1.0,2024
+G6_T10.0_K20,Softmax T=10.0 + K=20,True,True,79,0.00796,10.1628,50,5,softmax,10.0,20.0,,,,1.0,2024
+G6_T20.0_K5,Softmax T=20.0 + K=5,True,True,154,0.0,11.0048,103,5,softmax,20.0,5.0,,,,1.0,2024
+G6_T20.0_K10,Softmax T=20.0 + K=10,False,False,300,3.450754,10.3727,234,5,softmax,20.0,10.0,,,,1.0,2024
+G6_T20.0_K20,Softmax T=20.0 + K=20,True,True,172,0.00749,10.1861,111,6,softmax,20.0,20.0,,,,1.0,2024
+G7_s5.0_K5,Soft-sign sigma=5.0 + K=5,True,True,46,0.001964,10.8472,22,5,linear,1.0,5.0,5.0,,,1.0,2024
+G7_s5.0_K10,Soft-sign sigma=5.0 + K=10,True,True,225,0.000208,10.3894,80,6,linear,1.0,10.0,5.0,,,1.0,2024
+G7_s5.0_K20,Soft-sign sigma=5.0 + K=20,True,True,117,0.000909,10.2048,57,6,linear,1.0,20.0,5.0,,,1.0,2024
+G7_s10.0_K5,Soft-sign sigma=10.0 + K=5,True,True,58,0.004926,10.805,27,5,linear,1.0,5.0,10.0,,,1.0,2024
+G7_s10.0_K10,Soft-sign sigma=10.0 + K=10,True,True,171,0.009216,10.2582,78,7,linear,1.0,10.0,10.0,,,1.0,2024
+G7_s10.0_K20,Soft-sign sigma=10.0 + K=20,False,False,300,0.059363,10.1823,105,6,linear,1.0,20.0,10.0,,,1.0,2024
+G7_s20.0_K5,Soft-sign sigma=20.0 + K=5,True,True,142,0.008515,10.7401,56,5,linear,1.0,5.0,20.0,,,1.0,2024
+G7_s20.0_K10,Soft-sign sigma=20.0 + K=10,True,True,180,0.000959,10.2583,79,5,linear,1.0,10.0,20.0,,,1.0,2024
+G7_s20.0_K20,Soft-sign sigma=20.0 + K=20,True,True,110,0.008903,10.1843,47,6,linear,1.0,20.0,20.0,,,1.0,2024
+G8_T5.0_s5.0,Softmax T=5.0 + Soft-sign sigma=5.0,False,False,300,27.136422,11.0331,299,2,softmax,5.0,,5.0,,,1.0,2024
+G8_T5.0_s10.0,Softmax T=5.0 + Soft-sign sigma=10.0,False,False,300,99.609678,11.033,299,9,softmax,5.0,,10.0,,,1.0,2024
+G8_T10.0_s5.0,Softmax T=10.0 + Soft-sign sigma=5.0,False,False,300,28.562477,11.0331,299,4,softmax,10.0,,5.0,,,1.0,2024
+G8_T10.0_s10.0,Softmax T=10.0 + Soft-sign sigma=10.0,False,False,300,94.675037,11.0209,299,3,softmax,10.0,,10.0,,,1.0,2024
+G9_b0.7_K5,Profit EMA beta=0.7 + K=5,False,False,300,18.53214,10.9312,220,5,linear,1.0,5.0,,,0.7,1.0,2024
+G9_b0.7_K10,Profit EMA beta=0.7 + K=10,False,False,300,0.605197,10.6017,151,8,linear,1.0,10.0,,,0.7,1.0,2024
+G9_b0.7_K20,Profit EMA beta=0.7 + K=20,True,True,76,0.009898,10.3971,38,9,linear,1.0,20.0,,,0.7,1.0,2024
+G9_b0.85_K5,Profit EMA beta=0.85 + K=5,False,False,300,0.063953,11.7737,225,3,linear,1.0,5.0,,,0.85,1.0,2024
+G9_b0.85_K10,Profit EMA beta=0.85 + K=10,True,True,45,0.007493,10.7566,28,8,linear,1.0,10.0,,,0.85,1.0,2024
+G9_b0.85_K20,Profit EMA beta=0.85 + K=20,True,True,170,0.00199,10.4457,77,9,linear,1.0,20.0,,,0.85,1.0,2024
+G9_b0.9_K5,Profit EMA beta=0.9 + K=5,False,False,300,0.045148,11.8083,225,3,linear,1.0,5.0,,,0.9,1.0,2024
+G9_b0.9_K10,Profit EMA beta=0.9 + K=10,True,True,147,0.003474,10.7384,80,8,linear,1.0,10.0,,,0.9,1.0,2024
+G9_b0.9_K20,Profit EMA beta=0.9 + K=20,True,True,165,0.005782,10.4469,77,10,linear,1.0,20.0,,,0.9,1.0,2024
+BASE_K30,Baseline K=30 (Phase 8b winner),False,False,300,0.327268,8.9092,48,8,linear,1.0,30.0,,,,1.0,2025
+G1_T0.5,Softmax T=0.5,False,False,300,20.129735,9.219,299,2,softmax,0.5,,,,,1.0,2025
+G1_T1.0,Softmax T=1.0,False,False,300,20.129735,9.219,299,2,softmax,1.0,,,,,1.0,2025
+G1_T2.0,Softmax T=2.0,False,False,300,20.129734,9.219,299,2,softmax,2.0,,,,,1.0,2025
+G1_T5.0,Softmax T=5.0,False,False,300,20.121816,9.219,299,2,softmax,5.0,,,,,1.0,2025
+G1_T10.0,Softmax T=10.0,False,False,300,19.980245,9.219,299,2,softmax,10.0,,,,,1.0,2025
+G1_T20.0,Softmax T=20.0,False,False,300,19.468219,9.2189,299,2,softmax,20.0,,,,,1.0,2025
+G1_T50.0,Softmax T=50.0,False,False,300,25.202421,9.6816,299,5,softmax,50.0,,,,,1.0,2025
+G2_s1.0,Soft-sign sigma=1.0,False,False,300,61.073284,17.4196,299,3,linear,1.0,,1.0,,,1.0,2025
+G2_s2.0,Soft-sign sigma=2.0,False,False,300,61.698971,17.5729,299,3,linear,1.0,,2.0,,,1.0,2025
+G2_s5.0,Soft-sign sigma=5.0,False,False,300,62.504844,17.8614,299,3,linear,1.0,,5.0,,,1.0,2025
+G2_s10.0,Soft-sign sigma=10.0,False,False,300,62.862981,18.0806,299,3,linear,1.0,,10.0,,,1.0,2025
+G2_s20.0,Soft-sign sigma=20.0,False,False,300,57.41782,18.0606,299,3,linear,1.0,,20.0,,,1.0,2025
+G2_s50.0,Soft-sign sigma=50.0,False,False,300,57.987231,18.4028,299,3,linear,1.0,,50.0,,,1.0,2025
+G3_b0.5,Weight EMA beta=0.5,False,False,300,4.926374,9.0244,299,5,linear,1.0,,,0.5,,1.0,2025
+G3_b0.7,Weight EMA beta=0.7,False,False,300,2.863894,8.9109,299,7,linear,1.0,,,0.7,,1.0,2025
+G3_b0.85,Weight EMA beta=0.85,False,False,300,6.958229,9.0511,236,13,linear,1.0,,,0.85,,1.0,2025
+G3_b0.9,Weight EMA beta=0.9,False,False,300,0.98796,8.9148,101,18,linear,1.0,,,0.9,,1.0,2025
+G3_b0.95,Weight EMA beta=0.95,False,False,300,0.0,8.917,25,37,linear,1.0,,,0.95,,1.0,2025
+G4_b0.5,Profit EMA beta=0.5,False,False,300,46.966426,16.0674,287,5,linear,1.0,,,,0.5,1.0,2025
+G4_b0.7,Profit EMA beta=0.7,False,False,300,57.913361,17.3369,299,3,linear,1.0,,,,0.7,1.0,2025
+G4_b0.85,Profit EMA beta=0.85,False,False,300,36.304037,10.4385,297,3,linear,1.0,,,,0.85,1.0,2025
+G4_b0.9,Profit EMA beta=0.9,False,False,300,31.079414,11.3892,299,5,linear,1.0,,,,0.9,1.0,2025
+G5_K5_b0.7,K=5 + Weight EMA beta=0.7,False,False,300,0.664562,8.974,223,7,linear,1.0,5.0,,0.7,,1.0,2025
+G5_K5_b0.85,K=5 + Weight EMA beta=0.85,False,False,300,1.160518,8.9086,114,12,linear,1.0,5.0,,0.85,,1.0,2025
+G5_K5_b0.9,K=5 + Weight EMA beta=0.9,False,False,300,0.73497,8.9172,36,19,linear,1.0,5.0,,0.9,,1.0,2025
+G5_K10_b0.7,K=10 + Weight EMA beta=0.7,False,False,300,0.426288,8.944,92,9,linear,1.0,10.0,,0.7,,1.0,2025
+G5_K10_b0.85,K=10 + Weight EMA beta=0.85,False,False,300,0.53287,8.9543,42,12,linear,1.0,10.0,,0.85,,1.0,2025
+G5_K10_b0.9,K=10 + Weight EMA beta=0.9,False,False,300,0.522967,8.9215,21,18,linear,1.0,10.0,,0.9,,1.0,2025
+G5_K15_b0.7,K=15 + Weight EMA beta=0.7,False,False,300,0.130824,8.9559,59,14,linear,1.0,15.0,,0.7,,1.0,2025
+G5_K15_b0.85,K=15 + Weight EMA beta=0.85,False,False,300,0.115015,8.9241,24,14,linear,1.0,15.0,,0.85,,1.0,2025
+G5_K15_b0.9,K=15 + Weight EMA beta=0.9,False,False,300,0.156258,8.9384,23,17,linear,1.0,15.0,,0.9,,1.0,2025
+G5_K20_b0.7,K=20 + Weight EMA beta=0.7,False,False,300,0.569915,8.9663,41,19,linear,1.0,20.0,,0.7,,1.0,2025
+G5_K20_b0.85,K=20 + Weight EMA beta=0.85,False,False,300,0.282594,8.9426,20,19,linear,1.0,20.0,,0.85,,1.0,2025
+G5_K20_b0.9,K=20 + Weight EMA beta=0.9,False,False,300,0.175225,8.9128,21,19,linear,1.0,20.0,,0.9,,1.0,2025
+G6_T2.0_K5,Softmax T=2.0 + K=5,False,False,300,5.718858,9.4756,263,4,softmax,2.0,5.0,,,,1.0,2025
+G6_T2.0_K10,Softmax T=2.0 + K=10,False,False,300,1.949581,9.0592,178,8,softmax,2.0,10.0,,,,1.0,2025
+G6_T2.0_K20,Softmax T=2.0 + K=20,False,False,300,1.08051,8.9331,146,8,softmax,2.0,20.0,,,,1.0,2025
+G6_T5.0_K5,Softmax T=5.0 + K=5,False,False,300,0.000507,9.7835,217,4,softmax,5.0,5.0,,,,1.0,2025
+G6_T5.0_K10,Softmax T=5.0 + K=10,True,True,25,0.000234,9.0709,18,9,softmax,5.0,10.0,,,,1.0,2025
+G6_T5.0_K20,Softmax T=5.0 + K=20,True,True,105,0.000351,8.9413,41,9,softmax,5.0,20.0,,,,1.0,2025
+G6_T10.0_K5,Softmax T=10.0 + K=5,False,False,300,0.089853,9.7291,222,4,softmax,10.0,5.0,,,,1.0,2025
+G6_T10.0_K10,Softmax T=10.0 + K=10,True,True,69,0.009618,8.9981,42,9,softmax,10.0,10.0,,,,1.0,2025
+G6_T10.0_K20,Softmax T=10.0 + K=20,True,True,140,2e-05,8.9402,46,9,softmax,10.0,20.0,,,,1.0,2025
+G6_T20.0_K5,Softmax T=20.0 + K=5,True,True,87,0.0003,9.3038,71,5,softmax,20.0,5.0,,,,1.0,2025
+G6_T20.0_K10,Softmax T=20.0 + K=10,True,True,101,0.006872,8.9658,65,9,softmax,20.0,10.0,,,,1.0,2025
+G6_T20.0_K20,Softmax T=20.0 + K=20,False,False,300,4.38324,8.9238,73,9,softmax,20.0,20.0,,,,1.0,2025
+G7_s5.0_K5,Soft-sign sigma=5.0 + K=5,True,True,46,1e-06,9.3205,18,5,linear,1.0,5.0,5.0,,,1.0,2025
+G7_s5.0_K10,Soft-sign sigma=5.0 + K=10,True,True,60,0.005635,9.0449,14,9,linear,1.0,10.0,5.0,,,1.0,2025
+G7_s5.0_K20,Soft-sign sigma=5.0 + K=20,True,True,261,0.007576,8.9038,28,9,linear,1.0,20.0,5.0,,,1.0,2025
+G7_s10.0_K5,Soft-sign sigma=10.0 + K=5,True,True,46,3e-06,9.3083,19,5,linear,1.0,5.0,10.0,,,1.0,2025
+G7_s10.0_K10,Soft-sign sigma=10.0 + K=10,True,True,42,0.004995,9.0506,10,6,linear,1.0,10.0,10.0,,,1.0,2025
+G7_s10.0_K20,Soft-sign sigma=10.0 + K=20,True,True,153,0.006204,8.9066,18,9,linear,1.0,20.0,10.0,,,1.0,2025
+G7_s20.0_K5,Soft-sign sigma=20.0 + K=5,True,True,34,0.000109,9.2611,15,5,linear,1.0,5.0,20.0,,,1.0,2025
+G7_s20.0_K10,Soft-sign sigma=20.0 + K=10,True,True,51,0.008897,9.0494,13,7,linear,1.0,10.0,20.0,,,1.0,2025
+G7_s20.0_K20,Soft-sign sigma=20.0 + K=20,True,True,154,0.003329,8.9017,19,8,linear,1.0,20.0,20.0,,,1.0,2025
+G8_T5.0_s5.0,Softmax T=5.0 + Soft-sign sigma=5.0,False,False,300,28.59237,9.219,299,0,softmax,5.0,,5.0,,,1.0,2025
+G8_T5.0_s10.0,Softmax T=5.0 + Soft-sign sigma=10.0,False,False,300,28.594328,9.219,299,0,softmax,5.0,,10.0,,,1.0,2025
+G8_T10.0_s5.0,Softmax T=10.0 + Soft-sign sigma=5.0,False,False,300,28.468733,9.219,299,2,softmax,10.0,,5.0,,,1.0,2025
+G8_T10.0_s10.0,Softmax T=10.0 + Soft-sign sigma=10.0,False,False,300,28.594391,9.219,299,0,softmax,10.0,,10.0,,,1.0,2025
+G9_b0.7_K5,Profit EMA beta=0.7 + K=5,False,False,300,8.824502,9.5095,187,4,linear,1.0,5.0,,,0.7,1.0,2025
+G9_b0.7_K10,Profit EMA beta=0.7 + K=10,True,True,169,0.009314,9.0826,76,8,linear,1.0,10.0,,,0.7,1.0,2025
+G9_b0.7_K20,Profit EMA beta=0.7 + K=20,False,False,300,0.048726,9.0144,72,14,linear,1.0,20.0,,,0.7,1.0,2025
+G9_b0.85_K5,Profit EMA beta=0.85 + K=5,False,False,300,0.04688,10.0663,153,4,linear,1.0,5.0,,,0.85,1.0,2025
+G9_b0.85_K10,Profit EMA beta=0.85 + K=10,True,True,162,0.009876,9.2487,79,8,linear,1.0,10.0,,,0.85,1.0,2025
+G9_b0.85_K20,Profit EMA beta=0.85 + K=20,True,True,239,0.007207,9.0343,64,15,linear,1.0,20.0,,,0.85,1.0,2025
+G9_b0.9_K5,Profit EMA beta=0.9 + K=5,False,False,300,0.034395,10.1437,152,4,linear,1.0,5.0,,,0.9,1.0,2025
+G9_b0.9_K10,Profit EMA beta=0.9 + K=10,True,True,97,0.007426,9.2126,47,8,linear,1.0,10.0,,,0.9,1.0,2025
+G9_b0.9_K20,Profit EMA beta=0.9 + K=20,True,True,166,0.007468,9.0302,48,15,linear,1.0,20.0,,,0.9,1.0,2025

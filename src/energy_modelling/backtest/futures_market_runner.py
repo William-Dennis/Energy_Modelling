@@ -148,9 +148,12 @@ def run_futures_market_evaluation(
     max_iterations: int = 500,
     convergence_threshold: float = 0.01,
     convergence_window: int = 1,
+    monotone_window: int = 5,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
-    running_avg_k: int | None = 30,
+    running_avg_k: int | None = 15,
+    weight_mode: str = "softmax",
+    softmax_temp: float = 5.0,
 ) -> FuturesMarketResult:
     """Run all strategies, then evaluate them under the synthetic market.
 
@@ -170,11 +173,24 @@ def run_futures_market_evaluation(
     convergence_window:
         Number of consecutive iterations that must all have
         ``delta < convergence_threshold`` before convergence is declared.
-        Default 1 (Phase 8c winner: K=30 running-average absorbs oscillation
-        so a single small step reliably signals true convergence).
+        Default 1 (legacy fallback; ``monotone_window`` is the primary
+        convergence criterion for the Phase 9 winner config).
+    monotone_window:
+        Number of consecutive iterations whose deltas must be strictly
+        decreasing AND all below ``convergence_threshold``.  Default 5
+        (Phase 9 winner criterion — provably converging dynamics, not a
+        lucky dip below threshold).
     running_avg_k:
-        Running-average window applied across iterations (Phase 8 E1/8c).
-        Default 30 — converges on both 2024 and 2025 with lower MAE than K=5.
+        Running-average window applied across iterations (Phase 9 winner).
+        Default 15 — faster convergence (~35 iters avg on 2024 and 2025).
+    weight_mode:
+        How strategy weights are computed each iteration.  ``"softmax"``
+        (default, Phase 9 winner) gives every strategy a non-zero weight
+        via ``exp(profit/T) / Z``, eliminating hard sign-flips and regime
+        oscillation.  ``"sign"`` restores the legacy hard-sign behaviour.
+    softmax_temp:
+        Temperature for softmax weighting.  Default 5.0 (Phase 9 winner).
+        Higher values flatten the distribution; lower values sharpen it.
     """
 
     # Phase 1 + 2b: Fit strategies and collect forecasts (parallel)
@@ -231,7 +247,10 @@ def run_futures_market_evaluation(
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
         convergence_window=convergence_window,
+        monotone_window=monotone_window,
         running_avg_k=running_avg_k,
+        weight_mode=weight_mode,
+        softmax_temp=softmax_temp,
     )
 
     # Phase 4: Recompute PnL for each strategy under market prices

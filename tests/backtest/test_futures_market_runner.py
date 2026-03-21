@@ -124,7 +124,8 @@ class TestConvergedPriceMovesTowardReal:
 
 
 class TestProfitableStrategiesGainWeight:
-    def test_unprofitable_strategies_get_zero_weight(self) -> None:
+    def test_unprofitable_strategies_get_zero_weight_linear_mode(self) -> None:
+        """In linear (sign-based) mode, unprofitable strategies receive zero weight."""
         daily = _make_daily_frame()
         factories = {"long": _AlwaysLong, "short": _AlwaysShort}
 
@@ -134,6 +135,8 @@ class TestProfitableStrategiesGainWeight:
             training_end=_TRAIN_END,
             evaluation_start=_EVAL_START,
             evaluation_end=_EVAL_END,
+            weight_mode="linear",
+            monotone_window=0,
         )
 
         last_iter = result.equilibrium.iterations[-1]
@@ -142,6 +145,25 @@ class TestProfitableStrategiesGainWeight:
                 assert last_iter.strategy_weights[name] == 0.0, (
                     f"{name} has non-positive engine profit but non-zero weight"
                 )
+
+    def test_softmax_mode_all_strategies_have_positive_weight(self) -> None:
+        """In softmax mode (new default), every strategy receives a positive weight."""
+        daily = _make_daily_frame()
+        factories = {"long": _AlwaysLong, "short": _AlwaysShort}
+
+        result = run_futures_market_evaluation(
+            strategy_factories=factories,
+            daily_data=daily,
+            training_end=_TRAIN_END,
+            evaluation_start=_EVAL_START,
+            evaluation_end=_EVAL_END,
+            weight_mode="softmax",
+            softmax_temp=5.0,
+        )
+
+        last_iter = result.equilibrium.iterations[-1]
+        for name, weight in last_iter.strategy_weights.items():
+            assert weight > 0.0, f"{name} has zero weight under softmax mode"
 
 
 # ---------------------------------------------------------------------------
