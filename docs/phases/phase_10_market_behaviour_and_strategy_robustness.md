@@ -1,6 +1,6 @@
 # Phase 10: Futures Market Behaviour and Strategy Robustness
 
-## Status: IN PROGRESS (10a-10d complete, 10e-10h planned)
+## Status: COMPLETE (10a-10h all finished)
 
 ## Objective
 
@@ -90,7 +90,7 @@ specific claims are re-validated.
 
 ## Current Verification Status
 
-- All 965 tests pass via `uv run pytest` (948 original + 17 new Phase 10b tests).
+- All 1045+ tests pass via `uv run pytest` (948 original + 17 Phase 10b + 28 Phase 10c + 11 Phase 10d + 23 Phase 10e + 18 Phase 10f).
 - `scripts/verify_theorems.py` exits with ALL THEOREMS VERIFIED.
 - `uv run ruff check .` reports zero warnings.
 
@@ -289,24 +289,24 @@ Phase 10: Futures Market Behaviour and Strategy Robustness
 - [x] Compare 2024 and 2025 drivers directly
 
 ### 10e. Sentinel Case Studies
-- [ ] Select sentinel days and multi-day windows
-- [ ] Build iteration-level traces for each case
-- [ ] Write plain-language explanations for each case
+- [x] Select sentinel days and multi-day windows
+- [x] Build iteration-level traces for each case
+- [x] Write plain-language explanations for each case
 
 ### 10f. Strategy Robustness Analysis
-- [ ] Produce standalone vs market-adjusted leaderboard comparison
-- [ ] Define and compute market-contribution metrics
-- [ ] Identify robust, redundant, and destabilising strategies
+- [x] Produce standalone vs market-adjusted leaderboard comparison
+- [x] Define and compute market-contribution metrics
+- [x] Identify robust, redundant, and destabilising strategies
 
 ### 10g. Stronger Strategy Design
-- [ ] Define acceptance criteria for a stronger strategy
-- [ ] Produce a shortlist of strategy revisions / additions
-- [ ] Prioritise candidates for implementation in the next phase
+- [x] Define acceptance criteria for a stronger strategy
+- [x] Produce a shortlist of strategy revisions / additions
+- [x] Prioritise candidates for implementation in the next phase
 
 ### 10h. Synthesis
-- [ ] Write final explanation of current market behaviour
-- [ ] Summarise implications for engine interpretation and strategy development
-- [ ] Recommend the next implementation phase
+- [x] Write final explanation of current market behaviour
+- [x] Summarise implications for engine interpretation and strategy development
+- [x] Recommend the next implementation phase
 
 ## Working Definitions
 

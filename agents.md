@@ -33,7 +33,7 @@ Written 2026-03-21 after a full 20-item audit and cleanup session.
 
 ### Test count baseline
 
-- As of 2026-03-21: **948 tests pass** in ~43s.
+- As of 2026-03-21: **1045 tests pass** in ~31s.
 - If you see "11 collection errors", you're using system Python instead of `uv`.
 
 ---
@@ -303,7 +303,7 @@ result.strategy_forecasts   # dict[str, dict[date, float]]
 ### Before committing
 
 1. `uv run ruff check .` — must be clean
-2. `uv run pytest -q` — must pass (948+ tests)
+2. `uv run pytest -q` — must pass (1045+ tests)
 3. `uv run python scripts/verify_theorems.py` — ALL THEOREMS VERIFIED
 
 ### After completing a phase or sub-phase
@@ -320,34 +320,40 @@ result.strategy_forecasts   # dict[str, dict[date, float]]
 
 ---
 
-## 11. Phase 10 Context (Active Phase)
+## 11. Phase 10 Context (COMPLETE) and Phase 11 (Next)
 
-Phase 10 is the current active phase. It has 8 sub-phases (10a-10h).
+Phase 10 is complete. All 8 sub-phases (10a-10h) are finished. Phase 11 is
+planned but not yet started.
 
-### Completed: 10a (Baseline Reconciliation)
-- Established canonical baseline: `ema_alpha=0.1`, 500 max iters, 0.01 threshold
-- Confirmed 2024 does not converge, 2025 converges via active-strategy collapse
-- Added WARNING blocks to Phase 7 and Phase 8 docs
+### Phase 10 Summary
+- **10a**: Baseline reconciliation -- canonical config frozen
+- **10b**: Behaviour inventory -- per-iteration metrics, behaviour classifications
+- **10c**: Mechanism attribution -- 56-run ablation suite, key causal findings
+- **10d**: Regime and cluster analysis -- ML cluster dominance, regime stability
+- **10e**: Sentinel case studies -- 5 iteration-level causal traces
+- **10f**: Strategy robustness -- LOO analysis, robustness classifications
+- **10g**: Stronger strategy design -- 5 design rules, 10 candidates, acceptance criteria
+- **10h**: Synthesis -- unified causal explanation, engine/dashboard recommendations
 
-### Next: 10b (Behaviour Inventory)
-- Extract per-iteration metrics from both market pickles
-- Classify run behaviour types
-- Write `scripts/phase10b_behaviour_inventory.py`
-- Save results to `data/results/phase10/behaviour_inventory.csv`
+### Key Phase 10 Findings
+- Positive-profit truncation is the root cause of active-strategy collapse
+- ML regression cluster (11 strategies) captures >90% weight; 49 strategies are dead weight
+- `ema_alpha=0.01` is the only alpha achieving healthy convergence for both years
+- 2024 oscillates (non-convergent), 2025 collapses to absorbing zero-active state
+- Engine improvements (active-strategy floor, early stopping) should precede new strategies
 
-### Later sub-phases
-- 10c: Mechanism Attribution (ablation studies)
-- 10d: Regime and Cluster Analysis
-- 10e: Sentinel Case Studies
-- 10f: Strategy Robustness Analysis
-- 10g: Stronger Strategy Design
-- 10h: Synthesis and Forward Plan
+### Phase 11 Planned Structure
+- **11a**: Engine convergence improvements (active-strategy floor, early stopping, alpha=0.01)
+- **11b**: Strategy pool refinement (Diverse Ensemble v2, Spread Momentum, Selective High-Conviction, ML pruning)
+- **11c**: Dashboard convergence reporting (status badges, weight distribution, MAE sparklines)
+- **11d**: Re-run full market simulation with improved engine + refined pool
+- **11e**: Documentation and synthesis
 
 ---
 
 ## 12. Performance Notes
 
-- The full test suite runs in ~43s.
+- The full test suite runs in ~31s.
 - `verify_theorems.py` runs in ~2-3s.
 - `run_full_backtest.py` uses `ProcessPoolExecutor` and can take several minutes.
 - Market simulation with 67 strategies and 500 iterations takes ~30-60s per year.

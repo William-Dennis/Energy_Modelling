@@ -1,0 +1,27 @@
+case_id,iteration,convergence_delta,mae,rmse,bias,active_count,weight_entropy,top1_strategy,top1_weight,top3_strategies,top3_weights,dominant_cluster,cluster_weight
+zact_2025,301,0.687413,8.9163,12.7756,0.3631,4,1.191,Stacked Ridge Meta,0.360468,Stacked Ridge Meta; Bayesian Ridge; Mean Forecast Regression,0.360468; 0.356633; 0.251678,1,0.9688
+zact_2025,302,0.577895,8.9054,12.7758,0.3868,5,1.0612,Stacked Ridge Meta,0.659546,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.659546; 0.136627; 0.124144,1,0.9203
+zact_2025,303,0.660168,8.9156,12.7661,0.425,5,1.5133,Bayesian Ridge,0.273828,Bayesian Ridge; Mean Forecast Regression; Stacked Ridge Meta,0.273828; 0.266171; 0.215055,1,1.0
+zact_2025,304,0.547469,8.9108,12.752,0.5008,3,0.7932,Stacked Ridge Meta,0.549273,Stacked Ridge Meta; PLSRegression; Weekly Cycle,0.549273; 0.422709; 0.028018,1,0.972
+zact_2025,305,0.591748,8.9169,12.7464,0.5707,2,0.6568,Mean Forecast Regression,0.633942,Mean Forecast Regression; Stacked Ridge Meta; Always Long,0.633942; 0.366058; 0.000000,1,1.0
+zact_2025,306,4.938083,8.9662,12.8477,0.673,2,0.6573,Stacked Ridge Meta,0.633049,Stacked Ridge Meta; Weekly Cycle; Always Long,0.633049; 0.366951; 0.000000,1,0.633
+zact_2025,307,0.753574,8.955,12.8196,0.7039,8,1.7269,Stacked Ridge Meta,0.340728,Stacked Ridge Meta; PLSRegression; Bayesian Ridge,0.340728; 0.248821; 0.143599,1,1.0
+zact_2025,308,1.791159,8.9534,12.8709,0.3652,5,1.3781,Stacked Ridge Meta,0.405825,Stacked Ridge Meta; PLSRegression; Multi Spread,0.405825; 0.304547; 0.129263,1,0.7522
+zact_2025,309,0.724896,8.9418,12.8379,0.417,7,1.6543,Stacked Ridge Meta,0.318862,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.318862; 0.261505; 0.177531,1,1.0
+zact_2025,310,0.680684,8.9238,12.8063,0.5518,3,0.8315,Stacked Ridge Meta,0.686382,Stacked Ridge Meta; PLSRegression; Bayesian Ridge,0.686382; 0.191724; 0.121894,1,1.0
+zact_2025,311,0.973634,8.929,12.8364,0.3381,6,1.6216,Mean Forecast Regression,0.309773,Mean Forecast Regression; Stacked Ridge Meta; PLSRegression,0.309773; 0.260916; 0.202972,1,0.8491
+zact_2025,312,0.617133,8.9171,12.8072,0.4314,4,1.2167,Stacked Ridge Meta,0.492856,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.492856; 0.249482; 0.157399,1,1.0
+zact_2025,313,0.541698,8.914,12.7932,0.4349,5,1.2305,Mean Forecast Regression,0.33509,Mean Forecast Regression; PLSRegression; Stacked Ridge Meta,0.335090; 0.328798; 0.299162,1,0.9685
+zact_2025,314,3.080537,8.9412,12.9445,-0.0927,5,1.4229,Stacked Ridge Meta,0.438125,Stacked Ridge Meta; Multi Spread; Always Short,0.438125; 0.216595; 0.161318,1,0.5475
+zact_2025,315,1.023003,8.9359,12.9,-0.0204,9,2.1429,Bayesian Ridge,0.158694,Bayesian Ridge; Stacked Ridge Meta; Mean Forecast Regression,0.158694; 0.154121; 0.142780,1,1.0
+zact_2025,316,0.889679,8.9325,12.8667,0.0393,8,1.9185,Bayesian Ridge,0.233665,Bayesian Ridge; Mean Forecast Regression; PLSRegression,0.233665; 0.191388; 0.178864,1,1.0
+zact_2025,317,0.611142,8.9285,12.8363,0.1256,5,1.4094,Stacked Ridge Meta,0.322889,Stacked Ridge Meta; PLSRegression; Bayesian Ridge,0.322889; 0.284620; 0.234882,1,1.0
+zact_2025,318,0.569713,8.9193,12.8059,0.2306,3,0.9483,Stacked Ridge Meta,0.508543,Stacked Ridge Meta; PLSRegression; Bayesian Ridge,0.508543; 0.386219; 0.105238,1,1.0
+zact_2025,319,1.135864,8.899,12.7748,0.4538,2,0.2739,Stacked Ridge Meta,0.921978,Stacked Ridge Meta; Bayesian Ridge; Always Long,0.921978; 0.078022; 0.000000,1,1.0
+zact_2025,320,1.060025,8.9172,12.7718,0.4441,3,0.8187,Mean Forecast Regression,0.685201,Mean Forecast Regression; Bayesian Ridge; PLSRegression,0.685201; 0.216084; 0.098715,1,1.0
+zact_2025,321,1.892002,8.9189,12.8404,0.0886,4,1.2263,Stacked Ridge Meta,0.480192,Stacked Ridge Meta; PLSRegression; Always Short,0.480192; 0.260502; 0.157762,1,0.7407
+zact_2025,322,0.760275,8.9247,12.8196,0.1402,7,1.7426,PLSRegression,0.278306,PLSRegression; Bayesian Ridge; Stacked Ridge Meta,0.278306; 0.209784; 0.186258,1,1.0
+zact_2025,323,0.974088,8.9071,12.788,0.3567,2,0.4396,Stacked Ridge Meta,0.840067,Stacked Ridge Meta; Bayesian Ridge; Always Long,0.840067; 0.159933; 0.000000,1,1.0
+zact_2025,324,0.741793,8.9132,12.7728,0.3832,4,1.3343,PLSRegression,0.379851,PLSRegression; Stacked Ridge Meta; Bayesian Ridge,0.379851; 0.240027; 0.226664,1,1.0
+zact_2025,325,0.623853,8.9066,12.7514,0.4875,2,0.6595,Stacked Ridge Meta,0.628979,Stacked Ridge Meta; PLSRegression; Always Long,0.628979; 0.371021; 0.000000,1,1.0
+zact_2025,326,0.0,8.9066,12.7514,0.4875,0,0.0,Always Long,0.0,Always Long; Always Short; Bayesian Ridge,0.000000; 0.000000; 0.000000,2,0.0

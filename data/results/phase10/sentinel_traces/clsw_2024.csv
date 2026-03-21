@@ -1,0 +1,31 @@
+case_id,iteration,convergence_delta,mae,rmse,bias,active_count,weight_entropy,top1_strategy,top1_weight,top3_strategies,top3_weights,dominant_cluster,cluster_weight
+clsw_2024,0,inf,21.2584,30.4193,-0.2579,60,3.8014,SVMDirection,0.030344,SVMDirection; Neural Net; Logistic Direction,0.030344; 0.030332; 0.030300,3,0.6109
+clsw_2024,1,6.052409,20.023,29.0478,-0.4403,40,3.3176,Ridge Regression,0.056472,Ridge Regression; Lasso Calendar Augmented; Lasso Regression,0.056472; 0.055253; 0.055253,1,0.5997
+clsw_2024,2,5.623486,18.9059,27.8131,-0.605,40,3.2918,Ridge Regression,0.059225,Ridge Regression; Lasso Calendar Augmented; Lasso Regression,0.059225; 0.057837; 0.057837,1,0.6269
+clsw_2024,3,5.289135,17.8805,26.6896,-0.7521,38,3.2328,Ridge Regression,0.062685,Ridge Regression; PLSRegression; Lasso Calendar Augmented,0.062685; 0.060865; 0.060780,1,0.6583
+clsw_2024,4,4.917769,16.9549,25.6817,-0.8855,38,3.1853,Ridge Regression,0.06475,Ridge Regression; Lasso Calendar Augmented; Lasso Regression,0.064750; 0.063435; 0.063435,1,0.6837
+clsw_2024,5,4.701249,16.1149,24.7485,-1.0116,37,3.0823,Ridge Regression,0.069453,Ridge Regression; Lasso Calendar Augmented; Lasso Regression,0.069453; 0.068013; 0.068013,1,0.7279
+clsw_2024,6,4.708681,15.3215,23.8506,-1.1296,30,2.9189,Ridge Regression,0.075885,Ridge Regression; Lasso Calendar Augmented; Lasso Regression,0.075885; 0.074852; 0.074852,1,0.7922
+clsw_2024,7,4.738163,14.5896,22.9895,-1.2343,22,2.7273,Ridge Regression,0.082857,Ridge Regression; Lasso Calendar Augmented; Lasso Regression,0.082857; 0.082042; 0.082042,1,0.8624
+clsw_2024,8,4.570905,13.9531,22.2078,-1.3231,19,2.633,Ridge Regression,0.087677,Ridge Regression; Lasso Calendar Augmented; Lasso Regression,0.087677; 0.087425; 0.087425,1,0.9036
+clsw_2024,9,4.5539,13.3653,21.4886,-1.4057,14,2.4812,Ridge Regression,0.094387,Ridge Regression; Lasso Calendar Augmented; Lasso Regression,0.094387; 0.094196; 0.094196,1,0.9652
+clsw_2024,10,4.240817,12.8561,20.8722,-1.4891,12,2.4197,Lasso Calendar Augmented,0.104518,Lasso Calendar Augmented; Lasso Regression; Elastic Net,0.104518; 0.104518; 0.095126,1,0.9824
+clsw_2024,11,3.887345,12.4262,20.3562,-1.5669,12,2.3971,Lasso Calendar Augmented,0.10732,Lasso Calendar Augmented; Lasso Regression; Elastic Net,0.107320; 0.107320; 0.096933,1,0.9903
+clsw_2024,12,3.587536,12.0832,19.9246,-1.6371,11,2.3557,Lasso Calendar Augmented,0.10832,Lasso Calendar Augmented; Lasso Regression; Median Forecast Ensemble,0.108320; 0.108320; 0.105185,1,1.0
+clsw_2024,13,3.253641,11.7974,19.5694,-1.7055,11,2.3353,Lasso Calendar Augmented,0.110905,Lasso Calendar Augmented; Lasso Regression; Median Forecast Ensemble,0.110905; 0.110905; 0.104932,1,1.0
+clsw_2024,14,2.946451,11.5735,19.2796,-1.7756,11,2.3107,Lasso Calendar Augmented,0.111396,Lasso Calendar Augmented; Lasso Regression; Median Forecast Ensemble,0.111396; 0.111396; 0.105920,1,1.0
+clsw_2024,15,2.6584,11.4088,19.0446,-1.8341,10,2.294,Lasso Calendar Augmented,0.113947,Lasso Calendar Augmented; Lasso Regression; Median Forecast Ensemble,0.113947; 0.113947; 0.109793,1,1.0
+clsw_2024,16,2.389908,11.2941,18.8573,-1.8934,10,2.289,Lasso Calendar Augmented,0.116371,Lasso Calendar Augmented; Lasso Regression; Elastic Net,0.116371; 0.116371; 0.111801,1,1.0
+clsw_2024,17,2.126696,11.1973,18.7057,-1.9363,11,2.3106,Lasso Calendar Augmented,0.116292,Lasso Calendar Augmented; Lasso Regression; Median Forecast Ensemble,0.116292; 0.116292; 0.111390,1,0.9937
+clsw_2024,18,1.896253,11.1106,18.5812,-1.9637,11,2.3173,Lasso Calendar Augmented,0.116006,Lasso Calendar Augmented; Lasso Regression; Median Forecast Ensemble,0.116006; 0.116006; 0.110311,1,0.9889
+clsw_2024,19,1.69836,11.0312,18.476,-1.9703,11,2.3115,Stacked Ridge Meta,0.129851,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.129851; 0.117270; 0.117270,1,0.9852
+clsw_2024,20,1.478619,10.97,18.3874,-1.9723,11,2.3094,Stacked Ridge Meta,0.128703,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.128703; 0.121197; 0.121197,1,0.9743
+clsw_2024,21,1.347609,10.9054,18.3006,-1.9261,10,2.1602,Stacked Ridge Meta,0.173787,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.173787; 0.134301; 0.134301,1,0.9693
+clsw_2024,22,1.251179,10.838,18.2152,-1.8382,11,2.0867,Stacked Ridge Meta,0.218975,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.218975; 0.142503; 0.142503,1,0.9483
+clsw_2024,23,1.298074,10.775,18.1347,-1.7307,10,1.9824,Stacked Ridge Meta,0.244879,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.244879; 0.159656; 0.159656,1,0.9323
+clsw_2024,24,2.154273,10.6917,18.0286,-1.4962,9,1.6482,Stacked Ridge Meta,0.425635,Stacked Ridge Meta; Elastic Net; Lag2Reversion,0.425635; 0.201755; 0.098858,1,0.8945
+clsw_2024,25,1.672497,10.625,17.9442,-1.297,9,1.7592,Stacked Ridge Meta,0.414804,Stacked Ridge Meta; Elastic Net; Median Forecast Ensemble,0.414804; 0.131602; 0.111705,1,0.9188
+clsw_2024,26,1.369089,10.5625,17.8701,-1.0994,7,1.659,Stacked Ridge Meta,0.43882,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.438820; 0.124465; 0.124465,1,0.9405
+clsw_2024,27,1.267539,10.5099,17.8069,-0.9264,7,1.6231,Stacked Ridge Meta,0.424555,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.424555; 0.150612; 0.150612,1,0.9311
+clsw_2024,28,0.92242,10.4722,17.7577,-0.7929,7,1.5772,Stacked Ridge Meta,0.394312,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.394312; 0.181441; 0.181441,1,0.9469
+clsw_2024,29,1.100112,10.4428,17.7129,-0.6541,5,1.4649,Stacked Ridge Meta,0.413067,Stacked Ridge Meta; PLSRegression; Lasso Calendar Augmented,0.413067; 0.179356; 0.165925,1,0.9243

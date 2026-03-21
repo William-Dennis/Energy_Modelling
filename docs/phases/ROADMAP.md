@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASES 0-9 COMPLETE, PHASE 10 IN PROGRESS (10a-10b complete)
+## Overall Status: PHASES 0-10 COMPLETE, PHASE 11 PLANNED
 
 ## Phase Overview
 
@@ -16,7 +16,8 @@
 | 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Forecast-based convergence proven (contraction mapping); 4 theorems validated empirically. **WARNING: Applies to undampened model only (ema_alpha=1.0); not taken forward to production.** |
 | 8 | [Oscillation Research](phase_8_oscillation_research.md) | COMPLETE | Phase 7 | Historical oscillation research record. **WARNING: Winner (running_avg_k=5) was never implemented; see Phase 9 for the approach actually adopted.** |
 | 9 | [EMA Price Update Experiments](phase_9_ema_price_update.md) | COMPLETE | Phase 7, 8 | EMA dampening sweep; alpha=0.1 adopted as production default; 2025 converges, 2024 does not |
-| 10 | [Futures Market Behaviour and Strategy Robustness](phase_10_market_behaviour_and_strategy_robustness.md) | IN PROGRESS | Phase 5, 7, 8, 9 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
+| 10 | [Futures Market Behaviour and Strategy Robustness](phase_10_market_behaviour_and_strategy_robustness.md) | COMPLETE | Phase 5, 7, 8, 9 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
+| 11 | Engine Hardening and Strategy Refinement | PLANNED | Phase 10 | Engine convergence improvements, strategy pool refinement, dashboard enhancements |
 
 ## Dependency Graph
 
@@ -42,6 +43,8 @@ Phase 0 (Consolidation)
           +---> Phase 9 (EMA Price Update) <--- Phase 7, 8
           |
           +---> Phase 10 (Behaviour + Robust Strategies) <--- Phase 5, 7, 8, 9
+          |
+          +---> Phase 11 (Engine Hardening + Refinement) <--- Phase 10
 ```
 
 ## Expansion Phases (Parallel Track)
@@ -173,3 +176,8 @@ src/energy_modelling/
 | 2026-03-21 | 10b | COMPLETE — Behaviour inventory: per-iteration metrics for 2024 (500 iters) and 2025 (327 iters), 827-row CSV, behaviour classifications (2024=oscillating_non_convergence, 2025=absorbing_collapse), 17 new tests, 5 high-priority behaviours identified |
 | 2026-03-21 | 10c | COMPLETE — Mechanism attribution: 56-run ablation suite (EMA sweep, init sensitivity, 12 family ablations, 4 structural ablations). Key findings: ML strategies drive 2024 oscillation; 2025 convergence is fragile/path-dependent; alpha=0.01 is the only value achieving healthy convergence for both years. 28 new tests |
 | 2026-03-21 | 10d | COMPLETE — Regime and cluster analysis: ML regression cluster (11-12 strategies) captures >90% market weight in both years; 49-strategy broad cluster contributes <5%; forecast and profit clusters disagree; ML cluster more robust to volatility. 11 new tests |
+| 2026-03-21 | 10e | COMPLETE — Sentinel case studies: 5 sentinel cases (hvnc_2024, clsw_2024, ealost_2024, zact_2025, ealost_2025) with iteration-level causal traces. Key findings: 57 leadership changes in high-vol window, absorbing collapse traced step-by-step, early-accuracy-lost effect quantified. 23 new tests |
+| 2026-03-21 | 10f | COMPLETE — Strategy robustness analysis: LOO analysis for all 67 strategies across both years. 49-67% strategies redundant (corr >0.95). PLSRegression worst destabiliser. Cross-border signals most valuable. Standalone PnL poor proxy for market contribution. 18 new tests |
+| 2026-03-21 | 10g | COMPLETE — Stronger strategy design: 5 design rules derived from 10a-10f findings. 10 candidate strategies in 3 priority tiers. Top-3 implementation briefs. Acceptance criteria for Phase 11 |
+| 2026-03-21 | 10h | COMPLETE — Synthesis and forward plan: unified causal explanation of market dynamics, historical vs current truth table, engine change recommendations (alpha=0.01, active-strategy floor, early stopping), Phase 11 scope defined (11a-11e) |
+| 2026-03-21 | 10 | COMPLETE — All 8 sub-phases (10a-10h) finished. 1004+ tests pass. Phase 11 placeholder added to roadmap |

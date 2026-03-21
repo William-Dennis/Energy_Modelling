@@ -1,0 +1,6 @@
+case_id,case_type,year,description,iter_start,iter_end,n_trace_rows,start_mae,end_mae,best_mae,start_active,end_active,start_top1,end_top1,leadership_changes
+hvnc_2024,high_volatility_non_convergence,2024,High-volatility window (20 days) with persistent non-convergence.,0,99,100,50.2252,31.4655,31.4023,60,8,SVMDirection,Stacked Ridge Meta,57
+clsw_2024,cluster_switching,2024,Iteration window (0-29) with most leadership transitions.,0,29,30,21.2584,10.4428,10.4428,60,5,SVMDirection,Stacked Ridge Meta,3
+ealost_2024,early_accuracy_lost,2024,5 dates where iteration-0 was more accurate than the final iteration.,0,99,100,3.2952,23.7466,2.8503,60,8,SVMDirection,Stacked Ridge Meta,57
+zact_2025,zero_active_convergence,2025,Window around active-strategy collapse to zero (iters 301-326).,301,326,26,8.9163,8.9066,8.899,4,0,Stacked Ridge Meta,Always Long,17
+ealost_2025,early_accuracy_lost,2025,5 dates where iteration-0 was more accurate than the final iteration.,0,99,100,3.1124,18.4759,3.1124,60,8,Gradient Boosting,Stacked Ridge Meta,41

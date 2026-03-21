@@ -1,0 +1,101 @@
+case_id,iteration,convergence_delta,mae,rmse,bias,active_count,weight_entropy,top1_strategy,top1_weight,top3_strategies,top3_weights,dominant_cluster,cluster_weight
+ealost_2025,0,inf,3.1124,4.6315,2.0051,60,3.8078,Gradient Boosting,0.030618,Gradient Boosting; Top KEnsemble; Logistic Direction,0.030618; 0.030281; 0.030266,2,0.5997
+ealost_2025,1,1.71997,3.3987,5.2967,2.7415,39,3.3325,Elastic Net,0.056856,Elastic Net; Mean Forecast Regression; Bayesian Ridge,0.056856; 0.056247; 0.056097,1,0.6482
+ealost_2025,2,1.586888,4.6296,6.1386,3.412,39,3.2979,Elastic Net,0.059423,Elastic Net; Bayesian Ridge; Mean Forecast Regression,0.059423; 0.058382; 0.058363,1,0.6725
+ealost_2025,3,1.492344,5.8397,7.0535,4.0252,37,3.2331,Elastic Net,0.06255,Elastic Net; Bayesian Ridge; Stacked Ridge Meta,0.062550; 0.061822; 0.061484,1,0.707
+ealost_2025,4,1.406727,6.9543,7.9675,4.5772,35,3.1718,Elastic Net,0.065739,Elastic Net; Bayesian Ridge; Mean Forecast Regression,0.065739; 0.063908; 0.063643,1,0.7311
+ealost_2025,5,1.294252,7.9609,8.8358,5.066,34,3.1359,Elastic Net,0.067468,Elastic Net; Bayesian Ridge; Median Forecast Ensemble,0.067468; 0.065497; 0.065376,1,0.7473
+ealost_2025,6,1.229659,8.9238,9.697,5.5371,30,3.0262,Elastic Net,0.073166,Elastic Net; Bayesian Ridge; Mean Forecast Regression,0.073166; 0.070853; 0.070816,1,0.798
+ealost_2025,7,1.257509,9.9369,10.6315,6.0661,26,2.8221,Elastic Net,0.083408,Elastic Net; Bayesian Ridge; Mean Forecast Regression,0.083408; 0.080155; 0.079745,1,0.8853
+ealost_2025,8,1.313946,11.0007,11.6356,6.6538,15,2.533,Elastic Net,0.093906,Elastic Net; Bayesian Ridge; Mean Forecast Regression,0.093906; 0.090431; 0.089748,1,0.9762
+ealost_2025,9,1.224328,11.9911,12.5797,7.2163,14,2.499,Elastic Net,0.096679,Elastic Net; Mean Forecast Regression; Stacked Ridge Meta,0.096679; 0.093011; 0.092344,1,0.9852
+ealost_2025,10,1.160489,12.9296,13.4795,7.771,13,2.4326,Elastic Net,0.100241,Elastic Net; Mean Forecast Regression; Lasso Calendar Augmented,0.100241; 0.097933; 0.095075,1,0.9967
+ealost_2025,11,1.064114,13.791,14.3088,8.2893,11,2.3789,Elastic Net,0.103677,Elastic Net; Mean Forecast Regression; Lasso Calendar Augmented,0.103677; 0.100878; 0.098972,1,1.0
+ealost_2025,12,0.95618,14.565,15.0579,8.7546,11,2.3787,Elastic Net,0.106213,Elastic Net; Mean Forecast Regression; Median Forecast Ensemble,0.106213; 0.101741; 0.096075,1,1.0
+ealost_2025,13,0.859385,15.257,15.7305,9.1716,11,2.3726,Elastic Net,0.107711,Elastic Net; Mean Forecast Regression; Median Forecast Ensemble,0.107711; 0.099334; 0.096919,1,1.0
+ealost_2025,14,0.772032,15.8761,16.3337,9.5459,11,2.3648,Elastic Net,0.11163,Elastic Net; Mean Forecast Regression; Bayesian Ridge,0.111630; 0.098792; 0.096875,1,1.0
+ealost_2025,15,0.697251,16.4289,16.8724,9.8849,11,2.3357,Elastic Net,0.117779,Elastic Net; Mean Forecast Regression; Lasso Calendar Augmented,0.117779; 0.102368; 0.102328,1,1.0
+ealost_2025,16,0.629247,16.9256,17.3573,10.191,11,2.3221,Elastic Net,0.127207,Elastic Net; Mean Forecast Regression; Bayesian Ridge,0.127207; 0.105996; 0.103960,1,1.0
+ealost_2025,17,0.568703,17.3734,17.7949,10.4681,11,2.3117,Elastic Net,0.124739,Elastic Net; Mean Forecast Regression; Bayesian Ridge,0.124739; 0.110310; 0.105999,1,1.0
+ealost_2025,18,0.513791,17.7764,18.1888,10.719,11,2.3035,Elastic Net,0.122197,Elastic Net; Mean Forecast Regression; Bayesian Ridge,0.122197; 0.119503; 0.113671,1,1.0
+ealost_2025,19,0.462626,18.1356,18.5412,10.9427,10,2.2792,Elastic Net,0.126471,Elastic Net; Mean Forecast Regression; Median Forecast Ensemble,0.126471; 0.126100; 0.116057,1,1.0
+ealost_2025,20,0.414952,18.46,18.8599,11.1431,10,2.2762,Mean Forecast Regression,0.133385,Mean Forecast Regression; Elastic Net; Median Forecast Ensemble,0.133385; 0.127302; 0.114825,1,1.0
+ealost_2025,21,0.370176,18.7556,19.1498,11.324,11,2.2906,Elastic Net,0.13239,Elastic Net; Mean Forecast Regression; Stacked Ridge Meta,0.132390; 0.130197; 0.114060,1,1.0
+ealost_2025,22,0.332086,19.0169,19.4084,11.4809,10,2.2593,Elastic Net,0.141486,Elastic Net; Mean Forecast Regression; Stacked Ridge Meta,0.141486; 0.140388; 0.113771,1,1.0
+ealost_2025,23,0.240618,19.1948,19.5848,11.5625,11,2.2899,Mean Forecast Regression,0.142576,Mean Forecast Regression; Elastic Net; Stacked Ridge Meta,0.142576; 0.133733; 0.128039,1,0.9818
+ealost_2025,24,0.227405,19.3258,19.7156,11.6026,11,2.2738,Stacked Ridge Meta,0.155885,Stacked Ridge Meta; Elastic Net; PLSRegression,0.155885; 0.149101; 0.128327,1,0.9717
+ealost_2025,25,0.215395,19.4423,19.8291,11.6329,12,2.2725,Stacked Ridge Meta,0.186871,Stacked Ridge Meta; Elastic Net; PLSRegression,0.186871; 0.158946; 0.115966,1,0.9664
+ealost_2025,26,0.213839,19.4902,19.8779,11.5953,12,2.2598,Stacked Ridge Meta,0.215774,Stacked Ridge Meta; PLSRegression; Elastic Net,0.215774; 0.170037; 0.150168,1,0.9481
+ealost_2025,27,0.21346,19.5763,19.9614,11.596,12,2.0903,Stacked Ridge Meta,0.294694,Stacked Ridge Meta; Elastic Net; PLSRegression,0.294694; 0.223044; 0.127322,1,0.9569
+ealost_2025,28,0.191808,19.5973,19.9723,11.5402,10,1.7306,Stacked Ridge Meta,0.424224,Stacked Ridge Meta; Elastic Net; Ridge Regression,0.424224; 0.218285; 0.070938,1,0.9351
+ealost_2025,29,0.150346,19.6616,20.028,11.5444,10,1.8179,Stacked Ridge Meta,0.386522,Stacked Ridge Meta; Elastic Net; Ridge Regression,0.386522; 0.214403; 0.104441,1,0.9545
+ealost_2025,30,0.160348,19.6059,19.9674,11.443,8,1.622,Stacked Ridge Meta,0.415458,Stacked Ridge Meta; Elastic Net; Bayesian Ridge,0.415458; 0.238432; 0.098975,1,0.9247
+ealost_2025,31,0.234504,19.795,20.1489,11.5764,6,1.249,Stacked Ridge Meta,0.48773,Stacked Ridge Meta; Elastic Net; Ridge Net Demand,0.487730; 0.323726; 0.074117,1,0.9955
+ealost_2025,32,0.141874,19.7639,20.111,11.502,6,1.365,Stacked Ridge Meta,0.473306,Stacked Ridge Meta; Elastic Net; Ridge Regression,0.473306; 0.282004; 0.103288,1,0.93
+ealost_2025,33,0.258493,19.9224,20.2539,11.6129,6,1.0815,Stacked Ridge Meta,0.640802,Stacked Ridge Meta; Elastic Net; Ridge Regression,0.640802; 0.169970; 0.108081,1,0.9837
+ealost_2025,34,0.899391,19.4111,19.744,11.1236,5,0.9448,Stacked Ridge Meta,0.723722,Stacked Ridge Meta; Always Short; Multi Spread,0.723722; 0.120262; 0.071374,1,0.7666
+ealost_2025,35,0.354636,19.6372,19.9621,11.3353,8,1.9889,Mean Forecast Regression,0.237793,Mean Forecast Regression; Stacked Ridge Meta; Lasso Calendar Augmented,0.237793; 0.155643; 0.136724,1,1.0
+ealost_2025,36,0.27971,19.8604,20.1759,11.5184,6,1.43,Stacked Ridge Meta,0.483004,Stacked Ridge Meta; Mean Forecast Regression; PLSRegression,0.483004; 0.169738; 0.165986,1,1.0
+ealost_2025,37,0.17321,19.9918,20.301,11.6055,4,1.0229,Stacked Ridge Meta,0.596148,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.596148; 0.209188; 0.172650,1,0.978
+ealost_2025,38,0.463901,19.6763,19.9921,11.27,5,1.375,Stacked Ridge Meta,0.426517,Stacked Ridge Meta; Mean Forecast Regression; PLSRegression,0.426517; 0.284738; 0.140535,1,0.8518
+ealost_2025,39,0.328746,19.8804,20.1959,11.457,7,1.7891,PLSRegression,0.27622,PLSRegression; Mean Forecast Regression; Stacked Ridge Meta,0.276220; 0.216991; 0.201926,1,1.0
+ealost_2025,40,0.307163,20.032,20.336,11.6211,4,0.98,Stacked Ridge Meta,0.54921,Stacked Ridge Meta; Mean Forecast Regression; PLSRegression,0.549210; 0.350974; 0.077228,1,0.9774
+ealost_2025,41,0.232621,20.1735,20.4721,11.7652,4,1.0926,Stacked Ridge Meta,0.503052,Stacked Ridge Meta; Mean Forecast Regression; PLSRegression,0.503052; 0.297305; 0.179799,1,0.9802
+ealost_2025,42,0.808828,19.5818,19.9003,11.1598,5,1.5281,Stacked Ridge Meta,0.312,Stacked Ridge Meta; Mean Forecast Regression; PLSRegression,0.312000; 0.251763; 0.212165,1,0.7759
+ealost_2025,43,0.336783,19.7845,20.1017,11.3554,5,1.4791,Mean Forecast Regression,0.29294,Mean Forecast Regression; PLSRegression; Stacked Ridge Meta,0.292940; 0.292305; 0.206021,1,1.0
+ealost_2025,44,0.288068,20.0064,20.3145,11.5298,3,0.732,Stacked Ridge Meta,0.707881,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.707881; 0.245678; 0.046441,1,1.0
+ealost_2025,45,0.386662,20.0111,20.3133,11.6634,5,1.2968,Stacked Ridge Meta,0.53689,Stacked Ridge Meta; Mean Forecast Regression; Bayesian Ridge,0.536890; 0.195116; 0.104791,1,0.9081
+ealost_2025,46,0.889316,19.3593,19.6894,10.9815,5,1.4646,PLSRegression,0.341383,PLSRegression; Stacked Ridge Meta; Always Short,0.341383; 0.316641; 0.151909,1,0.7515
+ealost_2025,47,0.390244,19.577,19.9027,11.2,6,1.6077,Bayesian Ridge,0.308114,Bayesian Ridge; PLSRegression; Mean Forecast Regression,0.308114; 0.242814; 0.191115,1,1.0
+ealost_2025,48,0.299306,19.8055,20.1246,11.3896,3,0.9779,Stacked Ridge Meta,0.546383,Stacked Ridge Meta; PLSRegression; Bayesian Ridge,0.546383; 0.301873; 0.151744,1,1.0
+ealost_2025,49,0.379998,19.5936,19.9091,11.1563,5,0.9896,Stacked Ridge Meta,0.652269,Stacked Ridge Meta; Bayesian Ridge; Multi Spread,0.652269; 0.178198; 0.125679,1,0.8743
+ealost_2025,50,0.361053,19.798,20.1069,11.3652,7,1.9223,Mean Forecast Regression,0.203248,Mean Forecast Regression; Bayesian Ridge; Median Forecast Ensemble,0.203248; 0.170138; 0.151581,1,1.0
+ealost_2025,51,0.241891,19.9661,20.2711,11.5296,4,1.0146,Stacked Ridge Meta,0.582446,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.582446; 0.270042; 0.124449,1,0.9769
+ealost_2025,52,0.188347,19.881,20.1948,11.4286,4,1.2813,Mean Forecast Regression,0.345205,Mean Forecast Regression; PLSRegression; Stacked Ridge Meta,0.345205; 0.308122; 0.269258,1,0.9226
+ealost_2025,53,0.260258,20.0806,20.3893,11.5948,3,1.0063,Stacked Ridge Meta,0.534652,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.534652; 0.272797; 0.192551,1,1.0
+ealost_2025,54,0.231546,20.2304,20.5269,11.759,3,0.995,Mean Forecast Regression,0.524857,Mean Forecast Regression; Stacked Ridge Meta; Bayesian Ridge,0.524857; 0.315782; 0.159361,1,1.0
+ealost_2025,55,3.184287,17.9649,18.3553,9.5398,6,1.5073,Always Short,0.293836,Always Short; Multi Spread; Stacked Ridge Meta,0.293836; 0.286587; 0.267248,2,0.4264
+ealost_2025,56,0.56529,18.3225,18.6976,9.8883,11,2.3019,Stacked Ridge Meta,0.16209,Stacked Ridge Meta; Mean Forecast Regression; Median Forecast Ensemble,0.162090; 0.118685; 0.107826,1,1.0
+ealost_2025,57,0.511022,18.6552,19.0195,10.2027,11,2.3219,Stacked Ridge Meta,0.169918,Stacked Ridge Meta; Median Forecast Ensemble; Elastic Net,0.169918; 0.114179; 0.110042,1,1.0
+ealost_2025,58,0.482365,18.9603,19.3096,10.5074,9,2.1272,Lasso Calendar Augmented,0.155603,Lasso Calendar Augmented; Lasso Regression; Stacked Ridge Meta,0.155603; 0.155603; 0.145293,1,1.0
+ealost_2025,59,0.430475,19.244,19.5857,10.7736,8,1.8707,Stacked Ridge Meta,0.266471,Stacked Ridge Meta; Elastic Net; PLSRegression,0.266471; 0.211703; 0.185675,1,1.0
+ealost_2025,60,0.345452,19.5148,19.85,11.004,3,0.9839,Stacked Ridge Meta,0.549619,Stacked Ridge Meta; PLSRegression; Elastic Net,0.549619; 0.285754; 0.164627,1,1.0
+ealost_2025,61,0.309797,19.764,20.0907,11.2103,2,0.6273,Stacked Ridge Meta,0.679441,Stacked Ridge Meta; PLSRegression; Always Long,0.679441; 0.320559; 0.000000,1,1.0
+ealost_2025,62,0.409989,20.0022,20.3048,11.4096,2,0.0252,Stacked Ridge Meta,0.996155,Stacked Ridge Meta; Mean Forecast Regression; Always Long,0.996155; 0.003845; 0.000000,1,1.0
+ealost_2025,63,0.216525,20.1348,20.4318,11.5843,6,1.5438,Bayesian Ridge,0.354926,Bayesian Ridge; Stacked Ridge Meta; PLSRegression,0.354926; 0.259226; 0.159563,1,0.9864
+ealost_2025,64,0.256285,20.1479,20.4518,11.6995,4,0.993,Stacked Ridge Meta,0.513307,Stacked Ridge Meta; PLSRegression; Weekly Cycle,0.513307; 0.382610; 0.086279,1,0.9137
+ealost_2025,65,0.273177,20.2857,20.5879,11.8448,4,1.3712,Bayesian Ridge,0.308109,Bayesian Ridge; Mean Forecast Regression; PLSRegression,0.308109; 0.265512; 0.236739,1,1.0
+ealost_2025,66,2.83285,18.2158,18.5934,9.8332,7,1.6895,Multi Spread,0.267025,Multi Spread; Always Short; Stacked Ridge Meta,0.267025; 0.261831; 0.214848,2,0.3888
+ealost_2025,67,0.541197,18.5526,18.9187,10.1547,11,2.2978,Stacked Ridge Meta,0.139816,Stacked Ridge Meta; Mean Forecast Regression; PLSRegression,0.139816; 0.116537; 0.115907,1,1.0
+ealost_2025,68,0.499724,18.8637,19.2158,10.4612,9,2.169,Stacked Ridge Meta,0.133711,Stacked Ridge Meta; Lasso Calendar Augmented; Lasso Regression,0.133711; 0.122314; 0.122314,1,1.0
+ealost_2025,69,0.432117,19.1527,19.4942,10.7331,8,1.9253,Stacked Ridge Meta,0.291181,Stacked Ridge Meta; PLSRegression; Bayesian Ridge,0.291181; 0.173614; 0.124959,1,1.0
+ealost_2025,70,0.372848,19.4183,19.7537,10.9696,5,1.3951,Stacked Ridge Meta,0.418856,Stacked Ridge Meta; PLSRegression; Elastic Net,0.418856; 0.281967; 0.126423,1,1.0
+ealost_2025,71,0.307,19.6751,20.0035,11.1783,3,0.6914,Stacked Ridge Meta,0.645475,Stacked Ridge Meta; PLSRegression; Bayesian Ridge,0.645475; 0.345717; 0.008808,1,1.0
+ealost_2025,72,0.331652,19.9119,20.227,11.3721,3,0.5994,Stacked Ridge Meta,0.775119,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.775119; 0.205360; 0.019521,1,1.0
+ealost_2025,73,0.265961,20.0868,20.3881,11.5572,4,1.1958,Stacked Ridge Meta,0.419452,Stacked Ridge Meta; Mean Forecast Regression; Bayesian Ridge,0.419452; 0.321133; 0.216351,1,1.0
+ealost_2025,74,0.229161,20.2538,20.5494,11.7159,3,1.0503,Stacked Ridge Meta,0.479923,Stacked Ridge Meta; Bayesian Ridge; PLSRegression,0.479923; 0.285684; 0.234393,1,1.0
+ealost_2025,75,0.339019,20.4434,20.7197,11.8647,1,-0.0,Stacked Ridge Meta,1.0,Stacked Ridge Meta; Always Long; Always Short,1.000000; 0.000000; 0.000000,1,1.0
+ealost_2025,76,1.629964,19.5573,19.892,11.5426,4,1.0862,PLSRegression,0.493579,PLSRegression; Weekly Cycle; Always Short,0.493579; 0.363909; 0.092743,1,0.5433
+ealost_2025,77,0.351251,19.7738,20.0957,11.7065,4,1.2749,Stacked Ridge Meta,0.455382,Stacked Ridge Meta; Mean Forecast Regression; Bayesian Ridge,0.455382; 0.220294; 0.194801,1,1.0
+ealost_2025,78,0.340876,19.9926,20.297,11.8554,4,0.7911,Stacked Ridge Meta,0.758271,Stacked Ridge Meta; Mean Forecast Regression; Bayesian Ridge,0.758271; 0.135623; 0.061282,1,1.0
+ealost_2025,79,0.299422,20.1674,20.4687,11.976,5,1.2856,Stacked Ridge Meta,0.425725,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.425725; 0.292640; 0.178911,1,1.0
+ealost_2025,80,0.273942,20.32,20.6162,12.0936,4,1.3378,Stacked Ridge Meta,0.391235,Stacked Ridge Meta; Bayesian Ridge; PLSRegression,0.391235; 0.210822; 0.200797,1,1.0
+ealost_2025,81,0.954715,19.6522,19.9704,11.4061,6,1.6925,PLSRegression,0.318252,PLSRegression; Bayesian Ridge; Multi Spread,0.318252; 0.200978; 0.150968,1,0.7616
+ealost_2025,82,0.325618,19.8681,20.18,11.5765,4,1.1668,Stacked Ridge Meta,0.473678,Stacked Ridge Meta; Mean Forecast Regression; PLSRegression,0.473678; 0.245457; 0.242837,1,1.0
+ealost_2025,83,0.297543,20.0776,20.3892,11.7213,2,0.6795,Stacked Ridge Meta,0.582524,Stacked Ridge Meta; PLSRegression; Always Long,0.582524; 0.417476; 0.000000,1,1.0
+ealost_2025,84,0.291437,20.1968,20.4996,11.877,2,0.684,Mean Forecast Regression,0.567474,Mean Forecast Regression; Bayesian Ridge; Always Long,0.567474; 0.432526; 0.000000,1,1.0
+ealost_2025,85,3.479164,17.6801,18.087,9.3671,5,1.5649,Always Short,0.270146,Always Short; Multi Spread; Stacked Ridge Meta,0.270146; 0.261322; 0.200512,2,0.5382
+ealost_2025,86,0.612327,18.0535,18.4445,9.7258,11,2.2821,Mean Forecast Regression,0.132295,Mean Forecast Regression; Stacked Ridge Meta; PLSRegression,0.132295; 0.129152; 0.122255,1,1.0
+ealost_2025,87,0.534178,18.3932,18.7717,10.0451,11,2.2688,Stacked Ridge Meta,0.203925,Stacked Ridge Meta; Mean Forecast Regression; Elastic Net,0.203925; 0.130011; 0.099368,1,1.0
+ealost_2025,88,0.502928,18.7175,19.0815,10.3544,11,2.1693,Stacked Ridge Meta,0.204903,Stacked Ridge Meta; Elastic Net; Mean Forecast Regression,0.204903; 0.153256; 0.138672,1,1.0
+ealost_2025,89,0.444503,19.029,19.381,10.6354,7,1.6537,Stacked Ridge Meta,0.368473,Stacked Ridge Meta; Elastic Net; PLSRegression,0.368473; 0.185895; 0.170858,1,1.0
+ealost_2025,90,0.392262,19.3063,19.6499,10.8827,5,1.422,Stacked Ridge Meta,0.417859,Stacked Ridge Meta; PLSRegression; Elastic Net,0.417859; 0.260693; 0.130874,1,1.0
+ealost_2025,91,0.327061,19.5695,19.9036,11.1026,3,0.8508,Stacked Ridge Meta,0.618052,Stacked Ridge Meta; PLSRegression; Bayesian Ridge,0.618052; 0.309357; 0.072592,1,1.0
+ealost_2025,92,0.291962,19.8091,20.1364,11.2986,3,0.8008,Stacked Ridge Meta,0.623603,Stacked Ridge Meta; PLSRegression; Mean Forecast Regression,0.623603; 0.331044; 0.045353,1,1.0
+ealost_2025,93,0.385739,20.0318,20.336,11.4907,2,0.3524,Stacked Ridge Meta,0.887178,Stacked Ridge Meta; Bayesian Ridge; Always Long,0.887178; 0.112822; 0.000000,1,1.0
+ealost_2025,94,0.327334,20.1702,20.483,11.649,3,0.8,Bayesian Ridge,0.497084,Bayesian Ridge; PLSRegression; Mean Forecast Regression,0.497084; 0.475335; 0.027581,1,1.0
+ealost_2025,95,0.458541,20.1869,20.4862,11.7717,2,0.3075,Stacked Ridge Meta,0.907834,Stacked Ridge Meta; Weekly Cycle; Always Long,0.907834; 0.092166; 0.000000,1,0.9078
+ealost_2025,96,0.348751,20.3188,20.6346,11.8924,2,0.6493,PLSRegression,0.64705,PLSRegression; Bayesian Ridge; Always Long,0.647050; 0.352950; 0.000000,1,1.0
+ealost_2025,97,3.438101,17.8065,18.2213,9.4613,7,1.7458,Multi Spread,0.25307,Multi Spread; Always Short; Stacked Ridge Meta,0.253070; 0.227994; 0.214995,2,0.5319
+ealost_2025,98,0.571212,18.1663,18.5627,9.8118,11,2.28,Stacked Ridge Meta,0.157627,Stacked Ridge Meta; Bayesian Ridge; Mean Forecast Regression,0.157627; 0.128741; 0.124615,1,1.0
+ealost_2025,99,0.486598,18.4759,18.8616,10.1089,8,1.9817,Stacked Ridge Meta,0.244978,Stacked Ridge Meta; Mean Forecast Regression; Bayesian Ridge,0.244978; 0.151923; 0.144020,1,1.0
