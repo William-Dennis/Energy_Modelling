@@ -99,6 +99,7 @@ def run_forecast_foresight_market(
     initial_market_prices: pd.Series,
     max_iterations: int = 100,
     convergence_threshold: float = 0.01,
+    monotone_window: int = 5,
     other_forecasts: dict[str, dict] | None = None,
 ) -> FuturesMarketEquilibrium:
     """Run the market with PF providing real-price forecasts.
@@ -109,6 +110,14 @@ def run_forecast_foresight_market(
 
     With other strategies present, the price update is the profit-weighted
     average of all (profitable) strategies' forecasts.
+
+    Parameters
+    ----------
+    monotone_window:
+        Passed through to :func:`run_futures_market`.  Set to ``0`` in tests
+        that use tiny synthetic datasets that converge in 1-2 iterations
+        (the monotone window requires *N* consecutive deltas which may not
+        accumulate on micro datasets).
     """
     all_forecasts: dict[str, dict] = {
         "PerfectForesight": _build_pf_forecasts(real_prices),
@@ -122,4 +131,5 @@ def run_forecast_foresight_market(
         strategy_forecasts=all_forecasts,
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
+        monotone_window=monotone_window,
     )

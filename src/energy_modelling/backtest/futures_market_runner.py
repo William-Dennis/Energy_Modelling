@@ -147,50 +147,48 @@ def run_futures_market_evaluation(
     evaluation_end: date,
     max_iterations: int = 500,
     convergence_threshold: float = 0.01,
-    convergence_window: int = 1,
     monotone_window: int = 5,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
-    running_avg_k: int | None = 15,
-    weight_mode: str = "softmax",
-    softmax_temp: float = 5.0,
 ) -> FuturesMarketResult:
-    """Run all strategies, then evaluate them under the synthetic market.
+    """Run all strategies, then evaluate them under the synthetic futures market.
 
-    1. Run each strategy through ``run_backtest`` to obtain
-       direction predictions and original PnL.
-    2. Collect forecasts from each strategy.
-    3. Feed all forecasts into ``run_futures_market`` to find
-       the equilibrium market price.
-    4. Recompute each strategy's PnL against the market price.
+    1. Run each strategy through ``run_backtest`` to obtain direction
+       predictions and original PnL.
+    2. Collect price forecasts from each strategy.
+    3. Feed all forecasts into ``run_futures_market`` to find the equilibrium
+       market price.
+    4. Recompute each strategy's PnL against the converged market price.
 
     Parameters
     ----------
-    max_workers:
-        Number of worker processes for parallelism. ``None`` uses
-        :class:`ProcessPoolExecutor` defaults (one per CPU).
-        Set to 1 to disable parallelism (serial execution).
-    convergence_window:
-        Number of consecutive iterations that must all have
-        ``delta < convergence_threshold`` before convergence is declared.
-        Default 1 (legacy fallback; ``monotone_window`` is the primary
-        convergence criterion for the Phase 9 winner config).
+    strategy_factories:
+        Mapping of strategy name to a zero-argument callable that returns a
+        :class:`~energy_modelling.backtest.types.BacktestStrategy`.
+    daily_data:
+        Full historical dataset (training + evaluation rows).
+    training_end:
+        Last date used for strategy fitting.
+    evaluation_start:
+        First date included in the evaluation window.
+    evaluation_end:
+        Last date included in the evaluation window.
+    max_iterations:
+        Hard cap on market-convergence iterations.
+    convergence_threshold:
+        Maximum absolute EUR/MWh price change per iteration that counts
+        toward convergence.
     monotone_window:
         Number of consecutive iterations whose deltas must be strictly
-        decreasing AND all below ``convergence_threshold``.  Default 5
-        (Phase 9 winner criterion — provably converging dynamics, not a
-        lucky dip below threshold).
-    running_avg_k:
-        Running-average window applied across iterations (Phase 9 winner).
-        Default 15 — faster convergence (~35 iters avg on 2024 and 2025).
-    weight_mode:
-        How strategy weights are computed each iteration.  ``"softmax"``
-        (default, Phase 9 winner) gives every strategy a non-zero weight
-        via ``exp(profit/T) / Z``, eliminating hard sign-flips and regime
-        oscillation.  ``"sign"`` restores the legacy hard-sign behaviour.
-    softmax_temp:
-        Temperature for softmax weighting.  Default 5.0 (Phase 9 winner).
-        Higher values flatten the distribution; lower values sharpen it.
+        decreasing AND all below ``convergence_threshold`` before
+        convergence is declared.  Default 5 — requires provably converging
+        dynamics, not a lucky dip below threshold.
+    initial_market_prices:
+        Starting market prices.  Defaults to ``last_settlement_price``.
+    max_workers:
+        Number of worker processes for parallelism.  ``None`` uses
+        :class:`ProcessPoolExecutor` defaults (one per CPU).
+        Set to 1 for serial execution.
     """
 
     # Phase 1 + 2b: Fit strategies and collect forecasts (parallel)
@@ -220,7 +218,6 @@ def run_futures_market_evaluation(
         raise ValueError(msg)
 
     # Phase 2: Extract ground truth from daily data
-    # Normalise the daily data index to date objects
     data = daily_data.copy()
     if "delivery_date" in data.columns:
         data["delivery_date"] = pd.to_datetime(data["delivery_date"]).dt.date
@@ -228,8 +225,7 @@ def run_futures_market_evaluation(
     else:
         data.index = pd.Index(pd.to_datetime(data.index).date, name="delivery_date")
 
-    # Ensure derived features are present for _collect_forecasts().
-    # add_derived_features() is idempotent.
+    # add_derived_features() is idempotent
     data = add_derived_features(data)
 
     eval_mask = (data.index >= evaluation_start) & (data.index <= evaluation_end)
@@ -246,11 +242,7 @@ def run_futures_market_evaluation(
         strategy_forecasts=strategy_forecasts,
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
-        convergence_window=convergence_window,
         monotone_window=monotone_window,
-        running_avg_k=running_avg_k,
-        weight_mode=weight_mode,
-        softmax_temp=softmax_temp,
     )
 
     # Phase 4: Recompute PnL for each strategy under market prices

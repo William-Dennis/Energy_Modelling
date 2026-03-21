@@ -7,7 +7,6 @@ grows each year while evaluation uses a single calendar year at a time.
 from __future__ import annotations
 
 from datetime import date
-from typing import Type
 
 import pandas as pd
 
@@ -16,7 +15,7 @@ from energy_modelling.backtest.types import BacktestStrategy
 
 
 def walk_forward_validate(
-    strategy_factory: Type[BacktestStrategy],
+    strategy_factory: type[BacktestStrategy],
     daily_data: pd.DataFrame,
     eval_years: list[int] | None = None,
     first_train_year: int = 2019,

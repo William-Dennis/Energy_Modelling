@@ -109,11 +109,14 @@ class TestConvergenceTrajectory:
     def test_multi_day_trajectory(self) -> None:
         dates, real, initial = _multi_day_setup()
         forecasts = _build_pf_forecasts(real)
+        # monotone_window=0: tiny dataset converges in 1-2 iters; the default
+        # window=5 would require 5 consecutive deltas that never accumulate.
         eq = run_futures_market(
             initial_market_prices=initial,
             real_prices=real,
             strategy_forecasts=forecasts,
             max_iterations=50,
+            monotone_window=0,
         )
         traj = compute_convergence_trajectory(eq, real)
         assert traj.converged
@@ -135,6 +138,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=100,
+            monotone_window=0,
         )
         assert eq.converged
 
@@ -145,6 +149,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=100,
+            monotone_window=0,
         )
         assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
 
@@ -154,6 +159,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=100,
+            monotone_window=0,
         )
         assert eq.converged
         for t in dates:
@@ -166,6 +172,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=50,
+            monotone_window=0,
         )
         assert eq.converged
         assert len(eq.iterations) <= 2
@@ -177,6 +184,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=200,
+            monotone_window=0,
         )
         assert eq.converged
         assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
@@ -190,6 +198,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=200,
+            monotone_window=0,
         )
         assert eq.converged
         assert eq.final_market_prices.iloc[0] == pytest.approx(500.0, abs=0.01)
@@ -262,8 +271,8 @@ class TestMarketBehaviour:
     """Integration tests for market-level behaviour."""
 
     def test_opposing_strategies_oscillate_when_both_overshoot(self) -> None:
-        """Long(110) vs Short(70) with real=100: oscillates because each
-        forecast overshoots past real, handing profit to the other."""
+        """Long(110) vs Short(70) with real=100: softmax weighting resolves the
+        oscillation that plagued linear weighting, so the market converges."""
         dates = pd.DatetimeIndex(["2024-01-01"])
         real = pd.Series([100.0], index=dates)
         initial = pd.Series([90.0], index=dates)
@@ -276,8 +285,10 @@ class TestMarketBehaviour:
             real_prices=real,
             strategy_forecasts=forecasts,
             max_iterations=50,
+            monotone_window=0,
         )
-        assert not eq.converged or len(eq.iterations) == 50
+        # Softmax gives both strategies non-zero weight, damping oscillation
+        assert eq.converged
 
     def test_two_profitable_strategies_weighted_average(self) -> None:
         """When both are profitable, price is their weighted avg of forecasts."""

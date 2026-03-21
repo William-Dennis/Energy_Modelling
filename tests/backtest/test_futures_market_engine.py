@@ -119,12 +119,15 @@ class TestForecastRequired:
 
         forecasts = {"long_forecaster": {d: 75.0 for d in _DATES}}
 
+        # monotone_window=0: tiny 3-day dataset converges in 1-2 iters; the
+        # default window=5 requires 5 consecutive deltas which won't accumulate.
         eq = run_futures_market(
             initial_market_prices=initial,
             real_prices=real,
             strategy_forecasts=forecasts,
             max_iterations=50,
             convergence_threshold=0.001,
+            monotone_window=0,
         )
 
         # Strategy forecasts 75, real is 80, initial is 50.
@@ -372,10 +375,12 @@ class TestAllUnprofitable:
         # Forecast != market, but real == market => profit = sign * 0 = 0
         forecasts = {"long": {d: 60.0 for d in _DATES}}
 
+        # monotone_window=0: zero-delta scenario never builds up 5 deltas.
         eq = run_futures_market(
             initial_market_prices=prices.copy(),
             real_prices=prices.copy(),
             strategy_forecasts=forecasts,
+            monotone_window=0,
         )
         # With zero profit, weights are all zero, prices don't move
         assert eq.converged
@@ -402,12 +407,15 @@ class TestPerfectForesightInstantConvergence:
 
         pf_forecasts = {"PF": {d: float(real.loc[d]) for d in _DATES}}
 
+        # monotone_window=0: PF converges in 1-2 iters; window=5 would require
+        # 5 consecutive deltas that never accumulate on a micro dataset.
         eq = run_futures_market(
             initial_market_prices=initial,
             real_prices=real,
             strategy_forecasts=pf_forecasts,
             max_iterations=100,
             convergence_threshold=0.01,
+            monotone_window=0,
         )
 
         assert eq.converged
