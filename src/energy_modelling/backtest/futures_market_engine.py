@@ -22,11 +22,20 @@ Experiment parameters (Phase 8 research, default values reproduce the spec):
 - ``price_mode`` (str, default ``"mean"``): aggregation of weighted forecasts.
   - ``"mean"``: weighted arithmetic mean (spec).
   - ``"median"``: weighted median, more robust to outlier forecasts.
+- ``convergence_window`` (int, default 3): number of consecutive iterations that must
+  all have delta < ``convergence_threshold`` before convergence is declared.  The
+  default of 1 reproduces the original spec (single-step check).  A value of 3
+  prevents the oscillating sequence from falsely triggering on a momentary dip below
+  threshold during a limit cycle.
+- ``running_avg_k`` (int | None, default None): running average over last k price
+  candidates.  Phase 8 E1 experiment parameter.
 """
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -250,6 +259,161 @@ def compute_market_prices(
 
 
 # ---------------------------------------------------------------------------
+# Vectorised helpers (fast NumPy path)
+# ---------------------------------------------------------------------------
+
+
+class _ForecastMatrix(NamedTuple):
+    """Pre-built (S × T) matrix for fast iteration.
+
+    Attributes
+    ----------
+    F:
+        Float64 array of shape ``(S, T)``.  ``NaN`` where a strategy has no
+        forecast for that date.  Filled with the column mean for NaN entries so
+        that the dot product is numerically safe (those strategies will get
+        near-zero weight anyway because they have no directional opinion).
+    strategy_names:
+        List of strategy names, length S — row order matches ``F``.
+    dates:
+        DatetimeIndex of length T — column order matches ``F``.
+    real_vec:
+        Float64 array of shape ``(T,)`` — real prices aligned to ``dates``.
+    """
+
+    F: np.ndarray
+    strategy_names: list[str]
+    dates: pd.DatetimeIndex
+    real_vec: np.ndarray
+
+
+def _build_forecast_matrix(
+    strategy_forecasts: dict[str, dict],
+    dates: pd.Index,
+    real_prices: pd.Series,
+) -> _ForecastMatrix:
+    """Pre-compute the ``(S × T)`` forecast matrix once before the iteration loop.
+
+    Parameters
+    ----------
+    strategy_forecasts:
+        ``{strategy_name: {date: forecast_price}}``.
+    dates:
+        Evaluation dates (from ``market_prices.index``).
+    real_prices:
+        Ground-truth prices, used to build ``real_vec``.
+
+    Returns
+    -------
+    _ForecastMatrix namedtuple.
+    """
+    strategy_names = list(strategy_forecasts.keys())
+    S = len(strategy_names)
+    T = len(dates)
+    date_idx: dict = {d: i for i, d in enumerate(dates)}
+
+    F = np.full((S, T), np.nan, dtype=np.float64)
+    for s, name in enumerate(strategy_names):
+        fcs = strategy_forecasts[name]
+        for d, v in fcs.items():
+            idx = date_idx.get(d)
+            if idx is not None and v is not None:
+                F[s, idx] = float(v)
+
+    # Fill NaN columns with column mean so weighted dot product is safe.
+    # Strategies with NaN forecasts will still produce direction=0 via sign().
+    col_means = np.nanmean(F, axis=0)  # (T,)
+    nan_mask = np.isnan(F)
+    F[nan_mask] = np.take(col_means, np.where(nan_mask)[1])
+
+    real_vec = real_prices.reindex(dates).to_numpy(dtype=np.float64)
+
+    return _ForecastMatrix(
+        F=F,
+        strategy_names=strategy_names,
+        dates=pd.DatetimeIndex(dates),
+        real_vec=real_vec,
+    )
+
+
+def _vec_iteration(
+    market_vec: np.ndarray,
+    fm: _ForecastMatrix,
+    weight_mode: str = "linear",
+    weight_cap: float = 1.0,
+    price_mode: str = "mean",
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """One vectorised market iteration.
+
+    Parameters
+    ----------
+    market_vec:
+        Current market prices, shape ``(T,)``.
+    fm:
+        Pre-built forecast matrix.
+    weight_mode, weight_cap, price_mode:
+        Same as :func:`run_futures_market`.
+
+    Returns
+    -------
+    new_market_vec : np.ndarray, shape (T,)
+    profits : np.ndarray, shape (S,)
+    weights : np.ndarray, shape (S,)
+    """
+    F, real_vec = fm.F, fm.real_vec
+
+    # Steps 1-2: trading direction and per-strategy profit
+    direction = np.sign(F - market_vec[np.newaxis, :])  # (S, T)
+    price_change = real_vec - market_vec  # (T,)
+    profits = (direction * price_change[np.newaxis, :]).sum(axis=1)  # (S,)
+
+    # Step 3: weights
+    if weight_mode == "log":
+        raw = np.log1p(np.maximum(profits, 0.0))
+    else:
+        raw = np.maximum(profits, 0.0)
+
+    total = raw.sum()
+    if total == 0.0:
+        weights = np.zeros_like(raw)
+    else:
+        weights = raw / total
+        if weight_mode == "capped":
+            cap = max(min(weight_cap, 1.0), 1e-9)
+            weights = np.minimum(weights, cap)
+            cap_total = weights.sum()
+            if cap_total > 0.0:
+                weights /= cap_total
+            else:
+                weights = np.zeros_like(weights)
+
+    # Step 4: new market prices
+    if price_mode == "median":
+        # Weighted median per date
+        new_market_vec = market_vec.copy()
+        if weights.sum() > 0.0:
+            for t in range(len(market_vec)):
+                w_t = weights  # all strategies contribute per date
+                f_t = F[:, t]
+                order = np.argsort(f_t)
+                f_sorted = f_t[order]
+                w_sorted = w_t[order]
+                w_norm = w_sorted / w_sorted.sum() if w_sorted.sum() > 0 else w_sorted
+                cumulative = np.cumsum(w_norm)
+                idx = np.searchsorted(cumulative, 0.5)
+                new_market_vec[t] = f_sorted[min(idx, len(f_sorted) - 1)]
+    else:
+        # Weighted arithmetic mean
+        w_sum = weights.sum()
+        if w_sum > 0.0:
+            new_market_vec = (weights @ F) / w_sum  # (T,)
+        else:
+            new_market_vec = market_vec.copy()
+
+    return new_market_vec, profits, weights
+
+
+# ---------------------------------------------------------------------------
 # Iteration and convergence
 # ---------------------------------------------------------------------------
 
@@ -293,6 +457,7 @@ def run_futures_market(
     strategy_forecasts: dict[str, dict],
     max_iterations: int = 20,
     convergence_threshold: float = 0.01,
+    convergence_window: int = 1,
     alpha: float = 1.0,
     weight_mode: str = "linear",
     weight_cap: float = 1.0,
@@ -313,7 +478,14 @@ def run_futures_market(
     max_iterations:
         Hard cap on iteration count.
     convergence_threshold:
-        Maximum absolute EUR/MWh change to declare convergence.
+        Maximum absolute EUR/MWh change per iteration to count toward
+        convergence.
+    convergence_window:
+        Number of consecutive iterations that must each have
+        ``delta < convergence_threshold`` before convergence is declared.
+        Default 1 reproduces the original spec (single-step check).
+        Setting to 3 prevents a momentary dip in an oscillating sequence
+        from falsely triggering convergence.
     alpha:
         Dampening factor in [0, 1].  The updated price is blended as
         ``alpha * candidate + (1 - alpha) * current``.  Default 1.0
@@ -327,59 +499,68 @@ def run_futures_market(
         Forecast aggregation method.  ``"mean"`` (spec) or ``"median"``.
     running_avg_k:
         If set, the published market price at each iteration is the mean of
-        the last *k* raw iteration candidates.  This running-average
-        smoothing breaks the 3-step limit cycle that otherwise prevents
-        convergence.  ``None`` (default) disables smoothing (spec-compliant).
-        **Recommended production value: 5** (Phase 8 experiment winner —
-        converges within 50 iters, MAE 10.85 on 2024, 9.29 on 2025).
+        the last *k* raw price candidates.  Phase 8 E1 experiment parameter.
+        ``None`` (default) disables.
     """
     current_prices = initial_market_prices.copy().astype(float)
     iterations: list[FuturesMarketIteration] = []
     converged = False
     delta = float("inf")
-    price_history: list[pd.Series] = []
+    price_history: deque[np.ndarray] = deque(maxlen=running_avg_k) if running_avg_k else deque()
+    recent_deltas: list[float] = []
+
+    # Pre-build (S × T) forecast matrix once — avoids repeated dict iteration
+    fm = _build_forecast_matrix(strategy_forecasts, current_prices.index, real_prices)
+    strategy_names = fm.strategy_names
+    index = current_prices.index
 
     for k in tqdm(range(max_iterations), desc="Market simulation", unit="iter"):
-        result = run_futures_market_iteration(
-            market_prices=current_prices,
-            real_prices=real_prices,
-            iteration=k,
-            strategy_forecasts=strategy_forecasts,
-            weight_mode=weight_mode,
-            weight_cap=weight_cap,
-            price_mode=price_mode,
+        market_vec = current_prices.to_numpy(dtype=np.float64)
+
+        new_vec, profits_arr, weights_arr = _vec_iteration(
+            market_vec, fm, weight_mode=weight_mode, weight_cap=weight_cap, price_mode=price_mode
         )
 
         # Apply within-iteration alpha dampening
         if alpha < 1.0:
-            candidate = alpha * result.market_prices + (1.0 - alpha) * current_prices
+            candidate_vec = alpha * new_vec + (1.0 - alpha) * market_vec
         else:
-            candidate = result.market_prices
+            candidate_vec = new_vec
 
-        # Apply cross-iteration running-average smoothing (E1)
+        # Cross-iteration running-average smoothing (E1)
         if running_avg_k is not None and running_avg_k > 1:
-            price_history.append(candidate.copy())
-            if len(price_history) > running_avg_k:
-                price_history = price_history[-running_avg_k:]
-            published = pd.concat(price_history, axis=1).mean(axis=1)
+            price_history.append(candidate_vec)
+            published_vec = np.mean(list(price_history), axis=0)
         else:
-            published = candidate
+            published_vec = candidate_vec
 
-        # Store the published (smoothed) prices in the iteration snapshot
-        if published is not result.market_prices:
-            result = FuturesMarketIteration(
-                iteration=result.iteration,
-                market_prices=published,
-                strategy_profits=result.strategy_profits,
-                strategy_weights=result.strategy_weights,
-                active_strategies=result.active_strategies,
-            )
+        published = pd.Series(published_vec, index=index, name="market_price")
 
-        delta = float((published - current_prices).abs().max())
+        # Build lightweight dicts for the snapshot (avoid pandas overhead in tight loop)
+        profits_dict = dict(zip(strategy_names, profits_arr.tolist()))
+        weights_dict = dict(zip(strategy_names, weights_arr.tolist()))
+        active = [n for n, w in zip(strategy_names, weights_arr) if w > 0.0]
+
+        result = FuturesMarketIteration(
+            iteration=k,
+            market_prices=published,
+            strategy_profits=profits_dict,
+            strategy_weights=weights_dict,
+            active_strategies=active,
+        )
+
+        delta = float(np.abs(published_vec - market_vec).max())
         iterations.append(result)
         current_prices = published
 
+        # Stricter convergence: require convergence_window consecutive
+        # iterations all below threshold
         if delta < convergence_threshold:
+            recent_deltas.append(delta)
+        else:
+            recent_deltas = []
+
+        if len(recent_deltas) >= convergence_window:
             converged = True
             break
 

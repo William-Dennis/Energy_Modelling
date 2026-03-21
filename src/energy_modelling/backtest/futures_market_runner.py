@@ -145,11 +145,12 @@ def run_futures_market_evaluation(
     training_end: date,
     evaluation_start: date,
     evaluation_end: date,
-    max_iterations: int = 50,
+    max_iterations: int = 500,
     convergence_threshold: float = 0.01,
+    convergence_window: int = 1,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
-    running_avg_k: int | None = 5,
+    running_avg_k: int | None = 30,
 ) -> FuturesMarketResult:
     """Run all strategies, then evaluate them under the synthetic market.
 
@@ -166,11 +167,14 @@ def run_futures_market_evaluation(
         Number of worker processes for parallelism. ``None`` uses
         :class:`ProcessPoolExecutor` defaults (one per CPU).
         Set to 1 to disable parallelism (serial execution).
+    convergence_window:
+        Number of consecutive iterations that must all have
+        ``delta < convergence_threshold`` before convergence is declared.
+        Default 1 (Phase 8c winner: K=30 running-average absorbs oscillation
+        so a single small step reliably signals true convergence).
     running_avg_k:
-        Running-average window applied across iterations (Phase 8 E1
-        winner). Default 5 — the configuration that resolves the 3-step
-        limit cycle and converges within 50 iterations. Set to ``None``
-        to disable smoothing (spec-compliant, but does not converge).
+        Running-average window applied across iterations (Phase 8 E1/8c).
+        Default 30 — converges on both 2024 and 2025 with lower MAE than K=5.
     """
 
     # Phase 1 + 2b: Fit strategies and collect forecasts (parallel)
@@ -226,6 +230,7 @@ def run_futures_market_evaluation(
         strategy_forecasts=strategy_forecasts,
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
+        convergence_window=convergence_window,
         running_avg_k=running_avg_k,
     )
 
