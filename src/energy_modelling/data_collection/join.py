@@ -150,7 +150,9 @@ def build_kaggle_metadata(
     }
 
 
-def _load_mandatory_sources(config: DataCollectionConfig) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _load_mandatory_sources(
+    config: DataCollectionConfig,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Load and prefix mandatory data sources."""
     prices = load_raw_parquet(config.raw_dir / "prices_da.parquet", "prices")
     generation = load_raw_parquet(config.raw_dir / "generation.parquet", "generation")
@@ -215,7 +217,9 @@ def _drop_low_quality_columns(joined: pd.DataFrame) -> tuple[pd.DataFrame, list[
         joined = joined.drop(columns=drop_cols)
         logger.info(
             "Dropped {} columns with >{:.0f}% missing: {}",
-            len(drop_cols), MAX_MISSING_PCT, drop_cols,
+            len(drop_cols),
+            MAX_MISSING_PCT,
+            drop_cols,
         )
     constant_cols = [col for col in joined.columns if joined[col].dropna().nunique() <= 1]
     if constant_cols:
@@ -243,7 +247,8 @@ def _clean_and_impute(joined: pd.DataFrame) -> tuple[pd.DataFrame, list[str], di
     post_quality = compute_data_quality(joined)
     logger.info(
         "Post-imputation: {} rows, {} columns, missing: {}",
-        post_quality["total_rows"], len(joined.columns),
+        post_quality["total_rows"],
+        len(joined.columns),
         {k: f"{v}%" for k, v in post_quality["missing_percent"].items() if v > 0},
     )
     return joined, drop_cols, post_quality

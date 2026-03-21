@@ -1,5 +1,10 @@
 # Strategy Expansion: 11 → 67 Strategies
 
+> **Parent:** [Project ROADMAP](../phases/ROADMAP.md) | **Phase context:** These
+> expansion phases (A-G) ran as a parallel track alongside the main numbered
+> phases. See the ROADMAP's "Expansion Phases" table for how they fit into the
+> overall project timeline.
+
 ## Overview
 
 This folder tracks the live progress of expanding the strategy pool from 11 to 67

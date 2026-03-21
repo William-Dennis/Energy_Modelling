@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASES 0-8 COMPLETE, PHASE 9 PLANNED
+## Overall Status: PHASES 0-9 COMPLETE, PHASE 10 PLANNED
 
 ## Phase Overview
 
@@ -13,9 +13,10 @@
 | 4 | [Implement Strategies](phase_4_implement_strategies.md) | COMPLETE | Phase 0, 3 | 7 new BacktestStrategy implementations + 70 tests |
 | 5 | [Run & Assess](phase_5_run_and_assess.md) | COMPLETE | Phase 4 | Leaderboard, market sim, hypothesis assessment |
 | 6 | [EDA Feedback Loop](phase_6_feedback_loop.md) | COMPLETE | Phase 5 | 6 new dashboard sections, no strategy refinements needed |
-| 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Forecast-based convergence proven (contraction mapping); 4 theorems validated empirically |
-| 8 | [Oscillation Research](phase_8_oscillation_research.md) | COMPLETE | Phase 7 | Historical oscillation research record and remedy exploration |
-| 9 | [Futures Market Behaviour and Strategy Robustness](phase_9_market_behaviour_and_strategy_robustness.md) | PLANNED | Phase 5, 7, 8 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
+| 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Forecast-based convergence proven (contraction mapping); 4 theorems validated empirically. **WARNING: Applies to undampened model only (ema_alpha=1.0); not taken forward to production.** |
+| 8 | [Oscillation Research](phase_8_oscillation_research.md) | COMPLETE | Phase 7 | Historical oscillation research record. **WARNING: Winner (running_avg_k=5) was never implemented; see Phase 9 for the approach actually adopted.** |
+| 9 | [EMA Price Update Experiments](phase_9_ema_price_update.md) | COMPLETE | Phase 7, 8 | EMA dampening sweep; alpha=0.1 adopted as production default; 2025 converges, 2024 does not |
+| 10 | [Futures Market Behaviour and Strategy Robustness](phase_10_market_behaviour_and_strategy_robustness.md) | PLANNED | Phase 5, 7, 8, 9 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
 
 ## Dependency Graph
 
@@ -38,8 +39,29 @@ Phase 0 (Consolidation)
           |
           +---> Phase 8 (Oscillation Research) <--- Phase 7
           |
-          +---> Phase 9 (Behaviour + Robust Strategies) <--- Phase 5, 7, 8
+          +---> Phase 9 (EMA Price Update) <--- Phase 7, 8
+          |
+          +---> Phase 10 (Behaviour + Robust Strategies) <--- Phase 5, 7, 8, 9
 ```
+
+## Expansion Phases (Parallel Track)
+
+Strategy expansion from 9 to 67 strategies was tracked under a parallel work
+stream in `docs/expansion/`.  This work ran alongside the main Phase 0-9
+roadmap and is fully complete.
+
+| Sub-Phase | Title | Status | Key Deliverable |
+|-----------|-------|--------|-----------------|
+| A | [Feature Engineering](../expansion/phase_A_feature_engineering.md) | COMPLETE | 18 derived features |
+| B | [Issue 3 Strategies](../expansion/phase_B_issue3_strategies.md) | COMPLETE | +7 strategies (solar, commodity, temperature, cross-border, volatility, nuclear, renewables) |
+| C | [Derived Threshold](../expansion/phase_C_derived_threshold.md) | COMPLETE | +14 derived-feature threshold strategies |
+| D | [ML Strategies](../expansion/phase_D_ml_strategies.md) | COMPLETE | +15 ML model strategies |
+| E | [Regime Calendar](../expansion/phase_E_regime_calendar.md) | COMPLETE | +8 calendar/temporal/regime strategies |
+| F | [Ensemble](../expansion/phase_F_ensemble.md) | COMPLETE | +12 ensemble/meta strategies |
+| G | [Feedback Loop](../expansion/phase_G_feedback_loop.md) | COMPLETE | Automated feedback loop infrastructure |
+
+See `docs/expansion/strategy_registry.md` for the full 67-strategy inventory and
+`docs/expansion/signal_registry.md` for the signal catalog.
 
 ## Principles
 
@@ -53,48 +75,80 @@ Phase 0 (Consolidation)
   saved artifacts, preserve the older phase record and add explicit current-state
   notes rather than silently rewriting history
 
-## Architecture (Post Phase 0)
+## Architecture (Current — Post Expansion)
 
 ```
-strategies/                          # Student strategies (BacktestStrategy subclasses)
-  __init__.py
-  always_long.py
-  always_short.py
-  day_of_week.py           # H1: Calendar effect
-  wind_forecast.py         # H2: Wind forecast contrarian
-  load_forecast.py         # H3: Load forecast level
-  lag2_reversion.py        # H4: Lag-2 mean reversion
-  weekly_cycle.py          # H5: Weekly cycle exploitation
-  fossil_dispatch.py       # H6: Fossil dispatch contrarian
-  composite_signal.py      # H7: Weighted z-score composite
-  perfect_foresight.py     # Analysis-only (Phase 7, NOT in __init__.py)
+strategies/                          # 67 registered strategies + 1 analysis-only
+  __init__.py                        #   Registry: imports all 67 strategies
+  ml_base.py                         #   _MLStrategyBase (scikit-learn adapter)
+  ensemble_base.py                   #   _EnsembleBase (ensemble adapter)
+  always_long.py                     #   Baseline: always long
+  always_short.py                    #   Baseline: always short
+  day_of_week.py                     #   H1: Calendar effect
+  wind_forecast.py                   #   H2: Wind forecast contrarian
+  load_forecast.py                   #   H3: Load forecast level
+  lag2_reversion.py                  #   H4: Lag-2 mean reversion
+  weekly_cycle.py                    #   H5: Weekly cycle exploitation
+  fossil_dispatch.py                 #   H6: Fossil dispatch contrarian
+  composite_signal.py                #   H7: Weighted z-score composite
+  perfect_foresight.py               #   Analysis-only (Phase 7, NOT in __init__.py)
+  # ... +36 rule-based/fundamental strategies (Phases B-E)
+  # ... +18 ML strategies (Phase D)
+  # ... +11 ensemble strategies (Phase F)
+  # See docs/expansion/strategy_registry.md for full list
 
 src/energy_modelling/
-  backtest/                          # THE strategy framework
+  backtest/                          # THE strategy framework (16 modules)
     types.py                         #   BacktestStrategy ABC, BacktestState
     runner.py                        #   run_backtest()
     scoring.py                       #   metrics, leaderboard, monthly_pnl, rolling_sharpe
-    futures_market_engine.py         #   Synthetic futures market engine
+    futures_market_engine.py         #   Synthetic futures market engine (ema_alpha dampening)
     futures_market_runner.py         #   Market evaluation orchestrator
     convergence.py                   #   Convergence analysis (Phase 7)
     data.py                          #   Daily backtest data builder
-    __init__.py
+    benchmarks.py                    #   Entry-price benchmark factories (Issue 1)
+    walk_forward.py                  #   Walk-forward validation
+    io.py                            #   Save/load results (pickle) (Issue 2)
+    feedback.py                      #   Strategy feedback & correlation (Phase 6)
+    feature_engineering.py           #   Feature engineering pipeline (Expansion Phase A)
+    recompute.py                     #   recompute-all CLI (Issue 6)
+    cli.py                           #   build-backtest-data CLI
+    __main__.py                      #   CLI entry point
+    __init__.py                      #   Re-exports all public API
 
-  futures_market/                    # Shared data utilities (kept)
+  futures_market/                    # Shared data utilities (4 modules)
     data.py                          #   load_dataset, build_daily_features, compute_daily_settlement
     contract.py                      #   compute_pnl, compute_settlement_price
-    types.py                         #   DayState, Signal, Trade, Settlement (retained for data.py)
+    types.py                         #   DayState, Signal, Trade, Settlement
     __init__.py
 
-  dashboard/                         # Streamlit dashboard (4 tabs post-consolidation)
+  dashboard/                         # Streamlit dashboard (~20 modules, 4 tabs)
     app.py                           #   Thin orchestrator
     __init__.py                      #   Shared helpers
-    _eda.py                          #   Tab 1: EDA
+    _eda.py                          #   Tab 1: EDA (thin shim)
+    _eda_core.py                     #   EDA core rendering logic
+    _eda_constants.py                #   EDA constants/config
+    _eda_sections_basic.py           #   EDA: basic data sections
+    _eda_sections_distributions.py   #   EDA: distribution analysis
+    _eda_sections_forecasts.py       #   EDA: forecast analysis
+    _eda_sections_market.py          #   EDA: market analysis
+    _eda_sections_signals.py         #   EDA: signal extraction
+    _eda_sections_trading.py         #   EDA: trading analysis
+    _eda_sections_volatility.py      #   EDA: volatility analysis
+    _eda_sections_feedback.py        #   EDA: feedback loop analysis (Phase 6)
+    eda_analysis.py                  #   Standalone EDA analysis module
+    eda_analysis_advanced.py         #   Advanced EDA analysis
     _backtest.py                     #   Tab 2: Backtest leaderboard
+    _backtest_render.py              #   Backtest rendering helpers
+    _benchmark_charts.py             #   Benchmark comparison charts
     _futures_market.py               #   Tab 3: Futures market
     _accuracy.py                     #   Tab 4: Futures Market Simulation accuracy
 
-  data_collection/                   # ENTSO-E + weather + commodity data collection
+  data_collection/                   # ENTSO-E + weather + commodity data collection (14 modules)
+    cli.py, config.py, utils.py, join.py,
+    entsoe_prices.py, entsoe_load.py, entsoe_generation.py,
+    entsoe_forecasts.py, entsoe_flows.py, entsoe_ntc.py,
+    entsoe_neighbours.py, gas_price.py, carbon_price.py, weather.py
 ```
 
 ## Change Log
@@ -111,5 +165,7 @@ src/energy_modelling/
 | 2026-03-19 | 7 | COMPLETE — Convergence analysis: 3 theorems, 6 experiments, 29+7 new tests; non-convergence explained by constant step size |
 | 2026-03-20 | 7 | REDO — Forecast-first refactor: forecast() is sole abstract method; act() derived with skip_buffer. 4 theorems proven (contraction mapping), 6 experiments validate theory to 4 decimal places. 225 tests pass |
 | 2026-03-20 | 8 | STARTED — Oscillation research: 6 sub-phase documents (8a-8f), 15 experiments + 5 combinations planned across 4 research tracks |
-| 2026-03-21 | 8 | DOCUMENTED AS HISTORICAL — Phase 8 retained as research record; additive current-state notes added to avoid stale interpretation |
-| 2026-03-21 | 9 | PLANNED — New phase to reconcile live market behaviour, explain dynamics, and drive stronger market-robust strategy design |
+| 2026-03-21 | 8 | DOCUMENTED AS HISTORICAL — Phase 8 retained as research record; winner (running_avg_k=5) was never implemented |
+| 2026-03-21 | 9 | COMPLETE — EMA price-update experiments: alpha sweep {0.1..1.0} across 2024/2025; alpha=0.1 adopted as production default |
+| 2026-03-21 | 10 | PLANNED — New phase to reconcile live market behaviour, explain dynamics, and drive stronger market-robust strategy design |
+| 2026-03-21 | — | AUDIT — Phase renumbering: old Phase 9 → Phase 10; EMA experiments documented as new Phase 9. Warnings added to Phases 7 and 8. Architecture updated to reflect 67-strategy, 16-module backtest, 20-module dashboard state. 948 tests passing. |

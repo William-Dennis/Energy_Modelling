@@ -21,10 +21,10 @@ for _p in (_REPO_ROOT, _SRC_ROOT):
     if _ps not in sys.path:
         sys.path.insert(0, _ps)
 
-from energy_modelling.backtest.data import build_feature_glossary, write_backtest_data
-from energy_modelling.backtest.runner import BacktestResult, run_backtest
-from energy_modelling.backtest.scoring import leaderboard_score
-from energy_modelling.backtest.types import BacktestStrategy
+from energy_modelling.backtest.data import build_feature_glossary, write_backtest_data  # noqa: E402
+from energy_modelling.backtest.runner import BacktestResult, run_backtest  # noqa: E402
+from energy_modelling.backtest.scoring import leaderboard_score  # noqa: E402
+from energy_modelling.backtest.types import BacktestStrategy  # noqa: E402
 
 _DATASET_DEFAULT = Path("data/backtest/daily_public.csv")
 _HIDDEN_DATASET_DEFAULT = Path("data/backtest/daily_hidden_test_full.csv")
@@ -171,8 +171,10 @@ def _render_controls() -> tuple[str, str, list[str], bool]:
             "2025 hidden dataset", value=str(_HIDDEN_DATASET_DEFAULT), key="ch_hid"
         )
     selected = st.multiselect(
-        "Strategies", options=list(STRATEGY_FACTORIES),
-        default=list(STRATEGY_FACTORIES), key="ch_strats",
+        "Strategies",
+        options=list(STRATEGY_FACTORIES),
+        default=list(STRATEGY_FACTORIES),
+        key="ch_strats",
     )
     run_btn = st.button("Run Comparison", type="primary", key="ch_run")
     return pub_path, hid_path, selected, run_btn
@@ -222,9 +224,8 @@ def render() -> None:
         st.info("Choose strategies and click **Run Comparison**, or pre-compute results via CLI.")
         return
 
-    if run_btn:
-        if _run_evaluation(selected, pub_path, hid_path) is None:
-            return
+    if run_btn and _run_evaluation(selected, pub_path, hid_path) is None:
+        return
 
     val_results = st.session_state.get("backtest_val_results", {})
     hid_results = st.session_state.get("backtest_hid_results", {})

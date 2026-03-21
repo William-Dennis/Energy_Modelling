@@ -10,12 +10,12 @@ Six issues covering benchmarks, dashboard improvements, new strategies, refactor
 |-------|-------|--------|-------------|
 | 1 | Configurable Entry Price Benchmarks | ✅ Complete | 9 |
 | 2 | Dashboard Loads Saved Results | ✅ Complete | 6 |
-| 3 | New Strategies (5-7) | ⏳ Not started | — |
+| 3 | New Strategies (5-7) | ✅ Complete (Expansion Phase B) | 70+ |
 | 4 | Dashboard Benchmark Views | ✅ Complete | — |
 | 5 | Refactor Large Files | ✅ Complete | — |
 | 6 | Recompute CLI + Docs | ✅ Complete | 5 |
 
-**Total tests**: 295 passing (was 276 pre-issues, +19 new tests)
+**Total tests**: 948 passing (excluding system-Python `data_collection/` — needs `uv run`)
 
 ## Dependency Graph
 
@@ -25,7 +25,7 @@ Issue 1 (Benchmarks)  ✅  ──┐
 Issue 2 (Saved results) ✅ ──┤
                              └──> Issue 6 (CLI + docs)  ✅
 
-Issue 3 (New strategies)   ───── standalone  ⏳
+Issue 3 (New strategies)   ───── standalone  ✅ (completed via Expansion Phase B)
 Issue 5 (Refactor)  ✅     ───── standalone
 ```
 
@@ -37,7 +37,7 @@ Issue 5 (Refactor)  ✅     ───── standalone
 |-------|-------|----------|-------------|--------|
 | 1 | [Configurable Entry Price Benchmarks](issue_1_configurable_entry_price_benchmarks.md) | High | Medium | ✅ Done |
 | 2 | [Dashboard Loads Saved Results](issue_2_dashboard_saved_results.md) | High | Medium | ✅ Done |
-| 3 | [New Strategies (5-7)](issue_3_new_strategies.md) | High | Large | ⏳ Not started |
+| 3 | [New Strategies (5-7)](issue_3_new_strategies.md) | High | Large | ✅ Done (Expansion Phase B) |
 | 5 | [Refactor Large Files](issue_5_refactor_large_files.md) | Medium | Medium | ✅ Done |
 
 ### Wave 2 (After Issues 1 + 2 Merge)
@@ -55,8 +55,8 @@ Add `entry_prices` parameter to `run_backtest()` and factory functions for alter
 ### Issue 2: Dashboard Loads Saved Results ✅
 Dashboard loads pre-computed results from disk instead of recomputing live. Adds `io.py` with pickle-based save/load, auto-loads from `data/results/` on startup.
 
-### Issue 3: New Strategies (5-7) ⏳
-Implement 5-7 new strategies exploiting the 20 unused features: solar, commodities, temperature, cross-border spreads, volatility regimes, nuclear, renewables surplus.
+### Issue 3: New Strategies (5-7) ✅
+Implement 5-7 new strategies exploiting the 20 unused features: solar, commodities, temperature, cross-border spreads, volatility regimes, nuclear, renewables surplus. **Completed during Expansion Phase B** -- all 7 strategies implemented and registered. See `docs/expansion/strategy_registry.md`.
 
 ### Issue 4: Dashboard Benchmark Views ✅
 Added "Benchmark Comparison" tab to the dashboard with strategy × benchmark comparison table, heatmap visualization, and metric selector (PnL, Sharpe, Max Drawdown, Win Rate).
@@ -69,11 +69,11 @@ All 6 target files refactored to ≤300 lines. `_eda.py` (1788 lines) split into
 
 ## Current State (Post-Issues)
 
-- **295 tests passing** (excluding `data_collection/` — needs `pytest-mock`)
+- **948 tests passing** (all pass via `uv run python -m pytest`)
 - **Full rename complete**: `challenge` → `backtest`, `market_simulation` → `futures_market`
-- **9 strategies** implemented (2 baseline + 7 signal-based)
+- **67 strategies** implemented (2 baseline + 7 Phase 4 + 58 expansion)
 - **Dashboard** has 5 tabs: EDA, Backtest, Futures Market, Accuracy, Benchmark Comparison
-- **All 7 original phases** (0-7) complete
+- **All 9 phases** (0-9) complete; Phase 10 planned
 - **8 benchmark configurations**: baseline, noise (1/5/10/20 EUR), bias (±5 EUR), oracle
 - **CLI**: `collect-data`, `build-backtest-data`, `recompute-all`
 - **Result persistence**: `data/results/` with pickle-based save/load

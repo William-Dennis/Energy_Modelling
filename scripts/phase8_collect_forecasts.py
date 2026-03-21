@@ -45,11 +45,9 @@ def _run_single(
     """Worker: fit strategy, collect both forecasts and predictions."""
     from energy_modelling.backtest.feature_engineering import add_derived_features
     from energy_modelling.backtest.futures_market_runner import (
-        _STATE_EXCLUDE_COLUMNS,
         _collect_forecasts,
     )
     from energy_modelling.backtest.runner import _normalise_daily_data, run_backtest
-    from energy_modelling.backtest.types import BacktestState
 
     strategy = factory()
     result = run_backtest(
@@ -100,12 +98,10 @@ def collect_forecasts(
             ): name
             for name, factory in strategy_factories.items()
         }
-        done = 0
-        for future in futures:
+        for done, future in enumerate(futures, 1):
             name, f, p = future.result()
             forecasts[name] = f
             predictions[name] = p
-            done += 1
             if done % 10 == 0 or done == n:
                 logger.info("  %d/%d done", done, n)
 

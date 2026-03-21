@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 import pandas as pd
@@ -21,17 +21,9 @@ from energy_modelling.backtest.futures_market_engine import (
 )
 from energy_modelling.backtest.runner import BacktestResult, run_backtest
 from energy_modelling.backtest.scoring import compute_backtest_metrics
-from energy_modelling.backtest.types import BacktestState, BacktestStrategy
+from energy_modelling.backtest.types import STATE_EXCLUDE_COLUMNS, BacktestState, BacktestStrategy
 
-_STATE_EXCLUDE_COLUMNS = {
-    "delivery_date",
-    "split",
-    "settlement_price",
-    "price_change_eur_mwh",
-    "target_direction",
-    "pnl_long_eur",
-    "pnl_short_eur",
-}
+_STATE_EXCLUDE_COLUMNS = STATE_EXCLUDE_COLUMNS  # backwards-compat alias
 
 
 @dataclass(frozen=True)
@@ -57,7 +49,7 @@ class FuturesMarketResult:
     equilibrium: FuturesMarketEquilibrium
     market_results: dict[str, BacktestResult]
     original_results: dict[str, BacktestResult]
-    strategy_forecasts: dict[str, dict] = None  # type: ignore[assignment]
+    strategy_forecasts: dict[str, dict] = field(default_factory=dict)
 
 
 def _recompute_pnl_against_market(

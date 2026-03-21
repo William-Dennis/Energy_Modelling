@@ -1,5 +1,7 @@
 # Phase D: ML Model Strategies
 
+> [ROADMAP](../phases/ROADMAP.md) · [Expansion index](README.md)
+
 ## Status: ✅ Complete
 
 ## Objective

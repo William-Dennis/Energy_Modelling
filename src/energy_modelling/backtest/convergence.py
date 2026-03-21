@@ -105,8 +105,12 @@ def run_forecast_foresight_market(
     """Run the market with PF providing real-price forecasts.
 
     PF's forecast is the real settlement price.  With PF as the sole
-    strategy, the update rule is ``P_{k+1} = P_real`` (instant convergence
-    in one iteration) because there is no dampening.
+    strategy **and no dampening** (``ema_alpha=1.0``), the update rule
+    is ``P_{k+1} = P_real`` (instant convergence in one iteration).
+
+    Note: the default ``ema_alpha=0.1`` applies EMA dampening, so
+    convergence is gradual (not one-step).  Pass ``ema_alpha=1.0`` to
+    exercise the undampened, spec-compliant path.
 
     With other strategies present, the price update is the profit-weighted
     average of all (profitable) strategies' forecasts.

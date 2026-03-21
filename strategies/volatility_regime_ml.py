@@ -45,10 +45,7 @@ class VolatilityRegimeMLStrategy(BacktestStrategy):
 
     def forecast(self, state: BacktestState) -> float:
         vol = float(state.features.get("rolling_vol_7d", _DEFAULT_VOL))
-        if vol > self._vol_threshold:
-            mean_change = self._high_vol_mean
-        else:
-            mean_change = self._low_vol_mean
+        mean_change = self._high_vol_mean if vol > self._vol_threshold else self._low_vol_mean
         return state.last_settlement_price + mean_change
 
     def reset(self) -> None:

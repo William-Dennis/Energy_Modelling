@@ -79,10 +79,7 @@ class TopKEnsembleStrategy(_EnsembleBase):
                 )
                 f = float(m.forecast(state))
                 diff = f - state.last_settlement_price
-                if abs(diff) <= m.skip_buffer:
-                    pred_dir = 0.0
-                else:
-                    pred_dir = 1.0 if diff > 0 else -1.0
+                pred_dir = 0.0 if abs(diff) <= m.skip_buffer else 1.0 if diff > 0 else -1.0
                 true_dir = float(row["target_direction"])
                 if pred_dir != 0.0 and pred_dir == true_dir:
                     correct += 1

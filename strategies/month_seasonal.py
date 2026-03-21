@@ -31,7 +31,7 @@ class MonthSeasonalStrategy(BacktestStrategy):
         months = dates.dt.month.values  # numpy array to avoid index mismatch
         changes = train_data["price_change_eur_mwh"].values
         monthly: dict[int, list[float]] = {}
-        for m, c in zip(months, changes):
+        for m, c in zip(months, changes, strict=True):
             monthly.setdefault(int(m), []).append(float(c))
         self._monthly_mean = {m: float(np.mean(vals)) for m, vals in monthly.items()}
         abs_means = np.abs(list(self._monthly_mean.values()))

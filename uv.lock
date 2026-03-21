@@ -557,7 +557,6 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "entsoe-py" },
-    { name = "jupyter" },
     { name = "kaggle" },
     { name = "loguru" },
     { name = "matplotlib" },
@@ -570,7 +569,6 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "requests-cache" },
     { name = "retry-requests" },
-    { name = "ruff" },
     { name = "scikit-learn" },
     { name = "statsmodels" },
     { name = "streamlit" },
@@ -580,8 +578,10 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "jupyter" },
     { name = "pytest" },
     { name = "pytest-mock" },
+    { name = "ruff" },
     { name = "ty" },
 ]
 
@@ -589,7 +589,6 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.1" },
     { name = "entsoe-py", specifier = ">=0.6" },
-    { name = "jupyter", specifier = ">=1.1.1" },
     { name = "kaggle", specifier = ">=1.6,<2.0" },
     { name = "loguru", specifier = ">=0.7" },
     { name = "matplotlib", specifier = ">=3.10.8" },
@@ -602,7 +601,6 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "requests-cache", specifier = ">=1.1" },
     { name = "retry-requests", specifier = ">=2.0" },
-    { name = "ruff", specifier = ">=0.14.0" },
     { name = "scikit-learn", specifier = ">=1.8.0" },
     { name = "statsmodels", specifier = ">=0.14.6" },
     { name = "streamlit", specifier = ">=1.38" },
@@ -612,8 +610,10 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "jupyter", specifier = ">=1.1.1" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-mock", specifier = ">=3.12" },
+    { name = "ruff", specifier = ">=0.14.0" },
     { name = "ty", specifier = ">=0.0.1a7" },
 ]
 

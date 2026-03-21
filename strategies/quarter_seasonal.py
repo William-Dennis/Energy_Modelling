@@ -25,7 +25,7 @@ class QuarterSeasonalStrategy(BacktestStrategy):
         quarters = dates.dt.quarter.values  # numpy array to avoid index issues
         changes = train_data["price_change_eur_mwh"].values
         quarterly: dict[int, list[float]] = {}
-        for q, c in zip(quarters, changes):
+        for q, c in zip(quarters, changes, strict=True):
             quarterly.setdefault(int(q), []).append(float(c))
         self._quarterly_mean = {q: float(np.mean(vals)) for q, vals in quarterly.items()}
         abs_means = np.abs(list(self._quarterly_mean.values()))

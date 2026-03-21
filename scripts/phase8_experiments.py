@@ -483,7 +483,7 @@ def _print_summary(df: pd.DataFrame) -> None:
                 )
 
         if not not_conv.empty:
-            print(f"\n  Top 5 non-converged (by MAE):")
+            print("\n  Top 5 non-converged (by MAE):")
             print(f"  {'ID':<25} {'MAE':>8} {'Iters':>6} {'Delta':>10}  Label")
             for _, r in not_conv.head(5).iterrows():
                 print(
@@ -498,7 +498,8 @@ def _print_summary(df: pd.DataFrame) -> None:
         print(f"\n{'=' * 72}")
         print(f"  BEST OVERALL CONVERGED: {best['id']} (year={int(best['year'])})")
         print(
-            f"  MAE={best['mae']:.2f}  delta={best['final_delta']:.4f}  iters={int(best['n_iterations'])}"
+            f"  MAE={best['mae']:.2f}  delta={best['final_delta']:.4f}"
+            f"  iters={int(best['n_iterations'])}"
         )
         print(
             f"  alpha={best['alpha']}  weight_mode={best['weight_mode']}  "

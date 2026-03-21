@@ -173,9 +173,11 @@ Follow TDD:
 - [ ] All 276+ existing tests still pass
 - [ ] At least 2 of the new strategies outperform the existing best (CompositeSignal, 100K PnL) in the standard backtest -- or provide clear analysis if they don't
 
-## Status: ⏳ NOT STARTED
+## Status: ✅ COMPLETE (Expansion Phase B)
 
-This issue is standalone and can be worked on independently. All prerequisite infrastructure (benchmarks, saved results, CLI) is now in place from Issues 1, 2, 4, and 6.
+All 7 strategies were implemented during the Expansion Phase B work stream (see `docs/expansion/phase_B_issue3_strategies.md` and `docs/expansion/strategy_registry.md`). The strategies are fully registered in `strategies/__init__.py` and covered by tests in `tests/backtest/`.
+
+This issue file is retained for historical reference. The original planning text below reflects the pre-implementation specification.
 
 ## Labels
 

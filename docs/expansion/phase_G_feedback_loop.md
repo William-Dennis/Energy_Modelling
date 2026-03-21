@@ -1,5 +1,7 @@
 # Phase G: Feedback Loop Infrastructure
 
+> [ROADMAP](../phases/ROADMAP.md) · [Expansion index](README.md)
+
 ## Status: ✅ Complete
 
 ## Objective

@@ -8,6 +8,20 @@ from datetime import date
 
 import pandas as pd
 
+#: Columns excluded from :class:`BacktestState.features` because they contain
+#: target information that would not be available at decision time.
+STATE_EXCLUDE_COLUMNS: frozenset[str] = frozenset(
+    {
+        "delivery_date",
+        "split",
+        "settlement_price",
+        "price_change_eur_mwh",
+        "target_direction",
+        "pnl_long_eur",
+        "pnl_short_eur",
+    }
+)
+
 
 @dataclass(frozen=True)
 class BacktestState:

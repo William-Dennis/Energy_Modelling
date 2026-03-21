@@ -132,10 +132,7 @@ def run_experiment(
         new_vec, profits_arr, weights_arr = _vec_iteration(market_vec, fm)
 
         # EMA blend: P_{k+1} = alpha * P_spec + (1 - alpha) * P_k
-        if alpha < 1.0:
-            blended_vec = alpha * new_vec + (1.0 - alpha) * market_vec
-        else:
-            blended_vec = new_vec
+        blended_vec = alpha * new_vec + (1.0 - alpha) * market_vec if alpha < 1.0 else new_vec
 
         published = pd.Series(blended_vec, index=index, name="market_price")
 
@@ -231,7 +228,7 @@ def _print_summary(df: pd.DataFrame) -> None:
                 )
 
         if not not_conv.empty:
-            print(f"\n  Non-converged (top 5 by final delta):")
+            print("\n  Non-converged (top 5 by final delta):")
             print(
                 f"  {'ID':<18} {'alpha':>6} {'MAE':>8} {'Iters':>6} {'Delta':>10} {'MonoTail':>9}"
             )

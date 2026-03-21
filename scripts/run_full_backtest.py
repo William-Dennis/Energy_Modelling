@@ -27,10 +27,16 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from energy_modelling.backtest.futures_market_runner import run_futures_market_evaluation
-from energy_modelling.backtest.io import RESULTS_DIR, save_backtest_results, save_market_results
-from energy_modelling.backtest.runner import run_backtest
-from energy_modelling.backtest.scoring import leaderboard_score
+from energy_modelling.backtest.futures_market_runner import (  # noqa: E402
+    run_futures_market_evaluation,
+)
+from energy_modelling.backtest.io import (  # noqa: E402
+    RESULTS_DIR,
+    save_backtest_results,
+    save_market_results,
+)
+from energy_modelling.backtest.runner import run_backtest  # noqa: E402
+from energy_modelling.backtest.scoring import leaderboard_score  # noqa: E402
 from strategies import (  # noqa: E402
     AlwaysLongStrategy,
     AlwaysShortStrategy,

@@ -54,10 +54,7 @@ class VolatilityRegimeStrategy(BacktestStrategy):
         high_vol = vol > self._vol_threshold
         price_up = change >= 0.0
         # high-vol: mean-revert; low-vol: momentum
-        if high_vol:
-            direction = -1 if price_up else 1
-        else:
-            direction = 1 if price_up else -1
+        direction = (-1 if price_up else 1) if high_vol else (1 if price_up else -1)
         return state.last_settlement_price + direction * self._mean_abs_change
 
     def reset(self) -> None:

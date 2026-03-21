@@ -18,17 +18,17 @@ _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO))
 sys.path.insert(0, str(_REPO / "src"))
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
-from energy_modelling.backtest.feature_engineering import add_derived_features
-from energy_modelling.backtest.futures_market_engine import (
+from energy_modelling.backtest.feature_engineering import add_derived_features  # noqa: E402
+from energy_modelling.backtest.futures_market_engine import (  # noqa: E402
     compute_market_prices,
     compute_strategy_profits,
     compute_weights,
     run_futures_market,
 )
-from energy_modelling.backtest.runner import _normalise_daily_data
-from energy_modelling.dashboard._backtest import _resolve_path, load_daily
+from energy_modelling.backtest.runner import _normalise_daily_data  # noqa: E402
+from energy_modelling.dashboard._backtest import _resolve_path, load_daily  # noqa: E402
 
 
 def _build_pf_forecasts(real_prices: pd.Series) -> dict:

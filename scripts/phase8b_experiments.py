@@ -460,7 +460,7 @@ def _print_summary(df: pd.DataFrame) -> None:
                 )
 
         if not not_conv.empty:
-            print(f"\n  Top 5 non-converged (by MAE):")
+            print("\n  Top 5 non-converged (by MAE):")
             for _, r in not_conv.head(5).iterrows():
                 print(
                     f"  {r['id']:<30} {r['mae']:>7.2f} {int(r['n_iterations']):>6}"

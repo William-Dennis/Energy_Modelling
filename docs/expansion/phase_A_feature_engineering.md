@@ -1,5 +1,7 @@
 # Phase A: Feature Engineering Foundation
 
+> [ROADMAP](../phases/ROADMAP.md) · [Expansion index](README.md)
+
 ## Status: ✅ Complete
 
 ## Objective

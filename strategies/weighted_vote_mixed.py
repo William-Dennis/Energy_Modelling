@@ -33,7 +33,7 @@ class WeightedVoteMixedStrategy(_EnsembleBase):
 
     def forecast(self, state: BacktestState) -> float:
         dirs = self._get_member_directions(state)
-        vote = sum(w * d for w, d in zip(_WEIGHTS, dirs))
+        vote = sum(w * d for w, d in zip(_WEIGHTS, dirs, strict=True))
         if vote > 0:
             return state.last_settlement_price + 1.0
         if vote < 0:

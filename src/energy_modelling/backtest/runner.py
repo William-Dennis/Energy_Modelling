@@ -9,17 +9,9 @@ import pandas as pd
 
 from energy_modelling.backtest.feature_engineering import add_derived_features
 from energy_modelling.backtest.scoring import compute_backtest_metrics
-from energy_modelling.backtest.types import BacktestState, BacktestStrategy
+from energy_modelling.backtest.types import STATE_EXCLUDE_COLUMNS, BacktestState, BacktestStrategy
 
-_STATE_EXCLUDE_COLUMNS = {
-    "delivery_date",
-    "split",
-    "settlement_price",
-    "price_change_eur_mwh",
-    "target_direction",
-    "pnl_long_eur",
-    "pnl_short_eur",
-}
+_STATE_EXCLUDE_COLUMNS = STATE_EXCLUDE_COLUMNS  # backwards-compat alias
 
 
 @dataclass(frozen=True)

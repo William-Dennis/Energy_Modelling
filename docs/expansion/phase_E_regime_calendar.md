@@ -1,5 +1,7 @@
 # Phase E: Calendar, Temporal & Regime Strategies
 
+> [ROADMAP](../phases/ROADMAP.md) · [Expansion index](README.md)
+
 ## Status: ✅ Complete
 
 ## Objective

@@ -2,6 +2,32 @@
 
 ## Status: COMPLETE
 
+## WARNING — Historical Document (2026-03-21)
+
+> **This document describes the pre-Phase 7 engine implementation and is
+> substantially out of date.** It should be read as a build log for the
+> initial market engine, not as a description of the current system.
+>
+> Key changes since this document was written:
+>
+> - **Engine rewrite**: The engine was rewritten for Phase 7 (spec-compliant,
+>   undampened) and then modified again with EMA dampening (`ema_alpha=0.1`).
+>   The `forecast_spread` parameter no longer exists.
+> - **Convergence**: The engine now converges on both 2024 and 2025 data
+>   (the "did not converge" note in the integration results is obsolete).
+> - **Strategy count**: 67 strategies (not 12). The expansion work (Phases
+>   A-G) added 55 strategies after this document was written.
+> - **Test count**: 948 tests pass (not 185 or 150 as stated in various
+>   sections below).
+> - **Dampening**: `ema_alpha=0.1` (not "dampening alpha: 0.5" as stated
+>   in the Decisions section). The old `alpha` parameter was removed.
+> - **Dashboard**: Expanded to ~20 modules (not 4 tabs).
+>
+> For the current engine behaviour, see:
+> - `docs/phases/phase_9_ema_price_update.md` (EMA experiments)
+> - `docs/phases/ROADMAP.md` (overall project state)
+> - `src/energy_modelling/backtest/futures_market_engine.py` (source of truth)
+
 | Module | Status | Tests | Notes |
 |--------|--------|-------|-------|
 | `backtest/futures_market_engine.py` | DONE | 23/23 pass | Core engine: types, iteration, convergence |

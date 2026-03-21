@@ -2,28 +2,39 @@
 
 ## Status: COMPLETE
 
-## Current-State Note (2026-03-21)
+## WARNING — Historical Document (2026-03-21)
 
-This document remains the canonical record of the **undampened** convergence
-analysis completed in Phase 7. Its theorems and proofs should be read as
-historical analysis of the spec-compliant model described here, not as a full
-description of the current production defaults.
+> **The production engine no longer matches the undampened model analysed here.**
+>
+> The live engine (`futures_market_engine.py`) now uses **EMA dampening**
+> (`ema_alpha=0.1` by default) in the price-update loop. The theorems and
+> proofs below were derived for the **undampened** model (`ema_alpha=1.0`)
+> and only hold exactly under that setting.
+>
+> Specifically:
+>
+> - **Theorem 1 (PF instant convergence)** requires `ema_alpha=1.0`.
+>   With `ema_alpha=0.1`, convergence is gradual, not one-step.
+> - **`scripts/verify_theorems.py`** now explicitly passes `ema_alpha=1.0`
+>   to exercise the undampened path.
+> - The Phase 8 winner (`running_avg_k=5`) was **never implemented** in
+>   production. The engine uses `ema_alpha` EMA dampening instead. There
+>   is no `running_avg_k` parameter anywhere in the current codebase.
+> - The saved artifacts (`market_2024.pkl`, `market_2025.pkl`) were
+>   generated with the **damped** engine, not the undampened model
+>   described in this document.
+>
+> **None of this invalidates the Phase 7 theorems** — they remain correct
+> for the undampened model. This warning clarifies the scope under which
+> they should be interpreted today.
 
-Additional context for readers:
+### Reading guide
 
-- The live engine in `src/energy_modelling/backtest/futures_market_engine.py`
-  now exposes `ema_alpha` dampening in the main convergence loop.
-- The live runner in `src/energy_modelling/backtest/futures_market_runner.py`
-  also defaults to a damped configuration.
-- This means the theoretical claims in this phase still apply to the
-  undampened model, but some empirical statements tied to previous defaults do
-  not automatically describe the currently saved market artifacts.
-- Phase 8 should be read as the historical remedy-research follow-up, and
-  Phase 9 is the dedicated reconciliation and explanation phase for the current
-  implementation and artifacts.
-
-Nothing in this note invalidates the Phase 7 theorems; it clarifies the scope
-under which they should be interpreted today.
+- Phase 8 documents the oscillation research that motivated dampening.
+- Phase 9 documents the EMA price-update experiments that replaced Phase
+  8's `running_avg_k` approach.
+- Phase 10 is the forward-looking reconciliation and market robustness
+  phase.
 
 ## Objective
 
@@ -354,4 +365,4 @@ PerfectForesightStrategy is used as a **theoretical analysis tool** only
 - `tests/backtest/test_market_runner.py` — 11 tests
 - `tests/backtest/test_futures_market_runner.py` — 6 tests
 
-All tests pass (798 total, 0 failures).
+All tests pass (948 total, 0 failures — count as of 2026-03-21).

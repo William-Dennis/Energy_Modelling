@@ -37,10 +37,10 @@ _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO))
 sys.path.insert(0, str(_REPO / "src"))
 
-import numpy as np
-import pandas as pd
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
-from energy_modelling.backtest.futures_market_engine import (
+from energy_modelling.backtest.futures_market_engine import (  # noqa: E402
     compute_market_prices,
     compute_strategy_profits,
     compute_weights,
@@ -133,6 +133,7 @@ def verify_theorem_1(verbose: bool) -> None:
         strategy_forecasts={"PF": pf_fc},
         max_iterations=50,
         convergence_threshold=0.001,
+        ema_alpha=1.0,
     )
 
     if verbose:
@@ -179,6 +180,7 @@ def verify_theorem_1(verbose: bool) -> None:
             strategy_forecasts={"PF": _pf_forecasts(r)},
             max_iterations=50,
             convergence_threshold=0.001,
+            ema_alpha=1.0,
         )
         if len(e.iterations) > 2 or not e.converged:
             all_instant = False
@@ -228,7 +230,7 @@ def verify_theorem_2(verbose: bool) -> None:
     pf_profit = profits["PF"]
 
     if verbose:
-        print(f"\n  Profits at iter 0:")
+        print("\n  Profits at iter 0:")
         for name, p in sorted(profits.items(), key=lambda x: -x[1]):
             marker = " <-- PF" if name == "PF" else ""
             print(f"    {name:12s}: {p:>10.2f}{marker}")
@@ -265,7 +267,8 @@ def verify_theorem_2(verbose: bool) -> None:
             all_dominate = False
             if verbose:
                 print(
-                    f"    seed={seed}: PF={p['PF']:.2f}, Long={p['Long']:.2f}, Short={p['Short']:.2f}"
+                    f"    seed={seed}: PF={p['PF']:.2f},"
+                    f" Long={p['Long']:.2f}, Short={p['Short']:.2f}"
                 )
     _assert(all_dominate, "PF dominates for seeds {0, 7, 99}")
 
@@ -314,6 +317,7 @@ def verify_theorem_3(verbose: bool) -> None:
         strategy_forecasts={"PF": pf_fc},
         max_iterations=50,
         convergence_threshold=0.001,
+        ema_alpha=1.0,
     )
     rmse_pf = _rmse(eq_pf.final_market_prices, real)
     _assert(rmse_pf < 1e-9, f"PF-only: P* = P_real (RMSE={rmse_pf:.2e})")
@@ -326,6 +330,7 @@ def verify_theorem_3(verbose: bool) -> None:
         strategy_forecasts={"PF": pf_fc, "Long": long_fc},
         max_iterations=50,
         convergence_threshold=0.001,
+        ema_alpha=1.0,
     )
     _assert(eq_pf_long.converged, "PF+Long converges")
 
@@ -362,6 +367,7 @@ def verify_theorem_3(verbose: bool) -> None:
         strategy_forecasts={"BullishA": bullish_a_fc, "BullishB": bullish_b_fc},
         max_iterations=50,
         convergence_threshold=0.001,
+        ema_alpha=1.0,
     )
     _assert(eq_ab.converged, "BullishA+BullishB converges")
 
@@ -393,10 +399,7 @@ def verify_theorem_3(verbose: bool) -> None:
             if fc_val is not None:
                 numerator += w * fc_val
                 denom += w
-        if denom > 0:
-            expected_t = numerator / denom
-        else:
-            expected_t = float(eq_ab.final_market_prices.loc[t])
+        expected_t = numerator / denom if denom > 0 else float(eq_ab.final_market_prices.loc[t])
         err = abs(float(new_ab.loc[t]) - expected_t)
         max_fp_err = max(max_fp_err, err)
     _assert(
@@ -469,6 +472,7 @@ def verify_theorem_4(verbose: bool) -> None:
         strategy_forecasts=all_forecasts,
         max_iterations=50,
         convergence_threshold=0.001,
+        ema_alpha=1.0,
     )
     eq_pf = run_futures_market(
         initial_market_prices=initial.copy(),
@@ -476,6 +480,7 @@ def verify_theorem_4(verbose: bool) -> None:
         strategy_forecasts={"PF": pf_fc},
         max_iterations=50,
         convergence_threshold=0.001,
+        ema_alpha=1.0,
     )
     rmse_both = _rmse(eq_both.final_market_prices, real)
     rmse_pf = _rmse(eq_pf.final_market_prices, real)
