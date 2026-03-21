@@ -1,0 +1,135 @@
+strategy,forecast_cluster,profit_cluster,year
+Always Long,3,3,2024
+Always Short,3,8,2024
+Bayesian Ridge,1,2,2024
+Boosted Spread ML,3,1,2024
+Carbon Trend,3,6,2024
+Commodity Cost,3,3,2024
+Composite Signal,3,5,2024
+Consensus Signal,3,1,2024
+Cross Border Spread,3,6,2024
+DEFRSpread,3,6,2024
+DENLSpread,2,4,2024
+Day Of Week,3,5,2024
+Decision Tree,3,1,2024
+Diversity Ensemble,3,1,2024
+Dow Composite,3,5,2024
+Elastic Net,1,2,2024
+FRFlow Signal,3,6,2024
+Fossil Dispatch,3,4,2024
+Fuel Index Trend,3,6,2024
+GBMNet Demand,3,1,2024
+Gas Carbon Joint Trend,3,1,2024
+Gas Trend,3,6,2024
+Gradient Boosting,3,1,2024
+KNNDirection,3,1,2024
+Lag2Reversion,8,3,2024
+Lasso Calendar Augmented,1,2,2024
+Lasso Regression,1,2,2024
+Lasso Top Features,1,4,2024
+Load Forecast,3,4,2024
+Load Surprise,4,4,2024
+Logistic Direction,3,1,2024
+Majority Vote ML,3,1,2024
+Majority Vote Rule Based,3,1,2024
+Mean Forecast Regression,1,2,2024
+Median Forecast Ensemble,1,2,2024
+Monday Effect,3,7,2024
+Month Seasonal,3,1,2024
+Multi Spread,5,4,2024
+NLFlow Signal,2,6,2024
+Net Demand,3,4,2024
+Net Demand Momentum,3,7,2024
+Neural Net,3,1,2024
+Nuclear Availability,3,3,2024
+PLSRegression,1,2,2024
+Price Min Reversion,6,4,2024
+Price ZScore Reversion,3,1,2024
+Quarter Seasonal,3,1,2024
+Random Forest,3,1,2024
+Regime Conditional Ensemble,3,1,2024
+Renewable Regime,3,7,2024
+Renewables Penetration,3,4,2024
+Renewables Surplus,3,1,2024
+Ridge Net Demand,1,2,2024
+Ridge Regression,1,2,2024
+SVMDirection,3,1,2024
+Solar Forecast,3,6,2024
+Stacked Ridge Meta,1,2,2024
+Temperature Extreme,3,8,2024
+Top KEnsemble,3,1,2024
+Volatility Regime,3,6,2024
+Volatility Regime ML,3,1,2024
+Weekday Weekend Ensemble,3,1,2024
+Weekly Cycle,7,5,2024
+Weighted Vote Mixed,3,1,2024
+Wind Forecast,3,4,2024
+Wind Forecast Error,3,4,2024
+ZScore Momentum,3,1,2024
+Always Long,2,3,2025
+Always Short,2,5,2025
+Bayesian Ridge,1,1,2025
+Boosted Spread ML,2,8,2025
+Carbon Trend,2,5,2025
+Commodity Cost,2,3,2025
+Composite Signal,2,1,2025
+Consensus Signal,2,8,2025
+Cross Border Spread,2,3,2025
+DEFRSpread,2,3,2025
+DENLSpread,2,3,2025
+Day Of Week,2,2,2025
+Decision Tree,2,8,2025
+Diversity Ensemble,2,8,2025
+Dow Composite,2,2,2025
+Elastic Net,1,1,2025
+FRFlow Signal,2,3,2025
+Fossil Dispatch,5,3,2025
+Fuel Index Trend,2,5,2025
+GBMNet Demand,2,8,2025
+Gas Carbon Joint Trend,2,8,2025
+Gas Trend,2,5,2025
+Gradient Boosting,2,8,2025
+KNNDirection,2,8,2025
+Lag2Reversion,8,2,2025
+Lasso Calendar Augmented,1,1,2025
+Lasso Regression,1,1,2025
+Lasso Top Features,1,1,2025
+Load Forecast,2,3,2025
+Load Surprise,3,3,2025
+Logistic Direction,2,8,2025
+Majority Vote ML,2,8,2025
+Majority Vote Rule Based,2,8,2025
+Mean Forecast Regression,1,1,2025
+Median Forecast Ensemble,1,1,2025
+Monday Effect,2,6,2025
+Month Seasonal,2,8,2025
+Multi Spread,4,3,2025
+NLFlow Signal,2,3,2025
+Net Demand,2,3,2025
+Net Demand Momentum,2,6,2025
+Neural Net,2,8,2025
+Nuclear Availability,2,3,2025
+PLSRegression,1,1,2025
+Price Min Reversion,7,3,2025
+Price ZScore Reversion,2,7,2025
+Quarter Seasonal,2,8,2025
+Random Forest,2,8,2025
+Regime Conditional Ensemble,2,8,2025
+Renewable Regime,2,6,2025
+Renewables Penetration,2,3,2025
+Renewables Surplus,2,7,2025
+Ridge Net Demand,1,1,2025
+Ridge Regression,1,1,2025
+SVMDirection,2,8,2025
+Solar Forecast,2,4,2025
+Stacked Ridge Meta,1,1,2025
+Temperature Extreme,2,5,2025
+Top KEnsemble,2,8,2025
+Volatility Regime,2,3,2025
+Volatility Regime ML,2,8,2025
+Weekday Weekend Ensemble,2,8,2025
+Weekly Cycle,6,2,2025
+Weighted Vote Mixed,2,8,2025
+Wind Forecast,2,3,2025
+Wind Forecast Error,1,1,2025
+ZScore Momentum,2,8,2025

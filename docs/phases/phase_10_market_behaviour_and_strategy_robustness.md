@@ -1,6 +1,6 @@
 # Phase 10: Futures Market Behaviour and Strategy Robustness
 
-## Status: IN PROGRESS (10a-10c complete, 10d-10h planned)
+## Status: IN PROGRESS (10a-10d complete, 10e-10h planned)
 
 ## Objective
 
@@ -283,10 +283,10 @@ Phase 10: Futures Market Behaviour and Strategy Robustness
 - [x] Test sensitivity to extreme-day removal and sentinel-period masking
 
 ### 10d. Regime and Cluster Analysis
-- [ ] Cluster strategies by forecast similarity
-- [ ] Cluster strategies by profit similarity
-- [ ] Quantify cluster dominance by regime and by iteration
-- [ ] Compare 2024 and 2025 drivers directly
+- [x] Cluster strategies by forecast similarity
+- [x] Cluster strategies by profit similarity
+- [x] Quantify cluster dominance by regime and by iteration
+- [x] Compare 2024 and 2025 drivers directly
 
 ### 10e. Sentinel Case Studies
 - [ ] Select sentinel days and multi-day windows
