@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASES 0-7 COMPLETE, PHASE 8 IN PROGRESS
+## Overall Status: PHASES 0-8 COMPLETE, PHASE 9 PLANNED
 
 ## Phase Overview
 
@@ -14,7 +14,8 @@
 | 5 | [Run & Assess](phase_5_run_and_assess.md) | COMPLETE | Phase 4 | Leaderboard, market sim, hypothesis assessment |
 | 6 | [EDA Feedback Loop](phase_6_feedback_loop.md) | COMPLETE | Phase 5 | 6 new dashboard sections, no strategy refinements needed |
 | 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Forecast-based convergence proven (contraction mapping); 4 theorems validated empirically |
-| 8 | [Oscillation Research](phase_8_oscillation_research.md) | IN PROGRESS | Phase 7 | Resolve market non-convergence via dampening, weighting reforms, initialisation, and smoothing |
+| 8 | [Oscillation Research](phase_8_oscillation_research.md) | COMPLETE | Phase 7 | Historical oscillation research record and remedy exploration |
+| 9 | [Futures Market Behaviour and Strategy Robustness](phase_9_market_behaviour_and_strategy_robustness.md) | PLANNED | Phase 5, 7, 8 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
 
 ## Dependency Graph
 
@@ -36,6 +37,8 @@ Phase 0 (Consolidation)
           +---> Phase 7 (Convergence Analysis)
           |
           +---> Phase 8 (Oscillation Research) <--- Phase 7
+          |
+          +---> Phase 9 (Behaviour + Robust Strategies) <--- Phase 5, 7, 8
 ```
 
 ## Principles
@@ -46,6 +49,9 @@ Phase 0 (Consolidation)
 - **Tight loops**: Code -> test -> verify -> update docs at each step
 - **Live documents**: Each phase `.md` is updated in real-time as work progresses
 - **GIT commits**: Frequent, descriptive commits tied to specific phase goals to maintain a clear history and revertibility
+- **Historical clarity**: When later work supersedes operational defaults or
+  saved artifacts, preserve the older phase record and add explicit current-state
+  notes rather than silently rewriting history
 
 ## Architecture (Post Phase 0)
 
@@ -105,3 +111,5 @@ src/energy_modelling/
 | 2026-03-19 | 7 | COMPLETE — Convergence analysis: 3 theorems, 6 experiments, 29+7 new tests; non-convergence explained by constant step size |
 | 2026-03-20 | 7 | REDO — Forecast-first refactor: forecast() is sole abstract method; act() derived with skip_buffer. 4 theorems proven (contraction mapping), 6 experiments validate theory to 4 decimal places. 225 tests pass |
 | 2026-03-20 | 8 | STARTED — Oscillation research: 6 sub-phase documents (8a-8f), 15 experiments + 5 combinations planned across 4 research tracks |
+| 2026-03-21 | 8 | DOCUMENTED AS HISTORICAL — Phase 8 retained as research record; additive current-state notes added to avoid stale interpretation |
+| 2026-03-21 | 9 | PLANNED — New phase to reconcile live market behaviour, explain dynamics, and drive stronger market-robust strategy design |

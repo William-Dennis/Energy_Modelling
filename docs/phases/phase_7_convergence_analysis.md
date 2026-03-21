@@ -2,6 +2,29 @@
 
 ## Status: COMPLETE
 
+## Current-State Note (2026-03-21)
+
+This document remains the canonical record of the **undampened** convergence
+analysis completed in Phase 7. Its theorems and proofs should be read as
+historical analysis of the spec-compliant model described here, not as a full
+description of the current production defaults.
+
+Additional context for readers:
+
+- The live engine in `src/energy_modelling/backtest/futures_market_engine.py`
+  now exposes `ema_alpha` dampening in the main convergence loop.
+- The live runner in `src/energy_modelling/backtest/futures_market_runner.py`
+  also defaults to a damped configuration.
+- This means the theoretical claims in this phase still apply to the
+  undampened model, but some empirical statements tied to previous defaults do
+  not automatically describe the currently saved market artifacts.
+- Phase 8 should be read as the historical remedy-research follow-up, and
+  Phase 9 is the dedicated reconciliation and explanation phase for the current
+  implementation and artifacts.
+
+Nothing in this note invalidates the Phase 7 theorems; it clarifies the scope
+under which they should be interpreted today.
+
 ## Objective
 
 Formally analyze the convergence properties of the spec-compliant synthetic
@@ -268,6 +291,14 @@ Theorem 4 is **confirmed**.
 ---
 
 ## Summary
+
+## Historical-Scope Note
+
+The summary below intentionally reflects the Phase 7 scope: the undampened,
+perfect-foresight-oriented analysis environment. Where later phases introduced
+practical dampening or other production-oriented choices, those later choices
+should be treated as engineering follow-ups rather than contradictions of the
+results documented here.
 
 ### Does adding PF guarantee convergence to P_real?
 

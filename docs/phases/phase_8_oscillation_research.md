@@ -2,6 +2,29 @@
 
 ## Status: COMPLETE ✅
 
+## Current-State Note (2026-03-21)
+
+This document is preserved as the historical record of the Phase 8 oscillation
+research programme. It should not be read as an automatically up-to-date
+description of the current production engine, runner defaults, or regenerated
+artifact set.
+
+Additional context for readers:
+
+- The current live engine and runner should be treated as the source of truth
+  for present behaviour.
+- The saved artifacts in `data/results/market_2024.pkl` and
+  `data/results/market_2025.pkl` should be checked directly before using any
+  summary numbers from this document as current-state facts.
+- Some implementation claims in this document reflect the Phase 8 state at the
+  time of writing and may not fully match the current code signatures.
+- Phase 9 is the follow-up phase dedicated to reconciling historical Phase 7-8
+  conclusions with the current implementation and to extending the analysis
+  toward stronger market-robust strategies.
+
+This note is additive: it preserves the value of the Phase 8 research while
+making the historical scope explicit.
+
 ## Objective
 
 Systematically investigate and resolve the non-convergence (oscillation) of the
@@ -15,6 +38,16 @@ problem characterisation, four independent investigation tracks, and a unified
 evaluation framework.
 
 ## Result Summary
+
+## Historical-Record Note
+
+The tables and winner selection below should be interpreted as the recorded
+outcome of the Phase 8 experiment set, not as a guarantee that the same method,
+defaults, or artifact contents still represent the live system state today.
+
+Phase 9 is responsible for documenting the current canonical behaviour and for
+explaining any divergence between these historical summaries and the live code /
+saved results.
 
 **Winner: E1 Running Average K=5** (Track 8e, Iteration-Level Smoothing)
 
