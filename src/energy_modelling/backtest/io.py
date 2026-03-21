@@ -23,11 +23,14 @@ def save_backtest_results(results: dict[str, BacktestResult], path: Path) -> Non
 
 
 def load_backtest_results(path: Path) -> dict[str, BacktestResult] | None:
-    """Load backtest results from disk. Returns None if not found."""
+    """Load backtest results from disk. Returns None if not found or stale format."""
     if not path.exists():
         return None
     with open(path, "rb") as f:
-        return pickle.load(f)  # noqa: S301
+        obj = pickle.load(f)  # noqa: S301
+    if not isinstance(obj, dict) or not all(isinstance(v, BacktestResult) for v in obj.values()):
+        return None
+    return obj
 
 
 def save_market_results(result: FuturesMarketResult, path: Path) -> None:
@@ -38,11 +41,14 @@ def save_market_results(result: FuturesMarketResult, path: Path) -> None:
 
 
 def load_market_results(path: Path) -> FuturesMarketResult | None:
-    """Load market evaluation result from disk. Returns None if not found."""
+    """Load market evaluation result from disk. Returns None if not found or stale format."""
     if not path.exists():
         return None
     with open(path, "rb") as f:
-        return pickle.load(f)  # noqa: S301
+        obj = pickle.load(f)  # noqa: S301
+    if not isinstance(obj, FuturesMarketResult):
+        return None
+    return obj
 
 
 def results_exist() -> bool:

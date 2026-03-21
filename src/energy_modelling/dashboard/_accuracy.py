@@ -306,6 +306,10 @@ def render() -> None:
         )
         return
 
+    if public_daily is None:
+        st.warning("Dataset not loaded — run the **Backtest** tab first to load data.")
+        return
+
     st.markdown(
         "Compares the **converged synthetic-futures price** (strategy-consensus) "
         "against the **real day-ahead settlement** to assess whether this pool of "

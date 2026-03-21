@@ -315,6 +315,9 @@ def render() -> None:
         return
 
     if run_btn:
+        if public_daily is None:
+            st.warning("Dataset not loaded — run the **Backtest** tab first to load data.")
+            return
         combined = combine_public_hidden(public_daily, hidden_daily)
         with st.spinner("Running synthetic futures market..."):
             m24 = _run_market(
@@ -325,8 +328,12 @@ def render() -> None:
                 m25 = _run_market(
                     selected, combined, date(2024, 12, 31), date(2025, 1, 1), date(2025, 12, 31)
                 )
-        st.session_state["market_2024"] = m24
-        st.session_state["market_2025"] = m25
+        # Only write to session state when result is valid — storing None under a
+        # concrete key would permanently block the disk-load branch on subsequent renders.
+        if m24 is not None:
+            st.session_state["market_2024"] = m24
+        if m25 is not None:
+            st.session_state["market_2025"] = m25
 
         from energy_modelling.backtest.io import RESULTS_DIR, save_market_results
 
