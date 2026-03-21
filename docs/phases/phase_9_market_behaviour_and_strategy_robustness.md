@@ -68,6 +68,39 @@ Additional baseline observations:
 - The current saved artifacts therefore present a richer behaviour set than the
   simpler historical split of "oscillates" vs "converges".
 
+## First Confirmed Reconciliation Findings
+
+Phase 9a has already confirmed several concrete mismatches between the
+historical Phase 7-8 narrative and the live current-state baseline:
+
+- Phase 8 still contains implementation text describing `running_avg_k`-based
+  production defaults, while the live engine and runner currently expose
+  `ema_alpha=0.1` defaults.
+- The historical Phase 8 summary presents a converged 2024 result, but the
+  current saved `data/results/market_2024.pkl` artifact is not converged after
+  500 iterations.
+- The current saved `data/results/market_2025.pkl` artifact does converge, but
+  does so with the active strategy set collapsing to zero at the final step,
+  introducing an absorbing-state interpretation that is not foregrounded in the
+  historical narrative.
+
+These findings confirm that Phase 9 should treat live code plus current saved
+artifacts as canonical and should treat Phases 7-8 as historical context unless
+specific claims are re-validated.
+
+## Current Verification Status
+
+Phase 9a verification has been partially executed:
+
+- Full-repo linting (`python -m ruff check .`) currently fails due to pre-existing
+  repository issues outside the Phase 9 markdown work.
+- Full-repo tests (`pytest -q`) currently fail during collection in
+  `tests/data_collection/` because `pytest_mock` is not installed in the current
+  environment.
+
+These failures should be treated as current repository/environment status, not as
+regressions introduced by the Phase 9 documentation changes.
+
 ## Prerequisites
 
 - Phase 5 complete (baseline market simulation and strategy assessment) ✅

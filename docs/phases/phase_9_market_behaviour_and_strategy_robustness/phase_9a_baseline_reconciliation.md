@@ -64,6 +64,35 @@ in this priority order:
 - Active-strategy collapse must be treated as a primary explanatory target, not
   a side effect.
 
+## Initial Mismatch Table
+
+The following mismatches are already confirmed and should be treated as the
+starting reconciliation set for Phase 9a:
+
+| Topic | Historical claim | Current live state | Status |
+|------|-------------------|--------------------|--------|
+| Production default mechanism | Phase 8 implementation section references `running_avg_k`-based production defaults | Live engine / runner expose `ema_alpha=0.1` defaults | confirmed mismatch |
+| 2024 saved result interpretation | Phase 8 summary presents a converged 2024 outcome | Current `market_2024.pkl` is not converged after 500 iterations | confirmed mismatch |
+| 2025 convergence interpretation | Phase 8 summary presents converged 2025 via winning smoothing config | Current `market_2025.pkl` converges, but with zero active strategies at the end | partial mismatch / needs interpretation |
+| Phase 7 empirical scope | Phase 7 empirical language can read as generally current | Phase 7 theory remains valid, but current production defaults are damped | scope clarification needed |
+
+## Canonical Baseline Configuration
+
+Unless explicitly stated otherwise, Phase 9 should treat the following as the
+canonical baseline configuration:
+
+- engine: `run_futures_market()` from the live codebase
+- runner: `run_futures_market_evaluation()` from the live codebase
+- default dampening: `ema_alpha=0.1`
+- convergence threshold: `0.01`
+- iteration cap: `500`
+- artifact set:
+  - `data/results/market_2024.pkl`
+  - `data/results/market_2025.pkl`
+
+Historical Phase 7-8 settings remain important context, but they should not be
+treated as default current-state facts unless re-verified.
+
 ## Reconciliation Targets
 
 ### Phase 7
@@ -99,11 +128,38 @@ in this priority order:
   - needs re-validation
 - Additive note blocks in the relevant historical docs
 
+## Verification Notes (2026-03-21)
+
+### Linting
+
+- `python -m ruff check .` was run against the repository.
+- Result: fails due to pre-existing repo-wide issues outside the Phase 9 docs,
+  including legacy/import-order violations in scripts, simplification warnings,
+  long lines, and several existing strategy/dashboard lint findings.
+- Phase 9 documentation work did not introduce Python lint errors because it is
+  markdown-only, but the repository is not currently lint-clean as a whole.
+
+### Tests
+
+- `pytest -q` was run against the full repository.
+- Result: test collection fails in `tests/data_collection/` because the current
+  environment does not have `pytest_mock` installed.
+- This is an environment/dependency issue rather than a regression caused by the
+  Phase 9 documentation work.
+
+### Interpretation
+
+- The Phase 9a documentation changes are complete and the baseline findings are
+  recorded.
+- Full repo verification remains partially blocked by existing lint debt and the
+  missing `pytest_mock` dependency in the current environment.
+
 ## Checklist
 
-- [ ] Verify current live engine defaults from source
-- [ ] Verify current live runner defaults from source
-- [ ] Summarise saved 2024 artifact behaviour
-- [ ] Summarise saved 2025 artifact behaviour
-- [ ] Catalogue doc/code/result mismatches
-- [ ] Freeze the canonical baseline configuration for Phase 9
+- [x] Verify current live engine defaults from source
+- [x] Verify current live runner defaults from source
+- [x] Summarise saved 2024 artifact behaviour
+- [x] Summarise saved 2025 artifact behaviour
+- [x] Catalogue doc/code/result mismatches
+- [x] Freeze the canonical baseline configuration for Phase 9
+- [x] Record current lint / test verification status
