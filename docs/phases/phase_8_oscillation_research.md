@@ -68,6 +68,18 @@ All 4 success criteria met:
 
 ## Implementation
 
+## Historical-Implementation Note
+
+The implementation bullets in this section reflect the state of the Phase 8
+codebase when those experiments were recorded. Before using them as current
+operational truth, verify the live signatures and defaults in:
+
+- `src/energy_modelling/backtest/futures_market_engine.py`
+- `src/energy_modelling/backtest/futures_market_runner.py`
+
+Phase 9 treats the source files and regenerated artifacts as canonical and uses
+this document as the preserved historical experiment record.
+
 The winning configuration is now the production default in:
 - `src/energy_modelling/backtest/futures_market_engine.py` — `run_futures_market(..., running_avg_k=None)` accepts the parameter
 - `src/energy_modelling/backtest/futures_market_runner.py` — `run_futures_market_evaluation(..., running_avg_k=5)` defaults to 5

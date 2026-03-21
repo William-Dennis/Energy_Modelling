@@ -48,6 +48,26 @@ Initial inspection shows that:
 - A new explanatory layer is needed before doing more engine changes or
   evaluating new strategies solely on standalone backtest performance.
 
+## Initial Baseline Snapshot (2026-03-21)
+
+The first live-artifact inspection for Phase 9 shows:
+
+| Year | Converged | Iterations | Final Delta | Late Active Strategies |
+|------|-----------|------------|-------------|------------------------|
+| 2024 | No | 500 | 1.7729 | 5-8 in the final iterations |
+| 2025 | Yes | 327 | ~0.0 | 0 by the final iteration |
+
+Additional baseline observations:
+
+- 2024 appears to be **slowly damped but not converged** by the current 500
+  iteration cap.
+- 2025 **does converge**, but does so while the active strategy set collapses
+  toward zero, suggesting a possible absorbing carry-forward state.
+- Late-iteration active sets are much smaller than early-iteration active sets
+  in both years, making active-strategy collapse a first-class research target.
+- The current saved artifacts therefore present a richer behaviour set than the
+  simpler historical split of "oscillates" vs "converges".
+
 ## Prerequisites
 
 - Phase 5 complete (baseline market simulation and strategy assessment) ✅
@@ -203,6 +223,17 @@ Phase 9: Futures Market Behaviour and Strategy Robustness
 - A strategy robustness comparison table covering standalone, market-adjusted,
   and market-contribution metrics
 - A shortlist of high-priority stronger strategy candidates
+
+## Sub-Phase Documents
+
+- [9a: Baseline Reconciliation](phase_9_market_behaviour_and_strategy_robustness/phase_9a_baseline_reconciliation.md)
+- [9b: Behaviour Inventory](phase_9_market_behaviour_and_strategy_robustness/phase_9b_behaviour_inventory.md)
+- [9c: Mechanism Attribution](phase_9_market_behaviour_and_strategy_robustness/phase_9c_mechanism_attribution.md)
+- [9d: Regime and Cluster Analysis](phase_9_market_behaviour_and_strategy_robustness/phase_9d_regime_and_cluster_analysis.md)
+- [9e: Sentinel Case Studies](phase_9_market_behaviour_and_strategy_robustness/phase_9e_sentinel_case_studies.md)
+- [9f: Strategy Robustness Analysis](phase_9_market_behaviour_and_strategy_robustness/phase_9f_strategy_robustness_analysis.md)
+- [9g: Stronger Strategy Design](phase_9_market_behaviour_and_strategy_robustness/phase_9g_stronger_strategy_design.md)
+- [9h: Synthesis and Forward Plan](phase_9_market_behaviour_and_strategy_robustness/phase_9h_synthesis_and_forward_plan.md)
 
 ## Checklist
 
