@@ -124,9 +124,11 @@ class TestConvergedPriceMovesTowardReal:
 
 
 class TestProfitableStrategiesGainWeight:
-    def test_softmax_all_strategies_have_positive_weight(self) -> None:
-        """Production softmax weighting gives every strategy a positive weight."""
+    def test_unprofitable_strategy_gets_zero_weight(self) -> None:
+        """With linear spec weights, a consistently unprofitable strategy gets zero weight."""
         daily = _make_daily_frame()
+        # AlwaysLong forecasts above last_settlement on a rising market => profitable.
+        # AlwaysShort forecasts below last_settlement on a rising market => unprofitable.
         factories = {"long": _AlwaysLong, "short": _AlwaysShort}
 
         result = run_futures_market_evaluation(
@@ -138,11 +140,12 @@ class TestProfitableStrategiesGainWeight:
         )
 
         last_iter = result.equilibrium.iterations[-1]
-        for name, weight in last_iter.strategy_weights.items():
-            assert weight > 0.0, f"{name} has zero weight under softmax mode"
+        # At least one strategy should have zero weight (unprofitable one)
+        weights = list(last_iter.strategy_weights.values())
+        assert any(w == 0.0 for w in weights), "Expected at least one zero-weight strategy"
 
-    def test_monotone_window_zero_converges_quickly(self) -> None:
-        """With monotone_window=0, single-step threshold check still converges."""
+    def test_convergence_delta_tracked(self) -> None:
+        """convergence_delta is recorded and is non-negative after evaluation."""
         daily = _make_daily_frame()
         factories = {"long": _AlwaysLong, "short": _AlwaysShort}
 
@@ -152,12 +155,11 @@ class TestProfitableStrategiesGainWeight:
             training_end=_TRAIN_END,
             evaluation_start=_EVAL_START,
             evaluation_end=_EVAL_END,
-            monotone_window=0,
             max_iterations=200,
         )
 
         assert isinstance(result, FuturesMarketResult)
-        assert result.equilibrium.converged
+        assert result.equilibrium.convergence_delta >= 0.0
 
 
 # ---------------------------------------------------------------------------

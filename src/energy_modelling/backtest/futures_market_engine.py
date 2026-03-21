@@ -11,41 +11,21 @@ Implements the prediction-market model from ``docs/energy_market_spec.md``:
 Every strategy must provide explicit price forecasts.  The market price
 is the profit-weighted average of forecasts from profitable strategies.
 
-Convergence criterion (Phase 9 winner)
----------------------------------------
-The engine runs until ``monotone_window`` consecutive per-iteration
-max-price-deltas are **strictly monotonically decreasing** AND the most
-recent delta is below ``convergence_threshold``.  This requires genuinely
-converging dynamics rather than a lucky momentary dip below threshold.
-
-Production configuration (Phase 9 R2_G6_T5.0_K15)
-----------------------------------------------------
-- Softmax temperature weighting (T = 5.0): all strategies receive a
-  non-zero weight, eliminating the hard sign-flip regime oscillation that
-  plagued the original linear weighting.
-- Running-average smoothing (K = 15): the published price at each
-  iteration is the mean of the last 15 raw candidates, damping transient
-  overshoots.
-- Monotone convergence window = 5: declared converged only when 5+
-  consecutive deltas are strictly decreasing and below threshold.
+Convergence criterion
+---------------------
+The engine runs until the maximum absolute price change between consecutive
+iterations falls below ``convergence_threshold``.  This is the direct
+implementation of the spec Step 5 fixed-point criterion.
 """
 
 from __future__ import annotations
 
-from collections import deque
 from dataclasses import dataclass
 from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-
-# ---------------------------------------------------------------------------
-# Production configuration constants
-# ---------------------------------------------------------------------------
-
-_SOFTMAX_TEMP: float = 5.0  # temperature for softmax weight computation
-_RUNNING_AVG_K: int = 15  # cross-iteration running-average window
 
 # ---------------------------------------------------------------------------
 # Types
@@ -213,7 +193,9 @@ def compute_market_prices(
         total_w = sum(weights_t)
         if total_w == 0.0:
             continue
-        new_prices.loc[t] = sum(f * w for f, w in zip(forecasts_t, weights_t)) / total_w
+        new_prices.loc[t] = (
+            sum(f * w for f, w in zip(forecasts_t, weights_t, strict=True)) / total_w
+        )
 
     return new_prices
 
@@ -285,10 +267,10 @@ def _vec_iteration(
     market_vec: np.ndarray,
     fm: _ForecastMatrix,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """One vectorised market iteration using the production configuration.
+    """One vectorised market iteration implementing the spec exactly.
 
-    Uses softmax temperature weighting (T=5.0) so every strategy receives a
-    non-zero weight, eliminating hard sign-flip regime oscillation.
+    Uses linear (spec) weighting: only profitable strategies receive weight,
+    proportional to their total profit (spec Step 3).
 
     Parameters
     ----------
@@ -310,19 +292,14 @@ def _vec_iteration(
     price_change = real_vec - market_vec  # (T,)
     profits = (direction * price_change[np.newaxis, :]).sum(axis=1)  # (S,)
 
-    # Step 3: softmax weights — every strategy gets a non-zero weight
-    shifted = profits / _SOFTMAX_TEMP
-    shifted -= shifted.max()  # numerical stability
-    raw = np.exp(shifted)
+    # Step 3: linear weights — only profitable strategies get weight
+    raw = np.maximum(profits, 0.0)
     total = raw.sum()
-    weights = raw / total if total > 0.0 else np.ones(len(raw)) / len(raw)
+    weights = raw / total if total > 0.0 else np.zeros_like(raw)
 
     # Step 4: weighted arithmetic mean of forecasts
     w_sum = weights.sum()
-    if w_sum > 0.0:
-        new_market_vec = (weights @ F) / w_sum
-    else:
-        new_market_vec = market_vec.copy()
+    new_market_vec = (weights @ F) / w_sum if w_sum > 0.0 else market_vec.copy()
 
     return new_market_vec, profits, weights
 
@@ -371,7 +348,6 @@ def run_futures_market(
     strategy_forecasts: dict[str, dict],
     max_iterations: int = 500,
     convergence_threshold: float = 0.01,
-    monotone_window: int = 5,
 ) -> FuturesMarketEquilibrium:
     """Run the synthetic futures market until prices converge (spec Step 5).
 
@@ -387,20 +363,13 @@ def run_futures_market(
     max_iterations:
         Hard cap on iteration count.
     convergence_threshold:
-        Maximum absolute EUR/MWh change per iteration to count toward
-        convergence.
-    monotone_window:
-        Number of consecutive iterations whose per-iteration max-price-delta
-        must be **strictly monotonically decreasing** AND all below
-        ``convergence_threshold`` before convergence is declared.  Default 5.
-        Set to 0 to fall back to a single sub-threshold check.
+        Maximum absolute EUR/MWh change between consecutive iterations
+        required to declare convergence (spec Step 5 fixed-point criterion).
     """
     current_prices = initial_market_prices.copy().astype(float)
     iterations: list[FuturesMarketIteration] = []
     converged = False
     delta = float("inf")
-    price_history: deque[np.ndarray] = deque(maxlen=_RUNNING_AVG_K)
-    delta_history: list[float] = []
 
     # Pre-build (S × T) forecast matrix once — avoids repeated dict iteration
     fm = _build_forecast_matrix(strategy_forecasts, current_prices.index, real_prices)
@@ -412,15 +381,11 @@ def run_futures_market(
 
         new_vec, profits_arr, weights_arr = _vec_iteration(market_vec, fm)
 
-        # Cross-iteration running-average smoothing (K=15)
-        price_history.append(new_vec)
-        published_vec = np.mean(list(price_history), axis=0)
+        published = pd.Series(new_vec, index=index, name="market_price")
 
-        published = pd.Series(published_vec, index=index, name="market_price")
-
-        profits_dict = dict(zip(strategy_names, profits_arr.tolist()))
-        weights_dict = dict(zip(strategy_names, weights_arr.tolist()))
-        active = [n for n, w in zip(strategy_names, weights_arr) if w > 0.0]
+        profits_dict = dict(zip(strategy_names, profits_arr.tolist(), strict=True))
+        weights_dict = dict(zip(strategy_names, weights_arr.tolist(), strict=True))
+        active = [n for n, w in zip(strategy_names, weights_arr, strict=True) if w > 0.0]
 
         result = FuturesMarketIteration(
             iteration=k,
@@ -430,23 +395,11 @@ def run_futures_market(
             active_strategies=active,
         )
 
-        delta = float(np.abs(published_vec - market_vec).max())
-        delta_history.append(delta)
+        delta = float(np.abs(new_vec - market_vec).max())
         iterations.append(result)
         current_prices = published
 
-        # Convergence: monotone_window consecutive strictly-decreasing deltas
-        # all below threshold.  Falls back to single-step check when window=0.
-        if monotone_window > 0:
-            if len(delta_history) >= monotone_window:
-                tail = delta_history[-monotone_window:]
-                if (
-                    all(tail[i] < tail[i - 1] for i in range(1, len(tail)))
-                    and tail[-1] < convergence_threshold
-                ):
-                    converged = True
-                    break
-        elif delta < convergence_threshold:
+        if delta < convergence_threshold:
             converged = True
             break
 

@@ -147,7 +147,6 @@ def run_futures_market_evaluation(
     evaluation_end: date,
     max_iterations: int = 500,
     convergence_threshold: float = 0.01,
-    monotone_window: int = 5,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
 ) -> FuturesMarketResult:
@@ -176,13 +175,8 @@ def run_futures_market_evaluation(
     max_iterations:
         Hard cap on market-convergence iterations.
     convergence_threshold:
-        Maximum absolute EUR/MWh price change per iteration that counts
-        toward convergence.
-    monotone_window:
-        Number of consecutive iterations whose deltas must be strictly
-        decreasing AND all below ``convergence_threshold`` before
-        convergence is declared.  Default 5 — requires provably converging
-        dynamics, not a lucky dip below threshold.
+        Maximum absolute EUR/MWh price change between consecutive iterations
+        required to declare convergence (spec Step 5 fixed-point criterion).
     initial_market_prices:
         Starting market prices.  Defaults to ``last_settlement_price``.
     max_workers:
@@ -242,7 +236,6 @@ def run_futures_market_evaluation(
         strategy_forecasts=strategy_forecasts,
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
-        monotone_window=monotone_window,
     )
 
     # Phase 4: Recompute PnL for each strategy under market prices
