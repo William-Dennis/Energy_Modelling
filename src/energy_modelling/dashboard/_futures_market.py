@@ -169,7 +169,7 @@ def _render_price_quantile_evolution(
         xaxis_title="Iteration",
         yaxis_title="MAE (EUR/MWh)",
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "left", "x": 0},
-        xaxis={"dtick": 1, "gridcolor": "rgba(255,255,255,0.08)"},
+        xaxis={"gridcolor": "rgba(255,255,255,0.08)"},
         yaxis={"gridcolor": "rgba(255,255,255,0.08)"},
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
