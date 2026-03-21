@@ -99,6 +99,7 @@ def run_forecast_foresight_market(
     initial_market_prices: pd.Series,
     max_iterations: int = 100,
     convergence_threshold: float = 0.01,
+    ema_alpha: float = 0.1,
     other_forecasts: dict[str, dict] | None = None,
 ) -> FuturesMarketEquilibrium:
     """Run the market with PF providing real-price forecasts.
@@ -122,4 +123,5 @@ def run_forecast_foresight_market(
         strategy_forecasts=all_forecasts,
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
+        ema_alpha=ema_alpha,
     )

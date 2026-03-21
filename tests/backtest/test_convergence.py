@@ -101,6 +101,7 @@ class TestConvergenceTrajectory:
             real_prices=real,
             strategy_forecasts=forecasts,
             max_iterations=50,
+            ema_alpha=1.0,
         )
         traj = compute_convergence_trajectory(eq, real)
         # No dampening => PF drives price to real in one step => RMSE ~ 0
@@ -114,6 +115,7 @@ class TestConvergenceTrajectory:
             real_prices=real,
             strategy_forecasts=forecasts,
             max_iterations=50,
+            ema_alpha=1.0,
         )
         traj = compute_convergence_trajectory(eq, real)
         assert traj.converged
@@ -145,6 +147,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=100,
+            ema_alpha=1.0,
         )
         assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
 
@@ -154,6 +157,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=100,
+            ema_alpha=1.0,
         )
         assert eq.converged
         for t in dates:
@@ -166,6 +170,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=50,
+            ema_alpha=1.0,
         )
         assert eq.converged
         assert len(eq.iterations) <= 2
@@ -177,6 +182,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=200,
+            ema_alpha=1.0,
         )
         assert eq.converged
         assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
@@ -190,6 +196,7 @@ class TestForecastForesightMarket:
             real_prices=real,
             initial_market_prices=initial,
             max_iterations=200,
+            ema_alpha=1.0,
         )
         assert eq.converged
         assert eq.final_market_prices.iloc[0] == pytest.approx(500.0, abs=0.01)
@@ -249,6 +256,7 @@ class TestPFWithOtherStrategies:
             real_prices=real,
             strategy_forecasts=forecasts,
             max_iterations=50,
+            ema_alpha=1.0,
         )
         assert eq.final_market_prices.iloc[0] == pytest.approx(95.0, abs=0.01)
 
@@ -303,6 +311,7 @@ class TestMarketBehaviour:
             real_prices=real,
             strategy_forecasts=forecasts,
             max_iterations=1,
+            ema_alpha=1.0,
         )
         # Equal profit => equal weight => avg = (95+105)/2 = 100
         assert eq.iterations[0].market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)

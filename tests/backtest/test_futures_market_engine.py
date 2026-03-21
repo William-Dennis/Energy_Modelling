@@ -75,6 +75,7 @@ class TestFixedPointWithKnownForecasts:
             strategy_forecasts=forecasts,
             max_iterations=50,
             convergence_threshold=0.001,
+            ema_alpha=1.0,
         )
 
         # Should converge to 60 (only A survives, its forecast is 60)
@@ -125,6 +126,7 @@ class TestForecastRequired:
             strategy_forecasts=forecasts,
             max_iterations=50,
             convergence_threshold=0.001,
+            ema_alpha=1.0,
         )
 
         # Strategy forecasts 75, real is 80, initial is 50.
@@ -408,6 +410,7 @@ class TestPerfectForesightInstantConvergence:
             strategy_forecasts=pf_forecasts,
             max_iterations=100,
             convergence_threshold=0.01,
+            ema_alpha=1.0,
         )
 
         assert eq.converged
@@ -466,3 +469,62 @@ class TestComputeWeightsFromEngine:
     def test_weights_sum_to_one(self) -> None:
         weights = compute_weights({"a": 50.0, "b": 100.0, "c": 150.0})
         assert sum(weights.values()) == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# Test 11: EMA alpha parameter
+# ---------------------------------------------------------------------------
+
+
+class TestEmaAlpha:
+    """Verify EMA blending parameter behaviour."""
+
+    def test_ema_alpha_one_is_spec_identical(self) -> None:
+        """ema_alpha=1.0 must reproduce spec-exact single-step PF convergence."""
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([100.0], index=dates)
+        initial = pd.Series([80.0], index=dates)
+        forecasts = {"pf": {dates[0]: 100.0}}
+
+        eq = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=10,
+            ema_alpha=1.0,
+        )
+        # With alpha=1.0 the EMA is a no-op: price jumps to 100 in one step
+        assert eq.converged
+        assert eq.final_market_prices.iloc[0] == pytest.approx(100.0, abs=0.01)
+        # Spec: PF-only converges in <=2 iterations (instant convergence)
+        assert len(eq.iterations) <= 2
+
+    def test_ema_alpha_damps_price_jump(self) -> None:
+        """With ema_alpha=0.5, price moves half as far in one iteration as ema_alpha=1.0."""
+        dates = pd.DatetimeIndex(["2024-01-01"])
+        real = pd.Series([100.0], index=dates)
+        initial = pd.Series([60.0], index=dates)
+        forecasts = {"pf": {dates[0]: 100.0}}
+
+        # alpha=1.0: after 1 iteration price should jump fully to 100
+        eq_full = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=1,
+            ema_alpha=1.0,
+        )
+        # alpha=0.5: after 1 iteration price should be 0.5*100 + 0.5*60 = 80
+        eq_half = run_futures_market(
+            initial_market_prices=initial,
+            real_prices=real,
+            strategy_forecasts=forecasts,
+            max_iterations=1,
+            ema_alpha=0.5,
+        )
+        price_full = eq_full.iterations[0].market_prices.iloc[0]
+        price_half = eq_half.iterations[0].market_prices.iloc[0]
+
+        # full jump: 100; half jump: 0.5*100 + 0.5*60 = 80
+        assert price_full == pytest.approx(100.0, abs=0.01)
+        assert price_half == pytest.approx(80.0, abs=0.01)

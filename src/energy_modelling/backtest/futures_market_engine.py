@@ -348,6 +348,7 @@ def run_futures_market(
     strategy_forecasts: dict[str, dict],
     max_iterations: int = 500,
     convergence_threshold: float = 0.01,
+    ema_alpha: float = 0.1,
 ) -> FuturesMarketEquilibrium:
     """Run the synthetic futures market until prices converge (spec Step 5).
 
@@ -365,7 +366,24 @@ def run_futures_market(
     convergence_threshold:
         Maximum absolute EUR/MWh change between consecutive iterations
         required to declare convergence (spec Step 5 fixed-point criterion).
+    ema_alpha:
+        Blending factor for the EMA price update across iterations.
+        At each step the published price is:
+
+            P_{k+1} = ema_alpha * P_weighted_k + (1 - ema_alpha) * P_k
+
+        where ``P_weighted_k`` is the profit-weighted forecast average from
+        the spec (Step 4) and ``P_k`` is the current market price.
+
+        ``ema_alpha=1.0`` recovers the unmodified spec behaviour (no blending).
+        ``ema_alpha=0.1`` (default) damps per-iteration price jumps and
+        significantly reduces oscillation amplitude on real data.
+        Must be in (0, 1].
     """
+    if not 0.0 < ema_alpha <= 1.0:
+        msg = f"ema_alpha must be in (0, 1], got {ema_alpha}"
+        raise ValueError(msg)
+
     current_prices = initial_market_prices.copy().astype(float)
     iterations: list[FuturesMarketIteration] = []
     converged = False
@@ -381,7 +399,14 @@ def run_futures_market(
 
         new_vec, profits_arr, weights_arr = _vec_iteration(market_vec, fm)
 
-        published = pd.Series(new_vec, index=index, name="market_price")
+        # EMA blend: damp per-iteration price jump.
+        # When ema_alpha=1.0 this is a no-op (pure spec behaviour).
+        if ema_alpha < 1.0:
+            published_vec = ema_alpha * new_vec + (1.0 - ema_alpha) * market_vec
+        else:
+            published_vec = new_vec
+
+        published = pd.Series(published_vec, index=index, name="market_price")
 
         profits_dict = dict(zip(strategy_names, profits_arr.tolist(), strict=True))
         weights_dict = dict(zip(strategy_names, weights_arr.tolist(), strict=True))
@@ -395,7 +420,7 @@ def run_futures_market(
             active_strategies=active,
         )
 
-        delta = float(np.abs(new_vec - market_vec).max())
+        delta = float(np.abs(published_vec - market_vec).max())
         iterations.append(result)
         current_prices = published
 

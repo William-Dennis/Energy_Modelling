@@ -147,6 +147,7 @@ def run_futures_market_evaluation(
     evaluation_end: date,
     max_iterations: int = 500,
     convergence_threshold: float = 0.01,
+    ema_alpha: float = 0.1,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
 ) -> FuturesMarketResult:
@@ -177,6 +178,11 @@ def run_futures_market_evaluation(
     convergence_threshold:
         Maximum absolute EUR/MWh price change between consecutive iterations
         required to declare convergence (spec Step 5 fixed-point criterion).
+    ema_alpha:
+        EMA blending factor for the price update across iterations.
+        ``ema_alpha=1.0`` recovers the unmodified spec (no blending).
+        ``ema_alpha=0.1`` (default) damps oscillation on real data.
+        See :func:`~energy_modelling.backtest.futures_market_engine.run_futures_market`.
     initial_market_prices:
         Starting market prices.  Defaults to ``last_settlement_price``.
     max_workers:
@@ -236,6 +242,7 @@ def run_futures_market_evaluation(
         strategy_forecasts=strategy_forecasts,
         max_iterations=max_iterations,
         convergence_threshold=convergence_threshold,
+        ema_alpha=ema_alpha,
     )
 
     # Phase 4: Recompute PnL for each strategy under market prices
