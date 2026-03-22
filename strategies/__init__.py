@@ -6,6 +6,7 @@ automatically discovered by the dashboard's Challenge tab.
 
 from strategies.always_long import AlwaysLongStrategy
 from strategies.always_short import AlwaysShortStrategy
+from strategies.balanced_long_short import BalancedLongShortStrategy
 from strategies.bayesian_ridge import BayesianRidgeStrategy
 from strategies.boosted_spread_ml import BoostedSpreadMLStrategy
 from strategies.carbon_gas_ratio import CarbonGasRatioStrategy
@@ -107,6 +108,7 @@ from strategies.zscore_momentum import ZScoreMomentumStrategy
 __all__ = [
     "AlwaysLongStrategy",
     "AlwaysShortStrategy",
+    "BalancedLongShortStrategy",
     "BayesianRidgeStrategy",
     "BoostedSpreadMLStrategy",
     "CarbonGasRatioStrategy",
