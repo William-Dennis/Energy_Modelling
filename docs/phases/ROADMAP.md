@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASES 0-12 COMPLETE
+## Overall Status: PHASES 0-13 COMPLETE
 
 ## Phase Overview
 
@@ -15,10 +15,11 @@
 | 6 | [EDA Feedback Loop](phase_6_feedback_loop.md) | COMPLETE | Phase 5 | 6 new dashboard sections, no strategy refinements needed |
 | 7 | [Convergence Analysis](phase_7_convergence_analysis.md) | COMPLETE | Phase 4, 5 | Forecast-based convergence proven (contraction mapping); 4 theorems validated empirically. **WARNING: Applies to undampened model only (ema_alpha=1.0); not taken forward to production.** |
 | 8 | [Oscillation Research](phase_8_oscillation_research.md) | COMPLETE | Phase 7 | Historical oscillation research record. **WARNING: Winner (running_avg_k=5) was never implemented; see Phase 9 for the approach actually adopted.** |
-| 9 | [EMA Price Update Experiments](phase_9_ema_price_update.md) | COMPLETE | Phase 7, 8 | EMA dampening sweep; alpha=0.1 adopted as production default; 2025 converges, 2024 does not |
+| 9 | [EMA Price Update Experiments](phase_9_ema_price_update.md) | COMPLETE | Phase 7, 8 | EMA dampening sweep; alpha=0.1 adopted as initial production default; 2025 converges, 2024 does not. **NOTE: alpha=0.01 later applied in Phase 13 fix.** |
 | 10 | [Futures Market Behaviour and Strategy Robustness](phase_10_market_behaviour_and_strategy_robustness.md) | COMPLETE | Phase 5, 7, 8, 9 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
 | 11 | [New Strategies and Hyperparameter Tuning](phase_11_new_strategies_and_hyperparameter_tuning.md) | COMPLETE | Phase 10 | 7 new strategies (74 total), hyperparameter recommendations, 44 new tests |
 | 12 | [Forecast Cache & Strategy Expansion](phase_12_forecast_cache_and_strategy_expansion.md) | COMPLETE | Phase 11 | SQLite forecast cache (recompute-all in 2.6s), 26 new strategies reaching 100 total, 1279 tests |
+| 13 | ema_alpha Production Fix | COMPLETE | Phase 10c, 12 | Apply ema_alpha=0.01 to recompute.py call sites; regenerate market_2024.pkl and market_2025.pkl |
 
 ## Dependency Graph
 
@@ -188,3 +189,4 @@ src/energy_modelling/
 | 2026-03-22 | 11 | COMPLETE — 7 new strategies (SpreadMomentum, SelectiveHighConviction, TemperatureCurve, NuclearEvent, FlowImbalance, RegimeRidge, PrunedMLEnsemble) implemented with 44 tests. Strategy count 67->74. 1089 tests pass. Hyperparameter recommendations documented (ema_alpha=0.01, max_iterations=200) |
 | 2026-03-22 | 12a | COMPLETE — SQLite forecast cache: per-strategy fingerprinting, warm-cache recompute-all in 2.4s (down from ~8-10 min). 19 new tests. 1108 tests pass. All theorems verified |
 | 2026-03-22 | 12b | COMPLETE — Strategy expansion from 74 to 100: 26 new strategies in 6 batches (RadiationSolar, IntradayRange, OffshoreWindAnomaly, ForecastPriceError, PolandSpread, DenmarkSpread, CzechAustrianMean, SparkSpread, CarbonGasRatio, WeeklyAutocorrelation, MonthlyMeanReversion, LoadGenerationGap, RenewableRamp, NuclearGasSubstitution, VolatilityBreakout, SeasonalRegimeSwitch, WeekendMeanReversion, HighVolSkip, RadiationRegime, IndependentVote, MedianIndependent, SpreadConsensus, SupplyDemandBalance, ContrarianMomentum, ConvictionWeighted, BalancedLongShort). 171 new tests. 1279 tests pass. Warm-cache recompute-all: 2.6s with 100 strategies |
+| 2026-03-22 | 13 | COMPLETE — ema_alpha production fix: applied ema_alpha=0.01 explicitly to both run_futures_market_evaluation() calls in recompute.py (engine defaults unchanged for backwards compat). Regenerated market_2024.pkl (converged=False, delta=0.0718, 500 iters) and market_2025.pkl (converged=True, delta=0.0093, 499 iters). 1279 tests pass. |

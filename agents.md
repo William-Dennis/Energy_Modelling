@@ -83,7 +83,7 @@ The synthetic futures market (`futures_market_engine.py`) implements:
 5. **Iteration**: repeat until convergence delta < threshold
 
 Key parameters:
-- `ema_alpha=0.1` (production default; `1.0` = undampened spec)
+- `ema_alpha=0.01` (production default as of Phase 13; engine function default is 0.1 for backwards compat; `1.0` = undampened spec)
 - `convergence_threshold=0.01`
 - `max_iterations=500`
 
@@ -132,16 +132,18 @@ raw data → data_collection → processed/ → backtest/data.py → runner.py
 | 0-6 | Foundation: consolidation, EDA, hypotheses, strategies, backtest, feedback |
 | 7 | Convergence analysis (undampened model, `ema_alpha=1.0`) |
 | 8 | Oscillation research (historical record; winner never implemented) |
-| 9 | EMA price update experiments (`ema_alpha=0.1` adopted) |
+| 9 | EMA price update experiments (`ema_alpha=0.1` adopted as initial default) |
 | 10 | Market behaviour & strategy robustness (complete) |
 | 11 | New strategies & hyperparameter tuning (complete, 74 strategies) |
+| 12 | Forecast cache & strategy expansion (complete, 100 strategies, 1279 tests) |
+| 13 | ema_alpha production fix (complete, `ema_alpha=0.01` applied in recompute.py) |
 | A-G | Expansion phases (parallel track, all complete, 67 strategies) |
 
 ### Expansion docs
 
 - Live in `docs/expansion/phase_X_name.md`
 - Each has a breadcrumb link back to ROADMAP and expansion README.
-- `docs/expansion/strategy_registry.md` — the canonical 74-strategy list.
+- `docs/expansion/strategy_registry.md` — the canonical 100-strategy list.
 - `docs/expansion/signal_registry.md` — the signal catalog.
 
 ---
@@ -151,7 +153,7 @@ raw data → data_collection → processed/ → backtest/data.py → runner.py
 ### 1. `ema_alpha` matters everywhere
 
 - Theorems in `verify_theorems.py` require `ema_alpha=1.0` (undampened).
-- Production uses `ema_alpha=0.1`. Don't confuse the two.
+- Production uses `ema_alpha=0.01` (applied in `recompute.py` as of Phase 13). Engine function defaults are 0.1 for backwards compat. Don't confuse the two.
 - If you add a new `run_futures_market()` call for theorem testing, always pass `ema_alpha=1.0`.
 
 ### 2. Phase 8's `running_avg_k` was never implemented

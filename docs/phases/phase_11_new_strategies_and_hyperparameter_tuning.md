@@ -30,6 +30,12 @@ Based on Phase 10c findings, future market simulation runs should use:
 These values should be passed explicitly when calling `run_futures_market()` or
 `run_futures_market_evaluation()`. The engine defaults are not changed.
 
+> **NOTE (Phase 13, 2026-03-22):** The `ema_alpha=0.01` recommendation above has
+> now been implemented. `recompute.py` passes `ema_alpha=0.01` explicitly to both
+> `run_futures_market_evaluation()` calls. The engine function defaults remain 0.1
+> for backwards compatibility. The regenerated artifacts (`market_2024.pkl`,
+> `market_2025.pkl`) reflect this change.
+
 ## New Strategies (7)
 
 ### 1. SpreadMomentumStrategy (rule-based, cross-border)

@@ -18,6 +18,14 @@ Caching strategy
    ``fit()`` + ``forecast()`` cycle for all cached strategies.
 
    This brings ``recompute-all`` from minutes to seconds when the cache is warm.
+
+Market simulation parameters
+-----------------------------
+- ``ema_alpha=0.01``: adopted as the production default (Phase 10c sweep found
+  this to be the only value achieving healthy convergence for both 2024 and 2025).
+  The engine function default is 0.1 (retained for backwards compatibility);
+  this file overrides it explicitly.
+- ``max_iterations=500``: sufficient headroom for convergence at alpha=0.01.
 """
 
 from __future__ import annotations
@@ -508,6 +516,7 @@ def recompute_all(
             max_workers=max_workers,
             cached_forecasts=forecasts_24,
             cached_results=results_24,
+            ema_alpha=0.01,
         )
         save_market_results(m24, RESULTS_DIR / "market_2024.pkl")
         logger.info("Saved market_2024.pkl")
@@ -526,6 +535,7 @@ def recompute_all(
                 max_workers=max_workers,
                 cached_forecasts=forecasts_25,
                 cached_results=results_25,
+                ema_alpha=0.01,
             )
             save_market_results(m25, RESULTS_DIR / "market_2025.pkl")
             logger.info("Saved market_2025.pkl")
