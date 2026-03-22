@@ -83,9 +83,9 @@ The synthetic futures market (`futures_market_engine.py`) implements:
 5. **Iteration**: repeat until convergence delta < threshold
 
 Key parameters:
-- `ema_alpha=0.01` (production default as of Phase 13; engine function default is 0.1 for backwards compat; `1.0` = undampened spec)
+- `ema_alpha=0.003` (production default as of Phase 14; engine function default is 0.1 for backwards compat; `1.0` = undampened spec)
 - `convergence_threshold=0.01`
-- `max_iterations=500`
+- `max_iterations=10_000`
 
 ### Strategy Interface
 
@@ -106,8 +106,8 @@ raw data → data_collection → processed/ → backtest/data.py → runner.py
 
 ### Saved Artifacts
 
-- `data/results/market_2024.pkl` — `FuturesMarketResult` for 2024 (67 strategies, 366 dates, NOT converged after 500 iters)
-- `data/results/market_2025.pkl` — `FuturesMarketResult` for 2025 (67 strategies, 365 dates, converged at iter 327 with 0 active strategies)
+- `data/results/market_2024.pkl` — `FuturesMarketResult` for 2024 (100 strategies, 366 dates, converged with ema_alpha=0.003, ~1195 iters)
+- `data/results/market_2025.pkl` — `FuturesMarketResult` for 2025 (100 strategies, 365 dates, converged with ema_alpha=0.003, ~1103 iters)
 - `data/results/backtest_val_2024.pkl` / `backtest_hid_2025.pkl` — standalone backtest results
 - `data/results/phase8/` — forecast pickles from Phase 8 experiments
 - `data/results/phase10/results.csv` — EMA alpha sweep results
@@ -137,6 +137,7 @@ raw data → data_collection → processed/ → backtest/data.py → runner.py
 | 11 | New strategies & hyperparameter tuning (complete, 74 strategies) |
 | 12 | Forecast cache & strategy expansion (complete, 100 strategies, 1279 tests) |
 | 13 | ema_alpha production fix (complete, `ema_alpha=0.01` applied in recompute.py) |
+| 14 | Engine default update (complete, `ema_alpha=0.003`, `max_iterations=10_000` as engine defaults; both years converge) |
 | A-G | Expansion phases (parallel track, all complete, 67 strategies) |
 
 ### Expansion docs
@@ -153,7 +154,7 @@ raw data → data_collection → processed/ → backtest/data.py → runner.py
 ### 1. `ema_alpha` matters everywhere
 
 - Theorems in `verify_theorems.py` require `ema_alpha=1.0` (undampened).
-- Production uses `ema_alpha=0.01` (applied in `recompute.py` as of Phase 13). Engine function defaults are 0.1 for backwards compat. Don't confuse the two.
+- Production uses `ema_alpha=0.003` (applied in `recompute.py` as of Phase 13; engine defaults updated in Phase 14). Engine function defaults are 0.1 for backwards compat. Don't confuse the two.
 - If you add a new `run_futures_market()` call for theorem testing, always pass `ema_alpha=1.0`.
 
 ### 2. Phase 8's `running_avg_k` was never implemented

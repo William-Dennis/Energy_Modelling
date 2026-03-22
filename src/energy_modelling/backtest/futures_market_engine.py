@@ -346,9 +346,9 @@ def run_futures_market(
     initial_market_prices: pd.Series,
     real_prices: pd.Series,
     strategy_forecasts: dict[str, dict],
-    max_iterations: int = 500,
+    max_iterations: int = 10_000,
     convergence_threshold: float = 0.01,
-    ema_alpha: float = 0.1,
+    ema_alpha: float = 0.003,
 ) -> FuturesMarketEquilibrium:
     """Run the synthetic futures market until prices converge (spec Step 5).
 
@@ -362,7 +362,8 @@ def run_futures_market(
         ``{strategy_name: {date: forecast_price}}``.  Every strategy must
         provide forecasts for all delivery dates.
     max_iterations:
-        Hard cap on iteration count.
+        Hard cap on iteration count.  Default 10 000 gives ample headroom
+        for convergence at low ``ema_alpha`` values (~0.5 s worst-case).
     convergence_threshold:
         Maximum absolute EUR/MWh change between consecutive iterations
         required to declare convergence (spec Step 5 fixed-point criterion).
@@ -376,8 +377,9 @@ def run_futures_market(
         the spec (Step 4) and ``P_k`` is the current market price.
 
         ``ema_alpha=1.0`` recovers the unmodified spec behaviour (no blending).
-        ``ema_alpha=0.1`` (default) damps per-iteration price jumps and
-        significantly reduces oscillation amplitude on real data.
+        ``ema_alpha=0.003`` (default) is the production value: the lowest alpha
+        that achieves genuine cold-start convergence for both 2024 and 2025
+        (identified by Phase 14 fine sweep; 0.004 and above fails for 2024).
         Must be in (0, 1].
     """
     if not 0.0 < ema_alpha <= 1.0:

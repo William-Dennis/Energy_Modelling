@@ -137,9 +137,9 @@ def run_futures_market_evaluation(
     training_end: date,
     evaluation_start: date,
     evaluation_end: date,
-    max_iterations: int = 500,
+    max_iterations: int = 10_000,
     convergence_threshold: float = 0.01,
-    ema_alpha: float = 0.1,
+    ema_alpha: float = 0.003,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
     cached_forecasts: dict[str, dict] | None = None,
@@ -175,7 +175,8 @@ def run_futures_market_evaluation(
     ema_alpha:
         EMA blending factor for the price update across iterations.
         ``ema_alpha=1.0`` recovers the unmodified spec (no blending).
-        ``ema_alpha=0.1`` (default) damps oscillation on real data.
+        ``ema_alpha=0.003`` (default) is the production value: lowest alpha that
+        converges both 2024 and 2025 from a cold start (Phase 14 fine sweep).
         See :func:`~energy_modelling.backtest.futures_market_engine.run_futures_market`.
     initial_market_prices:
         Starting market prices.  Defaults to ``last_settlement_price``.

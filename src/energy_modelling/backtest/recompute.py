@@ -21,11 +21,13 @@ Caching strategy
 
 Market simulation parameters
 -----------------------------
-- ``ema_alpha=0.01``: adopted as the production default (Phase 10c sweep found
-  this to be the only value achieving healthy convergence for both 2024 and 2025).
-  The engine function default is 0.1 (retained for backwards compatibility);
-  this file overrides it explicitly.
-- ``max_iterations=500``: sufficient headroom for convergence at alpha=0.01.
+- ``ema_alpha=0.003``: production default (Phase 14 fine sweep).  Lowest value
+  achieving genuine cold-start convergence for both 2024 (1195 iters, ~0.4 s)
+  and 2025 (1103 iters, ~0.3 s).  Previously 0.01 (Phase 13) which appeared to
+  converge only due to warm-start initialisation; now confirmed with cold starts.
+  Passed explicitly here for clarity; also the engine function default.
+- ``max_iterations=10_000``: engine default (Phase 14).  Ample headroom; early
+  exit on convergence keeps cost low.
 """
 
 from __future__ import annotations
@@ -516,7 +518,7 @@ def recompute_all(
             max_workers=max_workers,
             cached_forecasts=forecasts_24,
             cached_results=results_24,
-            ema_alpha=0.01,
+            ema_alpha=0.003,
         )
         save_market_results(m24, RESULTS_DIR / "market_2024.pkl")
         logger.info("Saved market_2024.pkl")
@@ -535,7 +537,7 @@ def recompute_all(
                 max_workers=max_workers,
                 cached_forecasts=forecasts_25,
                 cached_results=results_25,
-                ema_alpha=0.01,
+                ema_alpha=0.003,
             )
             save_market_results(m25, RESULTS_DIR / "market_2025.pkl")
             logger.info("Saved market_2025.pkl")
