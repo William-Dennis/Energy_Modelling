@@ -32,6 +32,8 @@ from strategies.gas_carbon_joint_trend import GasCarbonJointTrendStrategy
 from strategies.gas_trend import GasTrendStrategy
 from strategies.gbm_net_demand import GBMNetDemandStrategy
 from strategies.gradient_boosting_direction import GradientBoostingStrategy
+from strategies.high_vol_skip import HighVolSkipStrategy
+from strategies.independent_vote import IndependentVoteStrategy
 from strategies.intraday_range import IntradayRangeStrategy
 from strategies.knn_direction import KNNDirectionStrategy
 from strategies.lag2_reversion import Lag2ReversionStrategy
@@ -64,6 +66,7 @@ from strategies.price_min_reversion import PriceMinReversionStrategy
 from strategies.price_zscore_reversion import PriceZScoreReversionStrategy
 from strategies.pruned_ml_ensemble import PrunedMLEnsembleStrategy
 from strategies.quarter_seasonal import QuarterSeasonalStrategy
+from strategies.radiation_regime import RadiationRegimeStrategy
 from strategies.radiation_solar import RadiationSolarStrategy
 from strategies.random_forest_direction import RandomForestStrategy
 from strategies.regime_conditional_ensemble import RegimeConditionalEnsembleStrategy
@@ -74,6 +77,7 @@ from strategies.renewables_penetration import RenewablesPenetrationStrategy
 from strategies.renewables_surplus import RenewablesSurplusStrategy
 from strategies.ridge_net_demand import RidgeNetDemandStrategy
 from strategies.ridge_regression import RidgeRegressionStrategy
+from strategies.seasonal_regime_switch import SeasonalRegimeSwitchStrategy
 from strategies.selective_high_conviction import SelectiveHighConvictionStrategy
 from strategies.solar_forecast import SolarForecastStrategy
 from strategies.spark_spread import SparkSpreadStrategy
@@ -87,6 +91,7 @@ from strategies.volatility_breakout import VolatilityBreakoutStrategy
 from strategies.volatility_regime import VolatilityRegimeStrategy
 from strategies.volatility_regime_ml import VolatilityRegimeMLStrategy
 from strategies.weekday_weekend_ensemble import WeekdayWeekendEnsembleStrategy
+from strategies.weekend_mean_reversion import WeekendMeanReversionStrategy
 from strategies.weekly_autocorrelation import WeeklyAutocorrelationStrategy
 from strategies.weekly_cycle import WeeklyCycleStrategy
 from strategies.weighted_vote_mixed import WeightedVoteMixedStrategy
@@ -123,6 +128,8 @@ __all__ = [
     "GasTrendStrategy",
     "GBMNetDemandStrategy",
     "GradientBoostingStrategy",
+    "HighVolSkipStrategy",
+    "IndependentVoteStrategy",
     "IntradayRangeStrategy",
     "KNNDirectionStrategy",
     "Lag2ReversionStrategy",
@@ -155,6 +162,7 @@ __all__ = [
     "PriceZScoreReversionStrategy",
     "PrunedMLEnsembleStrategy",
     "RadiationSolarStrategy",
+    "RadiationRegimeStrategy",
     "QuarterSeasonalStrategy",
     "RandomForestStrategy",
     "RegimeConditionalEnsembleStrategy",
@@ -166,6 +174,7 @@ __all__ = [
     "RidgeNetDemandStrategy",
     "RidgeRegressionStrategy",
     "SelectiveHighConvictionStrategy",
+    "SeasonalRegimeSwitchStrategy",
     "SolarForecastStrategy",
     "SparkSpreadStrategy",
     "SpreadMomentumStrategy",
@@ -178,6 +187,7 @@ __all__ = [
     "VolatilityRegimeMLStrategy",
     "VolatilityRegimeStrategy",
     "WeekdayWeekendEnsembleStrategy",
+    "WeekendMeanReversionStrategy",
     "WeeklyAutocorrelationStrategy",
     "WeeklyCycleStrategy",
     "WeightedVoteMixedStrategy",
