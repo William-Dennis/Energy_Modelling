@@ -8,15 +8,18 @@ from strategies.always_long import AlwaysLongStrategy
 from strategies.always_short import AlwaysShortStrategy
 from strategies.bayesian_ridge import BayesianRidgeStrategy
 from strategies.boosted_spread_ml import BoostedSpreadMLStrategy
+from strategies.carbon_gas_ratio import CarbonGasRatioStrategy
 from strategies.carbon_trend import CarbonTrendStrategy
 from strategies.commodity_cost import CommodityCostStrategy
 from strategies.composite_signal import CompositeSignalStrategy
 from strategies.consensus_signal import ConsensusSignalStrategy
 from strategies.cross_border_spread import CrossBorderSpreadStrategy
+from strategies.czech_austrian_mean import CzechAustrianMeanStrategy
 from strategies.day_of_week import DayOfWeekStrategy
 from strategies.de_fr_spread import DEFRSpreadStrategy
 from strategies.de_nl_spread import DENLSpreadStrategy
 from strategies.decision_tree_direction import DecisionTreeStrategy
+from strategies.denmark_spread import DenmarkSpreadStrategy
 from strategies.diversity_ensemble import DiversityEnsembleStrategy
 from strategies.dow_composite import DowCompositeStrategy
 from strategies.elastic_net import ElasticNetStrategy
@@ -69,6 +72,7 @@ from strategies.ridge_net_demand import RidgeNetDemandStrategy
 from strategies.ridge_regression import RidgeRegressionStrategy
 from strategies.selective_high_conviction import SelectiveHighConvictionStrategy
 from strategies.solar_forecast import SolarForecastStrategy
+from strategies.spark_spread import SparkSpreadStrategy
 from strategies.spread_momentum import SpreadMomentumStrategy
 from strategies.stacked_ridge_meta import StackedRidgeMetaStrategy
 from strategies.svm_direction import SVMDirectionStrategy
@@ -78,6 +82,7 @@ from strategies.top_k_ensemble import TopKEnsembleStrategy
 from strategies.volatility_regime import VolatilityRegimeStrategy
 from strategies.volatility_regime_ml import VolatilityRegimeMLStrategy
 from strategies.weekday_weekend_ensemble import WeekdayWeekendEnsembleStrategy
+from strategies.weekly_autocorrelation import WeeklyAutocorrelationStrategy
 from strategies.weekly_cycle import WeeklyCycleStrategy
 from strategies.weighted_vote_mixed import WeightedVoteMixedStrategy
 from strategies.wind_forecast import WindForecastStrategy
@@ -89,15 +94,18 @@ __all__ = [
     "AlwaysShortStrategy",
     "BayesianRidgeStrategy",
     "BoostedSpreadMLStrategy",
+    "CarbonGasRatioStrategy",
     "CarbonTrendStrategy",
     "CommodityCostStrategy",
     "CompositeSignalStrategy",
     "ConsensusSignalStrategy",
     "CrossBorderSpreadStrategy",
+    "CzechAustrianMeanStrategy",
     "DayOfWeekStrategy",
     "DEFRSpreadStrategy",
     "DENLSpreadStrategy",
     "DecisionTreeStrategy",
+    "DenmarkSpreadStrategy",
     "DiversityEnsembleStrategy",
     "DowCompositeStrategy",
     "ElasticNetStrategy",
@@ -150,6 +158,7 @@ __all__ = [
     "RidgeRegressionStrategy",
     "SelectiveHighConvictionStrategy",
     "SolarForecastStrategy",
+    "SparkSpreadStrategy",
     "SpreadMomentumStrategy",
     "StackedRidgeMetaStrategy",
     "SVMDirectionStrategy",
@@ -159,6 +168,7 @@ __all__ = [
     "VolatilityRegimeMLStrategy",
     "VolatilityRegimeStrategy",
     "WeekdayWeekendEnsembleStrategy",
+    "WeeklyAutocorrelationStrategy",
     "WeeklyCycleStrategy",
     "WeightedVoteMixedStrategy",
     "WindForecastStrategy",
