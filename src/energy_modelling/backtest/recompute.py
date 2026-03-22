@@ -4,14 +4,20 @@ CLI entry point: ``recompute-all``
 
 Caching strategy
 ----------------
-Backtests are deterministic — given the same strategy source code and the same
-dataset, they produce identical results.  We compute a SHA-256 fingerprint of
-all strategy source files plus the CSV dataset; if a pickle file was written
-with the same fingerprint we skip it.
+**Two-tier caching** ensures maximum speed:
 
-The futures market simulation is dynamic (it depends on the mix of all
-strategies and the market convergence engine), so ``market_*.pkl`` files are
-always regenerated.
+1. **Pickle fingerprint cache** (legacy, retained): Backtests are deterministic.
+   We compute a SHA-256 fingerprint of all strategy source files plus the CSV
+   dataset; if a pickle was written with the same fingerprint we skip it.
+
+2. **SQLite forecast cache** (new, Phase 12): Per-strategy forecasts and
+   backtest results are stored in ``data/results/forecast_cache.db``.
+   Each strategy is fingerprinted individually so that changing one strategy
+   only invalidates that strategy's cache.  The market simulation loads
+   forecasts directly from the database, bypassing the expensive
+   ``fit()`` + ``forecast()`` cycle for all cached strategies.
+
+   This brings ``recompute-all`` from minutes to seconds when the cache is warm.
 """
 
 from __future__ import annotations
@@ -30,6 +36,14 @@ import pandas as pd
 from tqdm import tqdm
 
 from energy_modelling.backtest.benchmarks import ALL_BENCHMARKS, get_benchmark
+from energy_modelling.backtest.forecast_cache import (
+    _connect,
+    clear_cache,
+    is_cached,
+    load_all_backtest_results,
+    load_all_forecasts,
+    store_forecasts,
+)
 from energy_modelling.backtest.io import (
     RESULTS_DIR,
     load_backtest_results,
@@ -47,7 +61,7 @@ EVAL_START = date(2024, 1, 1)
 EVAL_END = date(2024, 12, 31)
 
 # Reduced set of benchmarks run by default (covers representative spread without
-# running all 8 which would take 8× longer for diminishing insight).
+# running all 8 which would take 8x longer for diminishing insight).
 DEFAULT_BENCHMARKS = ["baseline", "noise_5", "oracle"]
 
 _FINGERPRINT_FILE = RESULTS_DIR / ".fingerprint.json"
@@ -83,8 +97,47 @@ def _run_backtest_worker(
     return name, result
 
 
+def _run_and_cache_worker(
+    name: str,
+    factory: Callable[[], BacktestStrategy],
+    daily_data: pd.DataFrame,
+    training_end: date,
+    evaluation_start: date,
+    evaluation_end: date,
+) -> tuple[str, BacktestResult, dict]:
+    """Subprocess worker: fit, evaluate, AND collect forecasts.
+
+    Returns ``(name, BacktestResult, forecasts_dict)``.
+    """
+    from energy_modelling.backtest.feature_engineering import (  # noqa: PLC0415
+        add_derived_features,
+    )
+    from energy_modelling.backtest.futures_market_runner import (  # noqa: PLC0415
+        _collect_forecasts,
+    )
+    from energy_modelling.backtest.runner import _normalise_daily_data  # noqa: PLC0415
+
+    strategy = factory()
+    result = run_backtest(
+        strategy=strategy,
+        daily_data=daily_data,
+        training_end=training_end,
+        evaluation_start=evaluation_start,
+        evaluation_end=evaluation_end,
+    )
+
+    # Collect forecasts from the already-fitted strategy
+    data = _normalise_daily_data(daily_data)
+    data = add_derived_features(data)
+    eval_mask = (data.index >= evaluation_start) & (data.index <= evaluation_end)
+    eval_data = data.loc[eval_mask]
+
+    forecasts = _collect_forecasts(strategy, eval_data, data)
+    return name, result, forecasts
+
+
 # ---------------------------------------------------------------------------
-# Fingerprinting helpers
+# Fingerprinting helpers (legacy pickle cache)
 # ---------------------------------------------------------------------------
 
 
@@ -161,6 +214,82 @@ def _parse_date(s: str | None) -> date | None:
     return date.fromisoformat(s)
 
 
+def _populate_forecast_cache(
+    strat_factories: dict[str, Callable[[], BacktestStrategy]],
+    daily_data: pd.DataFrame,
+    training_end: date,
+    evaluation_start: date,
+    evaluation_end: date,
+    year: int,
+    strategies_dir: Path,
+    csv_path: Path,
+    *,
+    force: bool = False,
+    max_workers: int | None = None,
+) -> tuple[dict[str, dict], dict[str, BacktestResult]]:
+    """Ensure the forecast cache is populated for all strategies.
+
+    Returns ``(all_forecasts, all_backtest_results)`` loaded from the cache.
+    Only strategies whose source code or data has changed are re-computed.
+    """
+    conn = _connect()
+    try:
+        # Identify which strategies need recomputing
+        uncached_names: list[str] = []
+        for name in strat_factories:
+            if force or not is_cached(name, year, strategies_dir, csv_path, conn):
+                uncached_names.append(name)
+
+        if uncached_names:
+            logger.info(
+                "Year %d: %d/%d strategies need recomputing: %s",
+                year,
+                len(uncached_names),
+                len(strat_factories),
+                uncached_names[:10],
+            )
+            uncached_factories = {n: strat_factories[n] for n in uncached_names}
+
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                futures_map = {
+                    executor.submit(
+                        _run_and_cache_worker,
+                        name,
+                        factory,
+                        daily_data,
+                        training_end,
+                        evaluation_start,
+                        evaluation_end,
+                    ): name
+                    for name, factory in uncached_factories.items()
+                }
+                for future in tqdm(
+                    futures_map,
+                    desc=f"  {year} forecast cache",
+                    unit="strat",
+                ):
+                    name, result, forecasts = future.result()
+                    store_forecasts(
+                        name,
+                        year,
+                        forecasts,
+                        result,
+                        strategies_dir,
+                        csv_path,
+                        conn,
+                    )
+                    logger.debug("Cached %s (%d forecasts)", name, len(forecasts))
+        else:
+            logger.info("Year %d: all %d strategies cached", year, len(strat_factories))
+
+        # Load everything from the cache
+        all_forecasts = load_all_forecasts(year, conn)
+        all_results = load_all_backtest_results(year, conn)
+        return all_forecasts, all_results
+    finally:
+        conn.close()
+
+
 def recompute_all(
     strategies: list[str] | None = None,
     benchmarks: list[str] | None = None,
@@ -226,7 +355,7 @@ def recompute_all(
     t0 = time.perf_counter()
 
     # ------------------------------------------------------------------
-    # Phase 1: Benchmark backtests (deterministic — respect cache)
+    # Phase 1: Benchmark backtests (deterministic -- respect pickle cache)
     # ------------------------------------------------------------------
     for bench_id in tqdm(bench_ids, desc="Benchmarks", unit="bench"):
         pkl_name = f"benchmark_{bench_id}.pkl"
@@ -270,7 +399,7 @@ def recompute_all(
         _record_fingerprint(pkl_name, fp_val)
         logger.info("Saved %s", pkl_name)
 
-    # Copy baseline → backtest_val_2024.pkl
+    # Copy baseline -> backtest_val_2024.pkl
     if "baseline" in bench_ids:
         baseline_path = RESULTS_DIR / "benchmark_baseline.pkl"
         baseline = load_backtest_results(baseline_path)
@@ -281,7 +410,7 @@ def recompute_all(
             logger.info("Saved %s (copy of baseline)", val_name)
 
     # ------------------------------------------------------------------
-    # Phase 2: Hidden-test period (2025) — deterministic
+    # Phase 2: Hidden-test period (2025) -- deterministic
     # ------------------------------------------------------------------
     hid_path = _resolve_path("data/backtest/daily_hidden_test_full.csv")
     combined = None
@@ -327,13 +456,48 @@ def recompute_all(
             _record_fingerprint(hid_pkl, fp_hid)
             logger.info("Saved %s", hid_pkl)
     else:
-        logger.info("No hidden data at %s — skipping 2025 evaluation.", hid_path)
+        logger.info("No hidden data at %s -- skipping 2025 evaluation.", hid_path)
 
     # ------------------------------------------------------------------
-    # Phase 3: Futures market simulation (always re-run — dynamic)
-    # PF is intentionally excluded: it is a theoretical tool only.
+    # Phase 3: Populate forecast cache (per-strategy, incremental)
+    # This is the expensive step on first run, but free on subsequent runs.
     # ------------------------------------------------------------------
-    logger.info("Running futures market simulation (2024)...")
+    logger.info("Populating forecast cache (2024)...")
+    forecasts_24, results_24 = _populate_forecast_cache(
+        strat_factories,
+        daily,
+        t_end,
+        e_start,
+        e_end,
+        year=2024,
+        strategies_dir=strategies_dir,
+        csv_path=pub_path,
+        force=force,
+        max_workers=max_workers,
+    )
+
+    forecasts_25: dict[str, dict] = {}
+    results_25: dict[str, BacktestResult] = {}
+    if combined is not None:
+        logger.info("Populating forecast cache (2025)...")
+        # Determine CSV path for 2025 fingerprinting
+        forecasts_25, results_25 = _populate_forecast_cache(
+            strat_factories,
+            combined,
+            date(2024, 12, 31),
+            date(2025, 1, 1),
+            date(2025, 12, 31),
+            year=2025,
+            strategies_dir=strategies_dir,
+            csv_path=hid_path,
+            force=force,
+            max_workers=max_workers,
+        )
+
+    # ------------------------------------------------------------------
+    # Phase 4: Futures market simulation (fast -- uses cached forecasts)
+    # ------------------------------------------------------------------
+    logger.info("Running futures market simulation (2024) with cached forecasts...")
     try:
         m24 = run_futures_market_evaluation(
             strategy_factories=strat_factories,
@@ -342,14 +506,16 @@ def recompute_all(
             evaluation_start=e_start,
             evaluation_end=e_end,
             max_workers=max_workers,
+            cached_forecasts=forecasts_24,
+            cached_results=results_24,
         )
         save_market_results(m24, RESULTS_DIR / "market_2024.pkl")
         logger.info("Saved market_2024.pkl")
     except Exception:
-        logger.exception("Futures market 2024 failed — skipping.")
+        logger.exception("Futures market 2024 failed -- skipping.")
 
     if combined is not None:
-        logger.info("Running futures market simulation (2025)...")
+        logger.info("Running futures market simulation (2025) with cached forecasts...")
         try:
             m25 = run_futures_market_evaluation(
                 strategy_factories=strat_factories,
@@ -358,11 +524,13 @@ def recompute_all(
                 evaluation_start=date(2025, 1, 1),
                 evaluation_end=date(2025, 12, 31),
                 max_workers=max_workers,
+                cached_forecasts=forecasts_25,
+                cached_results=results_25,
             )
             save_market_results(m25, RESULTS_DIR / "market_2025.pkl")
             logger.info("Saved market_2025.pkl")
         except Exception:
-            logger.exception("Futures market 2025 failed — skipping.")
+            logger.exception("Futures market 2025 failed -- skipping.")
 
     elapsed = time.perf_counter() - t0
     logger.info("Done in %.1f seconds. Results saved to %s", elapsed, RESULTS_DIR)
@@ -425,12 +593,21 @@ def main() -> None:
         action="store_true",
         help="Enable verbose logging",
     )
+    parser.add_argument(
+        "--clear-cache",
+        action="store_true",
+        help="Clear the SQLite forecast cache before running",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+
+    if args.clear_cache:
+        logger.info("Clearing forecast cache...")
+        clear_cache()
 
     bench_ids = None
     if args.all_benchmarks:

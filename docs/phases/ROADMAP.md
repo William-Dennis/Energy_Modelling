@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASES 0-10 COMPLETE, PHASE 11 PLANNED
+## Overall Status: PHASES 0-11 COMPLETE, PHASE 12 IN PROGRESS
 
 ## Phase Overview
 
@@ -17,7 +17,8 @@
 | 8 | [Oscillation Research](phase_8_oscillation_research.md) | COMPLETE | Phase 7 | Historical oscillation research record. **WARNING: Winner (running_avg_k=5) was never implemented; see Phase 9 for the approach actually adopted.** |
 | 9 | [EMA Price Update Experiments](phase_9_ema_price_update.md) | COMPLETE | Phase 7, 8 | EMA dampening sweep; alpha=0.1 adopted as production default; 2025 converges, 2024 does not |
 | 10 | [Futures Market Behaviour and Strategy Robustness](phase_10_market_behaviour_and_strategy_robustness.md) | COMPLETE | Phase 5, 7, 8, 9 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
-| 11 | Engine Hardening and Strategy Refinement | PLANNED | Phase 10 | Engine convergence improvements, strategy pool refinement, dashboard enhancements |
+| 11 | [New Strategies and Hyperparameter Tuning](phase_11_new_strategies_and_hyperparameter_tuning.md) | COMPLETE | Phase 10 | 7 new strategies (74 total), hyperparameter recommendations, 44 new tests |
+| 12 | [Forecast Cache & Strategy Expansion](phase_12_forecast_cache_and_strategy_expansion.md) | IN PROGRESS | Phase 11 | SQLite forecast cache (recompute-all in 2.4s), 26 new strategies to reach 100 total |
 
 ## Dependency Graph
 
@@ -45,6 +46,8 @@ Phase 0 (Consolidation)
           +---> Phase 10 (Behaviour + Robust Strategies) <--- Phase 5, 7, 8, 9
           |
           +---> Phase 11 (Engine Hardening + Refinement) <--- Phase 10
+          |
+          +---> Phase 12 (Forecast Cache + Strategy Expansion) <--- Phase 11
 ```
 
 ## Expansion Phases (Parallel Track)
@@ -63,7 +66,7 @@ roadmap and is fully complete.
 | F | [Ensemble](../expansion/phase_F_ensemble.md) | COMPLETE | +12 ensemble/meta strategies |
 | G | [Feedback Loop](../expansion/phase_G_feedback_loop.md) | COMPLETE | Automated feedback loop infrastructure |
 
-See `docs/expansion/strategy_registry.md` for the full 67-strategy inventory and
+See `docs/expansion/strategy_registry.md` for the full 74-strategy inventory and
 `docs/expansion/signal_registry.md` for the signal catalog.
 
 ## Principles
@@ -81,8 +84,8 @@ See `docs/expansion/strategy_registry.md` for the full 67-strategy inventory and
 ## Architecture (Current — Post Expansion)
 
 ```
-strategies/                          # 67 registered strategies + 1 analysis-only
-  __init__.py                        #   Registry: imports all 67 strategies
+strategies/                          # 74 registered strategies + 1 analysis-only
+  __init__.py                        #   Registry: imports all 74 strategies
   ml_base.py                         #   _MLStrategyBase (scikit-learn adapter)
   ensemble_base.py                   #   _EnsembleBase (ensemble adapter)
   always_long.py                     #   Baseline: always long
@@ -115,6 +118,7 @@ src/energy_modelling/
     feedback.py                      #   Strategy feedback & correlation (Phase 6)
     feature_engineering.py           #   Feature engineering pipeline (Expansion Phase A)
     recompute.py                     #   recompute-all CLI (Issue 6)
+    forecast_cache.py                #   SQLite per-strategy forecast cache (Phase 12)
     cli.py                           #   build-backtest-data CLI
     __main__.py                      #   CLI entry point
     __init__.py                      #   Re-exports all public API
@@ -181,3 +185,5 @@ src/energy_modelling/
 | 2026-03-21 | 10g | COMPLETE — Stronger strategy design: 5 design rules derived from 10a-10f findings. 10 candidate strategies in 3 priority tiers. Top-3 implementation briefs. Acceptance criteria for Phase 11 |
 | 2026-03-21 | 10h | COMPLETE — Synthesis and forward plan: unified causal explanation of market dynamics, historical vs current truth table, engine change recommendations (alpha=0.01, active-strategy floor, early stopping), Phase 11 scope defined (11a-11e) |
 | 2026-03-21 | 10 | COMPLETE — All 8 sub-phases (10a-10h) finished. 1004+ tests pass. Phase 11 placeholder added to roadmap |
+| 2026-03-22 | 11 | COMPLETE — 7 new strategies (SpreadMomentum, SelectiveHighConviction, TemperatureCurve, NuclearEvent, FlowImbalance, RegimeRidge, PrunedMLEnsemble) implemented with 44 tests. Strategy count 67->74. 1089 tests pass. Hyperparameter recommendations documented (ema_alpha=0.01, max_iterations=200) |
+| 2026-03-22 | 12a | COMPLETE — SQLite forecast cache: per-strategy fingerprinting, warm-cache recompute-all in 2.4s (down from ~8-10 min). 19 new tests. 1108 tests pass. All theorems verified |

@@ -33,7 +33,7 @@ Written 2026-03-21 after a full 20-item audit and cleanup session.
 
 ### Test count baseline
 
-- As of 2026-03-21: **1045 tests pass** in ~31s.
+- As of 2026-03-22: **1089 tests pass** in ~30s.
 - If you see "11 collection errors", you're using system Python instead of `uv`.
 
 ---
@@ -47,7 +47,7 @@ src/energy_modelling/
   data_collection/   # ENTSO-E + weather + commodity data: 14 modules
   futures_market/    # Shared data utilities: 4 modules
 
-strategies/           # 67 registered strategies + ml_base + ensemble_base
+strategies/           # 74 registered strategies + ml_base + ensemble_base
 tests/                # Mirrors src/ structure
 scripts/              # Standalone experiment scripts (phase8/9/10, verify, etc.)
 docs/                 # phases/, expansion/, eda/, specs
@@ -64,7 +64,7 @@ issues/               # GitHub-style issue tracking docs
 | `src/.../backtest/futures_market_engine.py` | Synthetic futures market: weights, prices, convergence loop |
 | `src/.../backtest/futures_market_runner.py` | Orchestrator: runs all strategies then feeds into market engine |
 | `src/.../backtest/convergence.py` | Convergence analysis tools |
-| `strategies/__init__.py` | Registry: imports all 67 strategies |
+| `strategies/__init__.py` | Registry: imports all 74 strategies |
 | `scripts/verify_theorems.py` | Validates 4 mathematical theorems about the market engine |
 | `docs/phases/ROADMAP.md` | Master roadmap — always update this when completing phases |
 
@@ -133,14 +133,15 @@ raw data → data_collection → processed/ → backtest/data.py → runner.py
 | 7 | Convergence analysis (undampened model, `ema_alpha=1.0`) |
 | 8 | Oscillation research (historical record; winner never implemented) |
 | 9 | EMA price update experiments (`ema_alpha=0.1` adopted) |
-| 10 | Market behaviour & strategy robustness (current active phase) |
+| 10 | Market behaviour & strategy robustness (complete) |
+| 11 | New strategies & hyperparameter tuning (complete, 74 strategies) |
 | A-G | Expansion phases (parallel track, all complete, 67 strategies) |
 
 ### Expansion docs
 
 - Live in `docs/expansion/phase_X_name.md`
 - Each has a breadcrumb link back to ROADMAP and expansion README.
-- `docs/expansion/strategy_registry.md` — the canonical 67-strategy list.
+- `docs/expansion/strategy_registry.md` — the canonical 74-strategy list.
 - `docs/expansion/signal_registry.md` — the signal catalog.
 
 ---
@@ -162,7 +163,7 @@ raw data → data_collection → processed/ → backtest/data.py → runner.py
 
 - Not a DataFrame. It's a nested dict.
 - Dates are `datetime.date` objects (or pandas Timestamps depending on context).
-- 67 strategies x ~365 dates per year.
+- 67 strategies x ~365 dates per year (74 after Phase 11).
 
 ### 4. Import order matters for scripts
 
@@ -303,7 +304,7 @@ result.strategy_forecasts   # dict[str, dict[date, float]]
 ### Before committing
 
 1. `uv run ruff check .` — must be clean
-2. `uv run pytest -q` — must pass (1045+ tests)
+2. `uv run pytest -q` — must pass (1089+ tests)
 3. `uv run python scripts/verify_theorems.py` — ALL THEOREMS VERIFIED
 
 ### After completing a phase or sub-phase
@@ -320,10 +321,10 @@ result.strategy_forecasts   # dict[str, dict[date, float]]
 
 ---
 
-## 11. Phase 10 Context (COMPLETE) and Phase 11 (Next)
+## 11. Phase 10 Context (COMPLETE) and Phase 11 (COMPLETE)
 
 Phase 10 is complete. All 8 sub-phases (10a-10h) are finished. Phase 11 is
-planned but not yet started.
+complete. 7 new strategies added, bringing the total from 67 to 74.
 
 ### Phase 10 Summary
 - **10a**: Baseline reconciliation -- canonical config frozen
@@ -342,12 +343,18 @@ planned but not yet started.
 - 2024 oscillates (non-convergent), 2025 collapses to absorbing zero-active state
 - Engine improvements (active-strategy floor, early stopping) should precede new strategies
 
-### Phase 11 Planned Structure
-- **11a**: Engine convergence improvements (active-strategy floor, early stopping, alpha=0.01)
-- **11b**: Strategy pool refinement (Diverse Ensemble v2, Spread Momentum, Selective High-Conviction, ML pruning)
-- **11c**: Dashboard convergence reporting (status badges, weight distribution, MAE sparklines)
-- **11d**: Re-run full market simulation with improved engine + refined pool
-- **11e**: Documentation and synthesis
+### Phase 11 Summary
+- 7 new strategies: SpreadMomentum, SelectiveHighConviction, TemperatureCurve,
+  NuclearEvent, FlowImbalance, RegimeRidge, PrunedMLEnsemble
+- 44 new tests (1089 total)
+- Engine code frozen; hyperparameter recommendations documented:
+  `ema_alpha=0.01`, `max_iterations=200`
+- Strategy registry updated to 74 strategies
+
+### Next Phase (12 -- not yet planned)
+Potential scope: engine convergence improvements (active-strategy floor, early
+stopping), dashboard convergence reporting, full market re-simulation with
+74 strategies and recommended hyperparameters.
 
 ---
 

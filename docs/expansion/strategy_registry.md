@@ -1,8 +1,8 @@
 # Strategy Registry (Live)
 
-## Current Count: 67
+## Current Count: 74
 
-Last updated: Phase F complete. All 67 strategies implemented and tested.
+Last updated: Phase 11 complete. 7 new strategies added (Phases B-F: 67, Phase 11: +7).
 
 ---
 
@@ -112,3 +112,17 @@ Last updated: Phase F complete. All 67 strategies implemented and tested.
 | 65 | `StackedRidgeMetaStrategy` | `stacked_ridge_meta.py` | Stacked Ridge meta-learner | ✅ |
 | 66 | `WeekdayWeekendEnsembleStrategy` | `weekday_weekend_ensemble.py` | Weekday/weekend dual ensemble | ✅ |
 | 67 | `BoostedSpreadMLStrategy` | `boosted_spread_ml.py` | Spread+GBM agreement filter | ✅ |
+
+---
+
+## Phase 11: New Strategies (+7, total 74)
+
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 68 | `SpreadMomentumStrategy` | `spread_momentum.py` | Cross-border spread EMA momentum | ✅ |
+| 69 | `SelectiveHighConvictionStrategy` | `selective_high_conviction.py` | Z-score filtered CompositeSignal | ✅ |
+| 70 | `TemperatureCurveStrategy` | `temperature_curve.py` | Quadratic temperature-demand model | ✅ |
+| 71 | `NuclearEventStrategy` | `nuclear_event.py` | Nuclear generation drop detector | ✅ |
+| 72 | `FlowImbalanceStrategy` | `flow_imbalance.py` | Combined FR+NL flow imbalance | ✅ |
+| 73 | `RegimeRidgeStrategy` | `regime_ridge.py` | Volatility-regime dual Ridge ML | ✅ |
+| 74 | `PrunedMLEnsembleStrategy` | `pruned_ml_ensemble.py` | Ridge+Lasso+RF equal-weight ensemble | ✅ |

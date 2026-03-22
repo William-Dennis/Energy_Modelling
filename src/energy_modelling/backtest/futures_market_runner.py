@@ -142,6 +142,8 @@ def run_futures_market_evaluation(
     ema_alpha: float = 0.1,
     initial_market_prices: pd.Series | None = None,
     max_workers: int | None = None,
+    cached_forecasts: dict[str, dict] | None = None,
+    cached_results: dict[str, BacktestResult] | None = None,
 ) -> FuturesMarketResult:
     """Run all strategies, then evaluate them under the synthetic futures market.
 
@@ -181,29 +183,53 @@ def run_futures_market_evaluation(
         Number of worker processes for parallelism.  ``None`` uses
         :class:`ProcessPoolExecutor` defaults (one per CPU).
         Set to 1 for serial execution.
+    cached_forecasts:
+        Pre-computed forecasts ``{name: {date: float}}``.  If provided for
+        a strategy, that strategy is not re-fit.  Strategies missing from
+        this dict are computed fresh.
+    cached_results:
+        Pre-computed backtest results ``{name: BacktestResult}``.  Must be
+        provided alongside ``cached_forecasts`` for the same strategies.
     """
+
+    cached_forecasts = cached_forecasts or {}
+    cached_results = cached_results or {}
 
     # Phase 1 + 2b: Fit strategies and collect forecasts (parallel)
     original_results: dict[str, BacktestResult] = {}
     strategy_forecasts: dict[str, dict] = {}
 
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(
-                _run_single_strategy,
-                name,
-                factory,
-                daily_data,
-                training_end,
-                evaluation_start,
-                evaluation_end,
-            ): name
-            for name, factory in strategy_factories.items()
-        }
-        for future in futures:
-            name, result, forecasts = future.result()
-            original_results[name] = result
-            strategy_forecasts[name] = forecasts
+    # Use cached data where available
+    for name in list(strategy_factories):
+        if name in cached_forecasts and name in cached_results:
+            strategy_forecasts[name] = cached_forecasts[name]
+            original_results[name] = cached_results[name]
+
+    # Compute only uncached strategies
+    uncached = {
+        name: factory
+        for name, factory in strategy_factories.items()
+        if name not in strategy_forecasts
+    }
+
+    if uncached:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(
+                    _run_single_strategy,
+                    name,
+                    factory,
+                    daily_data,
+                    training_end,
+                    evaluation_start,
+                    evaluation_end,
+                ): name
+                for name, factory in uncached.items()
+            }
+            for future in futures:
+                name, result, forecasts = future.result()
+                original_results[name] = result
+                strategy_forecasts[name] = forecasts
 
     if not original_results:
         msg = "No strategies were evaluated successfully."

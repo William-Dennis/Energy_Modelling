@@ -20,6 +20,7 @@ from strategies.decision_tree_direction import DecisionTreeStrategy
 from strategies.diversity_ensemble import DiversityEnsembleStrategy
 from strategies.dow_composite import DowCompositeStrategy
 from strategies.elastic_net import ElasticNetStrategy
+from strategies.flow_imbalance import FlowImbalanceStrategy
 from strategies.fossil_dispatch import FossilDispatchStrategy
 from strategies.fr_flow_signal import FRFlowSignalStrategy
 from strategies.fuel_index_trend import FuelIndexTrendStrategy
@@ -47,20 +48,26 @@ from strategies.net_demand_momentum import NetDemandMomentumStrategy
 from strategies.neural_net import NeuralNetStrategy
 from strategies.nl_flow_signal import NLFlowSignalStrategy
 from strategies.nuclear_availability import NuclearAvailabilityStrategy
+from strategies.nuclear_event import NuclearEventStrategy
 from strategies.pls_regression import PLSRegressionStrategy
 from strategies.price_min_reversion import PriceMinReversionStrategy
 from strategies.price_zscore_reversion import PriceZScoreReversionStrategy
+from strategies.pruned_ml_ensemble import PrunedMLEnsembleStrategy
 from strategies.quarter_seasonal import QuarterSeasonalStrategy
 from strategies.random_forest_direction import RandomForestStrategy
 from strategies.regime_conditional_ensemble import RegimeConditionalEnsembleStrategy
+from strategies.regime_ridge import RegimeRidgeStrategy
 from strategies.renewable_regime import RenewableRegimeStrategy
 from strategies.renewables_penetration import RenewablesPenetrationStrategy
 from strategies.renewables_surplus import RenewablesSurplusStrategy
 from strategies.ridge_net_demand import RidgeNetDemandStrategy
 from strategies.ridge_regression import RidgeRegressionStrategy
+from strategies.selective_high_conviction import SelectiveHighConvictionStrategy
 from strategies.solar_forecast import SolarForecastStrategy
+from strategies.spread_momentum import SpreadMomentumStrategy
 from strategies.stacked_ridge_meta import StackedRidgeMetaStrategy
 from strategies.svm_direction import SVMDirectionStrategy
+from strategies.temperature_curve import TemperatureCurveStrategy
 from strategies.temperature_extreme import TemperatureExtremeStrategy
 from strategies.top_k_ensemble import TopKEnsembleStrategy
 from strategies.volatility_regime import VolatilityRegimeStrategy
@@ -74,30 +81,22 @@ from strategies.zscore_momentum import ZScoreMomentumStrategy
 
 __all__ = [
     "AlwaysLongStrategy",
-    "BoostedSpreadMLStrategy",
-    "ConsensusSignalStrategy",
-    "DiversityEnsembleStrategy",
-    "MajorityVoteMLStrategy",
-    "MajorityVoteRuleBasedStrategy",
-    "MeanForecastRegressionStrategy",
-    "MedianForecastEnsembleStrategy",
-    "RegimeConditionalEnsembleStrategy",
-    "StackedRidgeMetaStrategy",
-    "TopKEnsembleStrategy",
-    "WeekdayWeekendEnsembleStrategy",
-    "WeightedVoteMixedStrategy",
     "AlwaysShortStrategy",
     "BayesianRidgeStrategy",
+    "BoostedSpreadMLStrategy",
     "CarbonTrendStrategy",
     "CommodityCostStrategy",
     "CompositeSignalStrategy",
+    "ConsensusSignalStrategy",
     "CrossBorderSpreadStrategy",
     "DayOfWeekStrategy",
     "DEFRSpreadStrategy",
     "DENLSpreadStrategy",
     "DecisionTreeStrategy",
+    "DiversityEnsembleStrategy",
     "DowCompositeStrategy",
     "ElasticNetStrategy",
+    "FlowImbalanceStrategy",
     "FossilDispatchStrategy",
     "FRFlowSignalStrategy",
     "FuelIndexTrendStrategy",
@@ -113,6 +112,10 @@ __all__ = [
     "LoadForecastStrategy",
     "LoadSurpriseStrategy",
     "LogisticDirectionStrategy",
+    "MajorityVoteMLStrategy",
+    "MajorityVoteRuleBasedStrategy",
+    "MeanForecastRegressionStrategy",
+    "MedianForecastEnsembleStrategy",
     "MondayEffectStrategy",
     "MonthSeasonalStrategy",
     "MultiSpreadStrategy",
@@ -121,22 +124,33 @@ __all__ = [
     "NeuralNetStrategy",
     "NLFlowSignalStrategy",
     "NuclearAvailabilityStrategy",
+    "NuclearEventStrategy",
     "PLSRegressionStrategy",
     "PriceMinReversionStrategy",
     "PriceZScoreReversionStrategy",
+    "PrunedMLEnsembleStrategy",
     "QuarterSeasonalStrategy",
     "RandomForestStrategy",
+    "RegimeConditionalEnsembleStrategy",
+    "RegimeRidgeStrategy",
     "RenewableRegimeStrategy",
     "RenewablesPenetrationStrategy",
     "RenewablesSurplusStrategy",
     "RidgeNetDemandStrategy",
     "RidgeRegressionStrategy",
+    "SelectiveHighConvictionStrategy",
     "SolarForecastStrategy",
+    "SpreadMomentumStrategy",
+    "StackedRidgeMetaStrategy",
     "SVMDirectionStrategy",
+    "TemperatureCurveStrategy",
     "TemperatureExtremeStrategy",
+    "TopKEnsembleStrategy",
     "VolatilityRegimeMLStrategy",
     "VolatilityRegimeStrategy",
+    "WeekdayWeekendEnsembleStrategy",
     "WeeklyCycleStrategy",
+    "WeightedVoteMixedStrategy",
     "WindForecastStrategy",
     "WindForecastErrorStrategy",
     "ZScoreMomentumStrategy",
