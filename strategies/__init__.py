@@ -39,6 +39,7 @@ from strategies.lasso_calendar_augmented import LassoCalendarAugmentedStrategy
 from strategies.lasso_regression import LassoRegressionStrategy
 from strategies.lasso_top_features import LassoTopFeaturesStrategy
 from strategies.load_forecast import LoadForecastStrategy
+from strategies.load_generation_gap import LoadGenerationGapStrategy
 from strategies.load_surprise import LoadSurpriseStrategy
 from strategies.logistic_direction import LogisticDirectionStrategy
 from strategies.majority_vote_ml import MajorityVoteMLStrategy
@@ -47,6 +48,7 @@ from strategies.mean_forecast_regression import MeanForecastRegressionStrategy
 from strategies.median_forecast_ensemble import MedianForecastEnsembleStrategy
 from strategies.monday_effect import MondayEffectStrategy
 from strategies.month_seasonal import MonthSeasonalStrategy
+from strategies.monthly_mean_reversion import MonthlyMeanReversionStrategy
 from strategies.multi_spread import MultiSpreadStrategy
 from strategies.net_demand import NetDemandStrategy
 from strategies.net_demand_momentum import NetDemandMomentumStrategy
@@ -54,6 +56,7 @@ from strategies.neural_net import NeuralNetStrategy
 from strategies.nl_flow_signal import NLFlowSignalStrategy
 from strategies.nuclear_availability import NuclearAvailabilityStrategy
 from strategies.nuclear_event import NuclearEventStrategy
+from strategies.nuclear_gas_substitution import NuclearGasSubstitutionStrategy
 from strategies.offshore_wind_anomaly import OffshoreWindAnomalyStrategy
 from strategies.pls_regression import PLSRegressionStrategy
 from strategies.poland_spread import PolandSpreadStrategy
@@ -65,6 +68,7 @@ from strategies.radiation_solar import RadiationSolarStrategy
 from strategies.random_forest_direction import RandomForestStrategy
 from strategies.regime_conditional_ensemble import RegimeConditionalEnsembleStrategy
 from strategies.regime_ridge import RegimeRidgeStrategy
+from strategies.renewable_ramp import RenewableRampStrategy
 from strategies.renewable_regime import RenewableRegimeStrategy
 from strategies.renewables_penetration import RenewablesPenetrationStrategy
 from strategies.renewables_surplus import RenewablesSurplusStrategy
@@ -79,6 +83,7 @@ from strategies.svm_direction import SVMDirectionStrategy
 from strategies.temperature_curve import TemperatureCurveStrategy
 from strategies.temperature_extreme import TemperatureExtremeStrategy
 from strategies.top_k_ensemble import TopKEnsembleStrategy
+from strategies.volatility_breakout import VolatilityBreakoutStrategy
 from strategies.volatility_regime import VolatilityRegimeStrategy
 from strategies.volatility_regime_ml import VolatilityRegimeMLStrategy
 from strategies.weekday_weekend_ensemble import WeekdayWeekendEnsembleStrategy
@@ -125,6 +130,7 @@ __all__ = [
     "LassoRegressionStrategy",
     "LassoTopFeaturesStrategy",
     "LoadForecastStrategy",
+    "LoadGenerationGapStrategy",
     "LoadSurpriseStrategy",
     "LogisticDirectionStrategy",
     "MajorityVoteMLStrategy",
@@ -133,6 +139,7 @@ __all__ = [
     "MedianForecastEnsembleStrategy",
     "MondayEffectStrategy",
     "MonthSeasonalStrategy",
+    "MonthlyMeanReversionStrategy",
     "MultiSpreadStrategy",
     "NetDemandMomentumStrategy",
     "NetDemandStrategy",
@@ -140,6 +147,7 @@ __all__ = [
     "NLFlowSignalStrategy",
     "NuclearAvailabilityStrategy",
     "NuclearEventStrategy",
+    "NuclearGasSubstitutionStrategy",
     "OffshoreWindAnomalyStrategy",
     "PLSRegressionStrategy",
     "PolandSpreadStrategy",
@@ -152,6 +160,7 @@ __all__ = [
     "RegimeConditionalEnsembleStrategy",
     "RegimeRidgeStrategy",
     "RenewableRegimeStrategy",
+    "RenewableRampStrategy",
     "RenewablesPenetrationStrategy",
     "RenewablesSurplusStrategy",
     "RidgeNetDemandStrategy",
@@ -165,6 +174,7 @@ __all__ = [
     "TemperatureCurveStrategy",
     "TemperatureExtremeStrategy",
     "TopKEnsembleStrategy",
+    "VolatilityBreakoutStrategy",
     "VolatilityRegimeMLStrategy",
     "VolatilityRegimeStrategy",
     "WeekdayWeekendEnsembleStrategy",
