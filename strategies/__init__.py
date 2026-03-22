@@ -13,6 +13,8 @@ from strategies.carbon_trend import CarbonTrendStrategy
 from strategies.commodity_cost import CommodityCostStrategy
 from strategies.composite_signal import CompositeSignalStrategy
 from strategies.consensus_signal import ConsensusSignalStrategy
+from strategies.contrarian_momentum import ContrarianMomentumStrategy
+from strategies.conviction_weighted import ConvictionWeightedStrategy
 from strategies.cross_border_spread import CrossBorderSpreadStrategy
 from strategies.czech_austrian_mean import CzechAustrianMeanStrategy
 from strategies.day_of_week import DayOfWeekStrategy
@@ -48,6 +50,7 @@ from strategies.majority_vote_ml import MajorityVoteMLStrategy
 from strategies.majority_vote_rule import MajorityVoteRuleBasedStrategy
 from strategies.mean_forecast_regression import MeanForecastRegressionStrategy
 from strategies.median_forecast_ensemble import MedianForecastEnsembleStrategy
+from strategies.median_independent import MedianIndependentStrategy
 from strategies.monday_effect import MondayEffectStrategy
 from strategies.month_seasonal import MonthSeasonalStrategy
 from strategies.monthly_mean_reversion import MonthlyMeanReversionStrategy
@@ -81,8 +84,10 @@ from strategies.seasonal_regime_switch import SeasonalRegimeSwitchStrategy
 from strategies.selective_high_conviction import SelectiveHighConvictionStrategy
 from strategies.solar_forecast import SolarForecastStrategy
 from strategies.spark_spread import SparkSpreadStrategy
+from strategies.spread_consensus import SpreadConsensusStrategy
 from strategies.spread_momentum import SpreadMomentumStrategy
 from strategies.stacked_ridge_meta import StackedRidgeMetaStrategy
+from strategies.supply_demand_balance import SupplyDemandBalanceStrategy
 from strategies.svm_direction import SVMDirectionStrategy
 from strategies.temperature_curve import TemperatureCurveStrategy
 from strategies.temperature_extreme import TemperatureExtremeStrategy
@@ -109,6 +114,8 @@ __all__ = [
     "CommodityCostStrategy",
     "CompositeSignalStrategy",
     "ConsensusSignalStrategy",
+    "ContrarianMomentumStrategy",
+    "ConvictionWeightedStrategy",
     "CrossBorderSpreadStrategy",
     "CzechAustrianMeanStrategy",
     "DayOfWeekStrategy",
@@ -144,6 +151,7 @@ __all__ = [
     "MajorityVoteRuleBasedStrategy",
     "MeanForecastRegressionStrategy",
     "MedianForecastEnsembleStrategy",
+    "MedianIndependentStrategy",
     "MondayEffectStrategy",
     "MonthSeasonalStrategy",
     "MonthlyMeanReversionStrategy",
@@ -177,9 +185,11 @@ __all__ = [
     "SeasonalRegimeSwitchStrategy",
     "SolarForecastStrategy",
     "SparkSpreadStrategy",
+    "SpreadConsensusStrategy",
     "SpreadMomentumStrategy",
     "StackedRidgeMetaStrategy",
     "SVMDirectionStrategy",
+    "SupplyDemandBalanceStrategy",
     "TemperatureCurveStrategy",
     "TemperatureExtremeStrategy",
     "TopKEnsembleStrategy",
