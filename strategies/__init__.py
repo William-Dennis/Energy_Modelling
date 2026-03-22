@@ -21,6 +21,7 @@ from strategies.diversity_ensemble import DiversityEnsembleStrategy
 from strategies.dow_composite import DowCompositeStrategy
 from strategies.elastic_net import ElasticNetStrategy
 from strategies.flow_imbalance import FlowImbalanceStrategy
+from strategies.forecast_price_error import ForecastPriceErrorStrategy
 from strategies.fossil_dispatch import FossilDispatchStrategy
 from strategies.fr_flow_signal import FRFlowSignalStrategy
 from strategies.fuel_index_trend import FuelIndexTrendStrategy
@@ -28,6 +29,7 @@ from strategies.gas_carbon_joint_trend import GasCarbonJointTrendStrategy
 from strategies.gas_trend import GasTrendStrategy
 from strategies.gbm_net_demand import GBMNetDemandStrategy
 from strategies.gradient_boosting_direction import GradientBoostingStrategy
+from strategies.intraday_range import IntradayRangeStrategy
 from strategies.knn_direction import KNNDirectionStrategy
 from strategies.lag2_reversion import Lag2ReversionStrategy
 from strategies.lasso_calendar_augmented import LassoCalendarAugmentedStrategy
@@ -49,11 +51,14 @@ from strategies.neural_net import NeuralNetStrategy
 from strategies.nl_flow_signal import NLFlowSignalStrategy
 from strategies.nuclear_availability import NuclearAvailabilityStrategy
 from strategies.nuclear_event import NuclearEventStrategy
+from strategies.offshore_wind_anomaly import OffshoreWindAnomalyStrategy
 from strategies.pls_regression import PLSRegressionStrategy
+from strategies.poland_spread import PolandSpreadStrategy
 from strategies.price_min_reversion import PriceMinReversionStrategy
 from strategies.price_zscore_reversion import PriceZScoreReversionStrategy
 from strategies.pruned_ml_ensemble import PrunedMLEnsembleStrategy
 from strategies.quarter_seasonal import QuarterSeasonalStrategy
+from strategies.radiation_solar import RadiationSolarStrategy
 from strategies.random_forest_direction import RandomForestStrategy
 from strategies.regime_conditional_ensemble import RegimeConditionalEnsembleStrategy
 from strategies.regime_ridge import RegimeRidgeStrategy
@@ -97,6 +102,7 @@ __all__ = [
     "DowCompositeStrategy",
     "ElasticNetStrategy",
     "FlowImbalanceStrategy",
+    "ForecastPriceErrorStrategy",
     "FossilDispatchStrategy",
     "FRFlowSignalStrategy",
     "FuelIndexTrendStrategy",
@@ -104,6 +110,7 @@ __all__ = [
     "GasTrendStrategy",
     "GBMNetDemandStrategy",
     "GradientBoostingStrategy",
+    "IntradayRangeStrategy",
     "KNNDirectionStrategy",
     "Lag2ReversionStrategy",
     "LassoCalendarAugmentedStrategy",
@@ -125,10 +132,13 @@ __all__ = [
     "NLFlowSignalStrategy",
     "NuclearAvailabilityStrategy",
     "NuclearEventStrategy",
+    "OffshoreWindAnomalyStrategy",
     "PLSRegressionStrategy",
+    "PolandSpreadStrategy",
     "PriceMinReversionStrategy",
     "PriceZScoreReversionStrategy",
     "PrunedMLEnsembleStrategy",
+    "RadiationSolarStrategy",
     "QuarterSeasonalStrategy",
     "RandomForestStrategy",
     "RegimeConditionalEnsembleStrategy",
