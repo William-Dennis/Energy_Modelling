@@ -1,6 +1,6 @@
 # Energy Modelling Platform -- Phase Roadmap
 
-## Overall Status: PHASES 0-11 COMPLETE, PHASE 12 IN PROGRESS
+## Overall Status: PHASES 0-12 COMPLETE
 
 ## Phase Overview
 
@@ -18,7 +18,7 @@
 | 9 | [EMA Price Update Experiments](phase_9_ema_price_update.md) | COMPLETE | Phase 7, 8 | EMA dampening sweep; alpha=0.1 adopted as production default; 2025 converges, 2024 does not |
 | 10 | [Futures Market Behaviour and Strategy Robustness](phase_10_market_behaviour_and_strategy_robustness.md) | COMPLETE | Phase 5, 7, 8, 9 | Reconcile current market behaviour, explain dynamics, and design stronger market-robust strategies |
 | 11 | [New Strategies and Hyperparameter Tuning](phase_11_new_strategies_and_hyperparameter_tuning.md) | COMPLETE | Phase 10 | 7 new strategies (74 total), hyperparameter recommendations, 44 new tests |
-| 12 | [Forecast Cache & Strategy Expansion](phase_12_forecast_cache_and_strategy_expansion.md) | IN PROGRESS | Phase 11 | SQLite forecast cache (recompute-all in 2.4s), 26 new strategies to reach 100 total |
+| 12 | [Forecast Cache & Strategy Expansion](phase_12_forecast_cache_and_strategy_expansion.md) | COMPLETE | Phase 11 | SQLite forecast cache (recompute-all in 2.6s), 26 new strategies reaching 100 total, 1279 tests |
 
 ## Dependency Graph
 
@@ -66,7 +66,7 @@ roadmap and is fully complete.
 | F | [Ensemble](../expansion/phase_F_ensemble.md) | COMPLETE | +12 ensemble/meta strategies |
 | G | [Feedback Loop](../expansion/phase_G_feedback_loop.md) | COMPLETE | Automated feedback loop infrastructure |
 
-See `docs/expansion/strategy_registry.md` for the full 74-strategy inventory and
+See `docs/expansion/strategy_registry.md` for the full 100-strategy inventory and
 `docs/expansion/signal_registry.md` for the signal catalog.
 
 ## Principles
@@ -84,8 +84,8 @@ See `docs/expansion/strategy_registry.md` for the full 74-strategy inventory and
 ## Architecture (Current — Post Expansion)
 
 ```
-strategies/                          # 74 registered strategies + 1 analysis-only
-  __init__.py                        #   Registry: imports all 74 strategies
+strategies/                          # 100 registered strategies + 1 analysis-only
+  __init__.py                        #   Registry: imports all 100 strategies
   ml_base.py                         #   _MLStrategyBase (scikit-learn adapter)
   ensemble_base.py                   #   _EnsembleBase (ensemble adapter)
   always_long.py                     #   Baseline: always long
@@ -187,3 +187,4 @@ src/energy_modelling/
 | 2026-03-21 | 10 | COMPLETE — All 8 sub-phases (10a-10h) finished. 1004+ tests pass. Phase 11 placeholder added to roadmap |
 | 2026-03-22 | 11 | COMPLETE — 7 new strategies (SpreadMomentum, SelectiveHighConviction, TemperatureCurve, NuclearEvent, FlowImbalance, RegimeRidge, PrunedMLEnsemble) implemented with 44 tests. Strategy count 67->74. 1089 tests pass. Hyperparameter recommendations documented (ema_alpha=0.01, max_iterations=200) |
 | 2026-03-22 | 12a | COMPLETE — SQLite forecast cache: per-strategy fingerprinting, warm-cache recompute-all in 2.4s (down from ~8-10 min). 19 new tests. 1108 tests pass. All theorems verified |
+| 2026-03-22 | 12b | COMPLETE — Strategy expansion from 74 to 100: 26 new strategies in 6 batches (RadiationSolar, IntradayRange, OffshoreWindAnomaly, ForecastPriceError, PolandSpread, DenmarkSpread, CzechAustrianMean, SparkSpread, CarbonGasRatio, WeeklyAutocorrelation, MonthlyMeanReversion, LoadGenerationGap, RenewableRamp, NuclearGasSubstitution, VolatilityBreakout, SeasonalRegimeSwitch, WeekendMeanReversion, HighVolSkip, RadiationRegime, IndependentVote, MedianIndependent, SpreadConsensus, SupplyDemandBalance, ContrarianMomentum, ConvictionWeighted, BalancedLongShort). 171 new tests. 1279 tests pass. Warm-cache recompute-all: 2.6s with 100 strategies |

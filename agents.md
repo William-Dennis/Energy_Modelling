@@ -33,7 +33,7 @@ Written 2026-03-21 after a full 20-item audit and cleanup session.
 
 ### Test count baseline
 
-- As of 2026-03-22: **1089 tests pass** in ~30s.
+- As of 2026-03-22: **1279 tests pass** in ~43s.
 - If you see "11 collection errors", you're using system Python instead of `uv`.
 
 ---
@@ -47,7 +47,7 @@ src/energy_modelling/
   data_collection/   # ENTSO-E + weather + commodity data: 14 modules
   futures_market/    # Shared data utilities: 4 modules
 
-strategies/           # 74 registered strategies + ml_base + ensemble_base
+strategies/           # 100 registered strategies + ml_base + ensemble_base
 tests/                # Mirrors src/ structure
 scripts/              # Standalone experiment scripts (phase8/9/10, verify, etc.)
 docs/                 # phases/, expansion/, eda/, specs
@@ -304,7 +304,7 @@ result.strategy_forecasts   # dict[str, dict[date, float]]
 ### Before committing
 
 1. `uv run ruff check .` — must be clean
-2. `uv run pytest -q` — must pass (1089+ tests)
+2. `uv run pytest -q` — must pass (1279+ tests)
 3. `uv run python scripts/verify_theorems.py` — ALL THEOREMS VERIFIED
 
 ### After completing a phase or sub-phase
@@ -321,10 +321,11 @@ result.strategy_forecasts   # dict[str, dict[date, float]]
 
 ---
 
-## 11. Phase 10 Context (COMPLETE) and Phase 11 (COMPLETE)
+## 11. Phase 10 Context (COMPLETE), Phase 11 (COMPLETE), and Phase 12 (COMPLETE)
 
 Phase 10 is complete. All 8 sub-phases (10a-10h) are finished. Phase 11 is
-complete. 7 new strategies added, bringing the total from 67 to 74.
+complete. 7 new strategies added, bringing the total from 67 to 74. Phase 12
+is complete. SQLite forecast cache + 26 new strategies, bringing the total to 100.
 
 ### Phase 10 Summary
 - **10a**: Baseline reconciliation -- canonical config frozen
@@ -351,19 +352,35 @@ complete. 7 new strategies added, bringing the total from 67 to 74.
   `ema_alpha=0.01`, `max_iterations=200`
 - Strategy registry updated to 74 strategies
 
-### Next Phase (12 -- not yet planned)
+### Phase 12 Summary
+- **12A**: SQLite forecast cache with per-strategy fingerprinting
+  - Warm cache recompute-all: 2.6 seconds (down from ~8-10 minutes)
+  - 19 new tests
+- **12B**: 26 new strategies in 6 batches, reaching 100 total
+  - Batch 1: RadiationSolar, IntradayRange, OffshoreWindAnomaly, ForecastPriceError, PolandSpread
+  - Batch 2: DenmarkSpread, CzechAustrianMean, SparkSpread, CarbonGasRatio, WeeklyAutocorrelation
+  - Batch 3: MonthlyMeanReversion, LoadGenerationGap, RenewableRamp, NuclearGasSubstitution, VolatilityBreakout
+  - Batch 4: SeasonalRegimeSwitch, WeekendMeanReversion, HighVolSkip, RadiationRegime, IndependentVote
+  - Batch 5: MedianIndependent, SpreadConsensus, SupplyDemandBalance, ContrarianMomentum, ConvictionWeighted
+  - Batch 6: BalancedLongShort (#100)
+  - 171 new tests (1279 total)
+
+### Next Phase (13 -- not yet planned)
 Potential scope: engine convergence improvements (active-strategy floor, early
 stopping), dashboard convergence reporting, full market re-simulation with
-74 strategies and recommended hyperparameters.
+100 strategies and recommended hyperparameters (`ema_alpha=0.01`,
+`max_iterations=200`).
 
 ---
 
 ## 12. Performance Notes
 
-- The full test suite runs in ~31s.
+- The full test suite runs in ~43s.
 - `verify_theorems.py` runs in ~2-3s.
 - `run_full_backtest.py` uses `ProcessPoolExecutor` and can take several minutes.
-- Market simulation with 67 strategies and 500 iterations takes ~30-60s per year.
+- Market simulation with 100 strategies and 500 iterations takes ~0.1s per year (cached).
+- Cold cache recompute-all with 100 strategies takes ~595 seconds.
+- Warm cache recompute-all with 100 strategies takes ~2.6 seconds.
 - The vectorised path in `futures_market_engine.py` (`_vec_iteration`) is much
   faster than the reference path (`run_futures_market_iteration`).
 

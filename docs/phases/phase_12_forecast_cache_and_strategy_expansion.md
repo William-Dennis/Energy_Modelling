@@ -1,6 +1,6 @@
 # Phase 12: Forecast Cache & Strategy Expansion
 
-**Status**: IN PROGRESS (12A complete, 12B pending)
+**Status**: COMPLETE
 
 **Depends On**: Phase 11
 
@@ -58,12 +58,12 @@ Two-tier caching:
 - [x] `--clear-cache` CLI flag
 - [x] 19 tests passing
 - [x] Full test suite passing (1108 tests)
-- [x] `recompute-all` warm cache: 2.4 seconds
+- [x] `recompute-all` warm cache: 2.4 seconds (67 strategies)
 - [x] All theorems verified
 
 ---
 
-## Phase 12B: Strategy Expansion to 100 -- PENDING
+## Phase 12B: Strategy Expansion to 100 -- COMPLETE
 
 ### Design Principles
 
@@ -89,13 +89,24 @@ Two-tier caching:
 
 ### Checklist
 
-- [ ] Batch 1 (75-79): implement + tests
-- [ ] Batch 2 (80-84): implement + tests
-- [ ] Batch 3 (85-89): implement + tests
-- [ ] Batch 4 (90-94): implement + tests
-- [ ] Batch 5 (95-99): implement + tests
-- [ ] Batch 6 (100): implement + tests
-- [ ] Update strategy_registry.md to 100
-- [ ] Update test_submission_strategies.py count assertion
-- [ ] Full validation: ruff + pytest + verify_theorems + recompute-all
-- [ ] Update ROADMAP.md, AGENTS.md
+- [x] Batch 1 (75-79): implement + tests (29 tests)
+- [x] Batch 2 (80-84): implement + tests (33 tests)
+- [x] Batch 3 (85-89): implement + tests (34 tests)
+- [x] Batch 4 (90-94): implement + tests (32 tests)
+- [x] Batch 5 (95-99): implement + tests (34 tests)
+- [x] Batch 6 (100): implement + tests (9 tests)
+- [x] Update strategy_registry.md to 100
+- [x] Update test_submission_strategies.py count assertion
+- [x] Full validation: ruff + pytest + verify_theorems + recompute-all
+- [x] Update ROADMAP.md, AGENTS.md
+
+### Results
+
+| Metric | Value |
+|--------|-------|
+| New strategies | 26 (74 -> 100) |
+| New tests | 171 (1108 -> 1279) |
+| Cold cache recompute-all (100 strategies) | ~595 seconds |
+| Warm cache recompute-all (100 strategies) | **2.6 seconds** |
+| All theorems verified | Yes |
+| Ruff clean | Yes |

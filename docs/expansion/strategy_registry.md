@@ -1,8 +1,8 @@
 # Strategy Registry (Live)
 
-## Current Count: 74
+## Current Count: 100
 
-Last updated: Phase 11 complete. 7 new strategies added (Phases B-F: 67, Phase 11: +7).
+Last updated: Phase 12B complete. 26 new strategies added (Phases B-F: 67, Phase 11: +7, Phase 12B: +26).
 
 ---
 
@@ -126,3 +126,71 @@ Last updated: Phase 11 complete. 7 new strategies added (Phases B-F: 67, Phase 1
 | 72 | `FlowImbalanceStrategy` | `flow_imbalance.py` | Combined FR+NL flow imbalance | ✅ |
 | 73 | `RegimeRidgeStrategy` | `regime_ridge.py` | Volatility-regime dual Ridge ML | ✅ |
 | 74 | `PrunedMLEnsembleStrategy` | `pruned_ml_ensemble.py` | Ridge+Lasso+RF equal-weight ensemble | ✅ |
+
+---
+
+## Phase 12B Batch 1: Unused Features (+5, total 79)
+
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 75 | `RadiationSolarStrategy` | `radiation_solar.py` | Shortwave radiation vs training median | ✅ |
+| 76 | `IntradayRangeStrategy` | `intraday_range.py` | Price range percentile: mean-revert/trend | ✅ |
+| 77 | `OffshoreWindAnomalyStrategy` | `offshore_wind_anomaly.py` | Actual vs forecast offshore wind | ✅ |
+| 78 | `ForecastPriceErrorStrategy` | `forecast_price_error.py` | Self-correcting forecast feedback loop | ✅ |
+| 79 | `PolandSpreadStrategy` | `poland_spread.py` | DE-PL spread convergence | ✅ |
+
+---
+
+## Phase 12B Batch 2: Spreads & Ratios (+5, total 84)
+
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 80 | `DenmarkSpreadStrategy` | `denmark_spread.py` | DE-DK1 spread convergence | ✅ |
+| 81 | `CzechAustrianMeanStrategy` | `czech_austrian_mean.py` | Average CZ+AT price vs DE spread | ✅ |
+| 82 | `SparkSpreadStrategy` | `spark_spread.py` | Gas-to-electricity spark spread signal | ✅ |
+| 83 | `CarbonGasRatioStrategy` | `carbon_gas_ratio.py` | Carbon/gas price ratio regime signal | ✅ |
+| 84 | `WeeklyAutocorrelationStrategy` | `weekly_autocorrelation.py` | 7-day autocorrelation pattern | ✅ |
+
+---
+
+## Phase 12B Batch 3: Supply-Demand (+5, total 89)
+
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 85 | `MonthlyMeanReversionStrategy` | `monthly_mean_reversion.py` | Calendar month average reversion | ✅ |
+| 86 | `LoadGenerationGapStrategy` | `load_generation_gap.py` | Load vs total generation gap | ✅ |
+| 87 | `RenewableRampStrategy` | `renewable_ramp.py` | Day-over-day renewable generation change | ✅ |
+| 88 | `NuclearGasSubstitutionStrategy` | `nuclear_gas_substitution.py` | Nuclear-gas substitution dynamics | ✅ |
+| 89 | `VolatilityBreakoutStrategy` | `volatility_breakout.py` | Momentum breakouts in high volatility | ✅ |
+
+---
+
+## Phase 12B Batch 4: Regime & Calendar (+5, total 94)
+
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 90 | `SeasonalRegimeSwitchStrategy` | `seasonal_regime_switch.py` | Winter/summer regime switch | ✅ |
+| 91 | `WeekendMeanReversionStrategy` | `weekend_mean_reversion.py` | Weekday/weekend price reversion | ✅ |
+| 92 | `HighVolSkipStrategy` | `high_vol_skip.py` | Skip trading in high-volatility regimes | ✅ |
+| 93 | `RadiationRegimeStrategy` | `radiation_regime.py` | Three-regime radiation classification | ✅ |
+| 94 | `IndependentVoteStrategy` | `independent_vote.py` | Majority vote from 5 independent features | ✅ |
+
+---
+
+## Phase 12B Batch 5: Meta & Ensemble (+5, total 99)
+
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 95 | `MedianIndependentStrategy` | `median_independent.py` | Median of 3 independent signals | ✅ |
+| 96 | `SpreadConsensusStrategy` | `spread_consensus.py` | Multi-border spread consensus | ✅ |
+| 97 | `SupplyDemandBalanceStrategy` | `supply_demand_balance.py` | Forecast load vs generation balance | ✅ |
+| 98 | `ContrarianMomentumStrategy` | `contrarian_momentum.py` | Follow strong trends, fade weak | ✅ |
+| 99 | `ConvictionWeightedStrategy` | `conviction_weighted.py` | Z-score mean-reversion with conviction | ✅ |
+
+---
+
+## Phase 12B Batch 6: Milestone (+1, total 100)
+
+| # | Class | File | Signal | Status |
+|---|-------|------|--------|--------|
+| 100 | `BalancedLongShortStrategy` | `balanced_long_short.py` | Position-tracking balanced long/short | ✅ |
