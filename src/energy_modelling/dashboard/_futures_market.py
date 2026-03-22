@@ -145,9 +145,8 @@ def _render_price_quantile_evolution(
         go.Scatter(
             x=iters,
             y=mae_real,
-            mode="lines+markers",
+            mode="lines",
             line={"color": _MEDIAN_COLOR, "width": 2.5},
-            marker={"size": 6, "color": _MEDIAN_COLOR},
             name="MAE vs real settlement",
             hovertemplate="Iter %{x} — MAE vs real: %{y:.2f} EUR/MWh<extra></extra>",
         )
@@ -157,9 +156,8 @@ def _render_price_quantile_evolution(
         go.Scatter(
             x=iters,
             y=mae_prev,
-            mode="lines+markers",
-            line={"color": _OUTER_BORDER, "width": 2.5, "dash": "dash"},
-            marker={"size": 6, "color": _OUTER_BORDER},
+            mode="lines",
+            line={"color": _OUTER_BORDER, "width": 2.5},
             name="MAE vs prev-day settlement",
             hovertemplate="Iter %{x} — MAE vs prev-day: %{y:.2f} EUR/MWh<extra></extra>",
         )
